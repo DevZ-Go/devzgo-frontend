@@ -1,10 +1,12 @@
 import axios from "axios";
 import { getToken } from "../auth/token";
+import { API_BASE_URL } from "./config";
 
-const API_BASE = "http://localhost:8000";
-
+/**
+ * Authenticated API client. Sends `Authorization: Bearer <token>` when a token exists in localStorage.
+ */
 export const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_BASE_URL,
 });
 
 api.interceptors.request.use((config) => {

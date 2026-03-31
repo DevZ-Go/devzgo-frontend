@@ -3,7 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 
 export function Navbar() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   function handleLogout() {
     logout();
@@ -20,6 +20,11 @@ export function Navbar() {
           DevZ-Go
         </Link>
         <div className="flex items-center gap-6">
+          {(user?.email ?? user?.username) && (
+            <span className="text-sm text-gray-500 max-w-[200px] truncate">
+              {String(user?.email ?? user?.username)}
+            </span>
+          )}
           <Link
             to="/explore"
             className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
