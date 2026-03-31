@@ -5,31 +5,36 @@ import { ArrowRight, Star, Zap, Loader2, AlertCircle } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
 import { FeedSection } from "../components/FeedSection";
-import { fetchProjects } from "../api/projects";
+import { fetchProjects, fetchTechStacks } from "../api/projects";
+import type { TechStackItem } from "../api/projects";
 import { transformApiProject } from "../utils/projectTransform";
+import { getApiErrorMessage } from "../utils/apiError";
 import type { Project } from "../types/project";
 
 export function LandingPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [techStacks, setTechStacks] = useState<TechStackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadProjects() {
+    async function loadData() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchProjects();
+        const [projectList, stackList] = await Promise.all([
+          fetchProjects(),
+          fetchTechStacks(),
+        ]);
         if (!cancelled) {
-          setProjects(data.map((api, i) => transformApiProject(api, i)));
+          setProjects(projectList.map((api, i) => transformApiProject(api, i)));
+          setTechStacks(stackList);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load projects"
-          );
+          setError(getApiErrorMessage(err));
         }
       } finally {
         if (!cancelled) {
@@ -38,7 +43,7 @@ export function LandingPage() {
       }
     }
 
-    loadProjects();
+    loadData();
     return () => {
       cancelled = true;
     };
@@ -166,6 +171,26 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {techStacks.length > 0 && (
+        <section className="px-8 pb-8">
+          <div className="max-w-[1440px] mx-auto">
+            <p className="text-sm font-medium text-gray-500 mb-3">
+              Tech stacks (from API)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {techStacks.map((t) => (
+                <span
+                  key={t.id}
+                  className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 text-sm border border-gray-200/80"
+                >
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Projects Section */}
       {error && (
