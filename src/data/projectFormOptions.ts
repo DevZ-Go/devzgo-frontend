@@ -3,14 +3,13 @@
  * Edit this list to match your API.
  */
 export const PROJECT_CATEGORIES = [
+  // Must match backend `ProjectCategory` enum values.
   "AI/ML",
   "Web Development",
-  "Mobile Development",
-  "Desktop",
-  "DevOps / Cloud",
-  "Data Science",
-  "Game Development",
-  "Cybersecurity",
+  "Mobile",
+  "Gaming",
+  "Education",
+  "Productivity",
   "Other",
 ] as const;
 

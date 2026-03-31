@@ -21,7 +21,7 @@ export function AddProjectPage() {
   const [category, setCategory] = useState<string>("");
   const [visibility, setVisibility] = useState<ProjectVisibility>("Public");
   const [stackOptions, setStackOptions] = useState<TechStackItem[]>([]);
-  const [selectedStackNames, setSelectedStackNames] = useState<string[]>([]);
+  const [selectedStackIds, setSelectedStackIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStacks, setLoadingStacks] = useState(true);
@@ -43,9 +43,10 @@ export function AddProjectPage() {
     };
   }, []);
 
-  function toggleStack(name: string) {
-    setSelectedStackNames((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+  function toggleStack(id: TechStackItem["id"]) {
+    const stackId = Number(id);
+    setSelectedStackIds((prev) =>
+      prev.includes(stackId) ? prev.filter((n) => n !== stackId) : [...prev, stackId]
     );
   }
 
@@ -54,15 +55,15 @@ export function AddProjectPage() {
     setError(null);
     setLoading(true);
     try {
-      await createProject({
+      const created = await createProject({
         title: title.trim(),
         short_description: shortDescription.trim(),
         full_description: fullDescription.trim(),
         category,
         visibility,
-        tech_stacks: selectedStackNames,
+        tech_stack_ids: selectedStackIds,
       });
-      navigate("/home", { replace: true });
+      navigate(`/project/${created.id}/uploads`, { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -184,7 +185,7 @@ export function AddProjectPage() {
                   <label
                     key={`${t.id}-${t.name}`}
                     className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm ${
-                      selectedStackNames.includes(t.name)
+                      selectedStackIds.includes(Number(t.id))
                         ? "border-blue-500 bg-blue-50 text-blue-900"
                         : "border-gray-200 bg-white text-gray-700"
                     }`}
@@ -192,8 +193,8 @@ export function AddProjectPage() {
                     <input
                       type="checkbox"
                       className="rounded"
-                      checked={selectedStackNames.includes(t.name)}
-                      onChange={() => toggleStack(t.name)}
+                      checked={selectedStackIds.includes(Number(t.id))}
+                      onChange={() => toggleStack(t.id)}
                     />
                     {t.name}
                   </label>
