@@ -1,3 +1,4 @@
+export { AuthBootstrap } from "./AuthBootstrap";
 export { AuthLayout } from "./AuthLayout";
 export { Navbar } from "./Navbar";
 export { ProtectedRoute } from "./ProtectedRoute";

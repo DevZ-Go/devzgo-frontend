@@ -1,46 +1,49 @@
 import axios from "axios";
+import type { AuthUser } from "../types/auth";
+import { api } from "./client";
+import { API_BASE_URL } from "./config";
 
-const API_BASE = "http://localhost:8000";
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
+export interface LoginTokenResponse {
   access_token: string;
+  token_type?: string;
 }
 
-export interface RegisterCredentials {
+export interface RegisterPayload {
   email: string;
   password: string;
   username: string;
 }
 
-export interface RegisterResponse {
-  id: string;
-  email: string;
-  username: string;
-}
+/**
+ * OAuth2 password flow: FastAPI expects form fields `username` (email) and `password`.
+ */
+export async function loginWithPassword(
+  email: string,
+  password: string
+): Promise<LoginTokenResponse> {
+  const body = new URLSearchParams();
+  body.set("username", email);
+  body.set("password", password);
 
-export async function login(
-  credentials: LoginCredentials
-): Promise<LoginResponse> {
-  const { data } = await axios.post<LoginResponse>(
-    `${API_BASE}/login`,
-    credentials,
-    { headers: { "Content-Type": "application/json" } }
+  const { data } = await axios.post<LoginTokenResponse>(
+    `${API_BASE_URL}/auth/login`,
+    body,
+    {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    }
   );
   return data;
 }
 
-export async function register(
-  credentials: RegisterCredentials
-): Promise<RegisterResponse> {
-  const { data } = await axios.post<RegisterResponse>(
-    `${API_BASE}/register`,
-    credentials,
-    { headers: { "Content-Type": "application/json" } }
-  );
+export async function registerUser(payload: RegisterPayload): Promise<unknown> {
+  const { data } = await axios.post(`${API_BASE_URL}/auth/register`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+/** Requires Bearer token (uses `api` client). */
+export async function fetchCurrentUser(): Promise<AuthUser> {
+  const { data } = await api.get<AuthUser>("/auth/me");
   return data;
 }

@@ -2,13 +2,14 @@ import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Zap } from "lucide-react";
-import { login } from "../api/auth";
+import { loginWithPassword } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
+import { getApiErrorMessage } from "../utils/apiError";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login: authLogin } = useAuth();
+  const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,24 +21,21 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const { access_token } = await login({ email, password });
-      authLogin(access_token);
+      const { access_token } = await loginWithPassword(email, password);
+      setAuthToken(access_token);
+      try {
+        await refreshUser();
+      } catch {
+        logout();
+        setError("Signed in but could not verify your session. Try again.");
+        return;
+      }
       navigate("/home", { replace: true });
     } catch (err) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data
-              ?.detail ?? "Invalid email or password"
-          : "Something went wrong. Please try again.";
-      setError(String(message));
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleDemoLogin() {
-    authLogin("demo-token-for-preview");
-    navigate("/home", { replace: true });
   }
 
   return (
@@ -115,23 +113,6 @@ export function LoginPage() {
               className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-60 disabled:pointer-events-none"
             >
               {loading ? "Signing in..." : "Sign in"}
-            </button>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-4 text-gray-500">or</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              className="w-full rounded-xl border-2 border-gray-200 py-3.5 text-base font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50"
-            >
-              Try demo (no backend)
             </button>
           </form>
         </div>
