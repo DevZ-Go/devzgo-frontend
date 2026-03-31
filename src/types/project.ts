@@ -9,13 +9,20 @@ export interface ApiProject {
   id: string | number;
   title: string;
   short_description: string;
+  full_description?: string;
   category?: string;
+  visibility?: string;
+  /** Backend may use cover_image_url */
   image_url?: string;
-  tech_stack?: string[];
+  cover_image_url?: string | null;
+  /** Backend may return plural `tech_stacks` as string[] */
+  tech_stack?: Array<string | { name?: string }>;
+  tech_stacks?: string[];
   likes?: number;
   views?: number;
   comments?: number;
   owner?: ApiProjectOwner;
+  owner_username?: string;
 }
 
 /** Normalized project for UI components */

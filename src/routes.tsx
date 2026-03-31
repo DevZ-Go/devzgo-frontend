@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AddProjectPage } from "./pages/AddProjectPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -36,9 +37,9 @@ export const router = createBrowserRouter([
   {
     path: "/add-project",
     element: (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Add project page – coming soon</p>
-      </div>
+      <ProtectedRoute>
+        <AddProjectPage />
+      </ProtectedRoute>
     ),
   },
   {

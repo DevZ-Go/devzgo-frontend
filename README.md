@@ -1,4 +1,30 @@
-# React + TypeScript + Vite
+# DevZ-Go — Frontend
+
+React + TypeScript + Vite app for the DevZ-Go developer portfolio platform. Integrates with a **FastAPI** backend (default `http://127.0.0.1:8000`).
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[docs/PROJECT_CHANGES_AND_DOCUMENTATION.md](docs/PROJECT_CHANGES_AND_DOCUMENTATION.md)** | **Start here:** all changes, routes, API mapping, auth flow, file list, how to run |
+| [CHANGELOG.md](CHANGELOG.md) | Summary changelog |
+| [docs/API_INTEGRATION.md](docs/API_INTEGRATION.md) | FastAPI integration & CORS |
+| [CODEBASE_GUIDE.md](CODEBASE_GUIDE.md) | File-by-file codebase guide |
+| [VIVA_PREPARATION_NOTES.md](VIVA_PREPARATION_NOTES.md) | Concepts & viva prep |
+
+## Quick start
+
+```bash
+cp .env.example .env   # optional: set VITE_API_BASE_URL
+npm install
+npm run dev            # http://localhost:5173
+```
+
+Run your FastAPI server separately on port **8000**.
+
+---
+
+## React + TypeScript + Vite (template notes)
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

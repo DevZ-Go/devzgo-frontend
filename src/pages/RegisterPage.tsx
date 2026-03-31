@@ -2,8 +2,9 @@ import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Zap } from "lucide-react";
-import { register } from "../api/auth";
+import { registerUser } from "../api/auth";
 import { AuthLayout } from "../components/AuthLayout";
+import { getApiErrorMessage } from "../utils/apiError";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -19,15 +20,10 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      await register({ username, email, password });
+      await registerUser({ username, email, password });
       navigate("/login", { replace: true });
     } catch (err) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { detail?: string } } }).response
-              ?.data?.detail ?? "Registration failed. Please try again."
-          : "Something went wrong. Please try again.";
-      setError(String(message));
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
