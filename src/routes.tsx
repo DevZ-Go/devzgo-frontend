@@ -4,6 +4,7 @@ import { AddProjectPage } from "./pages/AddProjectPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { UploadProjectAssetsPage } from "./pages/UploadProjectAssetsPage";
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AddProjectPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/project/:id/uploads",
+    element: (
+      <ProtectedRoute>
+        <UploadProjectAssetsPage />
       </ProtectedRoute>
     ),
   },

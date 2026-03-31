@@ -10,12 +10,12 @@ export type ProjectVisibility = "Public" | "Private";
 
 export interface CreateProjectPayload {
   title: string;
-  short_description: string;
-  full_description: string;
+  short_description?: string | null;
+  full_description?: string | null;
   category: string;
   visibility: ProjectVisibility;
-  /** Backend expects stack names, e.g. ["React", "JavaScript"] */
-  tech_stacks: string[];
+  /** Backend expects tech stack IDs */
+  tech_stack_ids: number[];
 }
 
 function normalizeTechStackResponse(data: unknown): TechStackItem[] {
@@ -78,7 +78,40 @@ export async function fetchTechStacks(): Promise<TechStackItem[]> {
 
 export async function createProject(
   payload: CreateProjectPayload
-): Promise<unknown> {
-  const { data } = await api.post("/projects", payload);
+): Promise<ApiProject> {
+  const { data } = await api.post<ApiProject>("/projects", payload);
+  return data;
+}
+
+export async function uploadProjectImage(
+  projectId: string,
+  file: File
+): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append("image", file);
+  const { data } = await api.post(`/projects/${projectId}/upload-image`, form);
+  return data;
+}
+
+export async function uploadProjectVideo(
+  projectId: string,
+  file: File
+): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append("video", file);
+  const { data } = await api.post(`/projects/${projectId}/upload-video`, form);
+  return data;
+}
+
+export async function uploadProjectFiles(
+  projectId: string,
+  files: FileList | null
+): Promise<{ files: Array<{ filename: string; url: string }> }> {
+  const form = new FormData();
+  if (!files || files.length === 0) {
+    return { files: [] };
+  }
+  Array.from(files).forEach((f) => form.append("files", f));
+  const { data } = await api.post(`/projects/${projectId}/upload-files`, form);
   return data;
 }
