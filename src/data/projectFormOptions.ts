@@ -3,6 +3,7 @@
  * devzgo-backend `app/models/enums.py` (values sent to the API).
  */
 export const PROJECT_CATEGORIES = [
+  // Must match backend `ProjectCategory` enum values.
   "AI/ML",
   "Web Development",
   "Mobile",
