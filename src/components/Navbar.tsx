@@ -26,6 +26,12 @@ export function Navbar() {
             </span>
           )}
           <Link
+            to="/profile"
+            className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+          >
+            Profile
+          </Link>
+          <Link
             to="/explore"
             className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
           >
