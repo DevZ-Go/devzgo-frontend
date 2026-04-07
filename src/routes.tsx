@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ProjectFormPage } from "./pages/ProjectFormPage";
 import { LandingPage } from "./pages/LandingPage";
@@ -14,60 +15,65 @@ export const router = createBrowserRouter([
     element: <Navigate to="/home" replace />,
   },
   {
-    path: "/home",
-    element: (
-      <ProtectedRoute>
-        <LandingPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/explore",
-    element: (
-      <ProtectedRoute>
-        <ExplorePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/add-project",
-    element: (
-      <ProtectedRoute>
-        <ProjectFormPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/project/:id/edit",
-    element: (
-      <ProtectedRoute>
-        <ProjectFormPage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/project/:id",
-    element: (
-      <ProtectedRoute>
-        <ProjectDetailPage />
-      </ProtectedRoute>
-    ),
+    element: <AppLayout />,
+    children: [
+      {
+        path: "/home",
+        element: (
+          <ProtectedRoute>
+            <LandingPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />,
+      },
+      {
+        path: "/explore",
+        element: (
+          <ProtectedRoute>
+            <ExplorePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/add-project",
+        element: (
+          <ProtectedRoute>
+            <ProjectFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/project/:id/edit",
+        element: (
+          <ProtectedRoute>
+            <ProjectFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/project/:id",
+        element: (
+          <ProtectedRoute>
+            <ProjectDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
   },
   {
     path: "*",

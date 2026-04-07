@@ -33,6 +33,10 @@ import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
 import { isProjectOwner } from "../utils/projectOwnership";
 import type { FileTreeNode } from "../utils/buildFileTree";
+import {
+  getProjectCategoryChipClasses,
+  getTechStackChipClasses,
+} from "../utils/techStackChipStyle";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
@@ -174,6 +178,10 @@ export function ProjectDetailPage() {
   const owner =
     project?.owner_username ?? project?.owner?.username ?? "Creator";
   const stacks = project?.tech_stacks ?? [];
+  const categoryDisplay =
+    project?.category === "Other" && project?.category_other?.trim()
+      ? `Other — ${project.category_other.trim()}`
+      : project?.category ?? "";
 
   async function handleDeleteProject() {
     if (!id || !project || deleting) return;
@@ -248,26 +256,26 @@ export function ProjectDetailPage() {
         {!loading && !error && project && (
           <article className="space-y-8">
             <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-sm">
-              <div className="aspect-[21/9] max-h-[320px] bg-slate-100">
-                <ImageWithFallback
-                  src={coverUrl}
-                  alt={project.title}
-                  className="w-full h-full object-cover"
-                />
+              {/* Full-bleed cover: span the padded main column edge-to-edge */}
+              <div className="-mx-6 sm:-mx-8">
+                <div className="relative w-full aspect-[2.4/1] min-h-[200px] max-h-[min(42vh,420px)] bg-slate-100">
+                  <ImageWithFallback
+                    src={coverUrl}
+                    alt={project.title}
+                    className="absolute inset-0 block h-full w-full object-cover object-center"
+                  />
+                </div>
               </div>
               <div className="p-8 sm:p-10">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {stacks.map((t) => (
-                    <span
-                      key={t}
-                      className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-800 border border-indigo-100"
-                    >
+                    <span key={t} className={getTechStackChipClasses(t, "onLight")}>
                       {t}
                     </span>
                   ))}
-                  {project.category && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                      {project.category}
+                  {categoryDisplay && (
+                    <span className={getProjectCategoryChipClasses(project.category ?? "Other")}>
+                      {categoryDisplay}
                     </span>
                   )}
                 </div>

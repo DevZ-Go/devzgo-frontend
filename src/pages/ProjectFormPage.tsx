@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FileArchive, ImagePlus, Loader2, Trash2, Video } from "lucide-react";
+import {
+  FileArchive,
+  ImagePlus,
+  Layers,
+  LayoutList,
+  Loader2,
+  Trash2,
+  UploadCloud,
+  Video,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   createProject,
   fetchProject,
@@ -24,6 +35,19 @@ import { resolveApiAssetUrl } from "../api/config";
 import type { ApiProject } from "../types/project";
 import type { ProjectCategory } from "../data/projectFormOptions";
 import { isProjectOwner } from "../utils/projectOwnership";
+import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
+
+const TOTAL_STEPS = 3;
+const STEP_META = [
+  {
+    n: 1,
+    title: "Details",
+    subtitle: "Title & descriptions",
+    icon: LayoutList,
+  },
+  { n: 2, title: "Classification", subtitle: "Category & visibility", icon: Layers },
+  { n: 3, title: "Assets", subtitle: "Media & workspace", icon: UploadCloud },
+] as const;
 
 export function ProjectFormPage() {
   const { id: editProjectId } = useParams<{ id: string }>();
@@ -39,7 +63,11 @@ export function ProjectFormPage() {
   const [shortDescription, setShortDescription] = useState("");
   const [fullDescription, setFullDescription] = useState("");
   const [category, setCategory] = useState<string>("");
+  const [categoryOther, setCategoryOther] = useState("");
   const [visibility, setVisibility] = useState<ProjectVisibility>("Public");
+  const [step, setStep] = useState(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [submitPhase, setSubmitPhase] = useState<string | null>(null);
   const [stackOptions, setStackOptions] = useState<TechStackItem[]>([]);
   const [selectedStackIds, setSelectedStackIds] = useState<number[]>([]);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -52,10 +80,12 @@ export function ProjectFormPage() {
   const [loadingStacks, setLoadingStacks] = useState(true);
   const [loadingProject, setLoadingProject] = useState(isEdit);
   const [detectingStacks, setDetectingStacks] = useState(false);
-  const [showDetectModal, setShowDetectModal] = useState(false);
-  const [detectedTechNames, setDetectedTechNames] = useState<string[]>([]);
-  const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
-  const [confirmingStacks, setConfirmingStacks] = useState(false);
+  const [showTechConfirmModal, setShowTechConfirmModal] = useState(false);
+  const [techConfirmContext, setTechConfirmContext] = useState<{
+    projectId: string;
+    warnings: string[];
+  } | null>(null);
+  const [confirmingTechStacks, setConfirmingTechStacks] = useState(false);
 
   /** Server URLs when editing (for PUT when user does not replace media). */
   const [savedCoverUrl, setSavedCoverUrl] = useState<string | null>(null);
@@ -120,6 +150,9 @@ export function ProjectFormPage() {
         } else if (cat) {
           setCategory(cat);
         }
+        setCategoryOther(
+          typeof p.category_other === "string" ? p.category_other : ""
+        );
         const vis = p.visibility;
         if (vis === "Public" || vis === "Private") {
           setVisibility(vis);
@@ -202,12 +235,77 @@ export function ProjectFormPage() {
     if (zipInputRef.current) zipInputRef.current.value = "";
   }
 
+  function projectPayloadBase() {
+    return {
+      title: title.trim(),
+      short_description: shortDescription.trim(),
+      full_description: fullDescription.trim(),
+      category: category as ProjectCategory,
+      category_other: category === "Other" ? categoryOther.trim() || null : null,
+      visibility,
+      tech_stack_ids: selectedStackIds,
+    };
+  }
+
+  function categoryOtherWordCount(): number {
+    return categoryOther.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function validateStep1(): boolean {
+    if (!title.trim() || !shortDescription.trim() || !fullDescription.trim()) {
+      setStepError("Please fill in title, short description, and full description.");
+      return false;
+    }
+    setStepError(null);
+    return true;
+  }
+
+  function validateStep2(): boolean {
+    if (!category || !PROJECT_CATEGORIES.includes(category as ProjectCategory)) {
+      setStepError("Select a category from the list.");
+      return false;
+    }
+    if (category === "Other" && categoryOther.trim()) {
+      if (categoryOther.trim().length > 64) {
+        setStepError("Custom label is too long (max 64 characters).");
+        return false;
+      }
+      if (categoryOtherWordCount() > 4) {
+        setStepError("Use a short label (1–2 words work best).");
+        return false;
+      }
+    }
+    setStepError(null);
+    return true;
+  }
+
+  function goNext() {
+    if (step === 1) {
+      if (!validateStep1()) return;
+      setStep(2);
+    } else if (step === 2) {
+      if (!validateStep2()) return;
+      setStep(3);
+    }
+  }
+
+  function goBack() {
+    setStepError(null);
+    setStep((s) => Math.max(1, s - 1));
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (step < 3) return;
     if (submitLock.current || loading || loadingProject) return;
+    if (!validateStep1() || !validateStep2()) {
+      setStepError("Please review steps 1 and 2.");
+      return;
+    }
     submitLock.current = true;
     setError(null);
     setLoading(true);
+    setSubmitPhase(null);
     const warnings: string[] = [];
     try {
       const coverForPut =
@@ -218,26 +316,16 @@ export function ProjectFormPage() {
       let projectId: string;
 
       if (isEdit && editProjectId) {
+        setSubmitPhase("Saving project…");
         await updateProject(editProjectId, {
-          title: title.trim(),
-          short_description: shortDescription.trim(),
-          full_description: fullDescription.trim(),
-          category: category as ProjectCategory,
-          visibility,
-          tech_stack_ids: selectedStackIds,
+          ...projectPayloadBase(),
           cover_image_url: coverForPut,
           demo_video_url: demoForPut,
         });
         projectId = editProjectId;
       } else {
-        const created = await createProject({
-          title: title.trim(),
-          short_description: shortDescription.trim(),
-          full_description: fullDescription.trim(),
-          category: category as ProjectCategory,
-          visibility,
-          tech_stack_ids: selectedStackIds,
-        });
+        setSubmitPhase("Creating project…");
+        const created = await createProject(projectPayloadBase());
         projectId = String(created?.id ?? "").trim();
         if (!projectId) {
           throw new Error("Server did not return a project id. Try again.");
@@ -245,6 +333,7 @@ export function ProjectFormPage() {
       }
 
       try {
+        setSubmitPhase("Uploading media…");
         await uploadProjectMedia(projectId, {
           cover_image: coverFile,
           demo_video: demoVideoFile,
@@ -255,28 +344,33 @@ export function ProjectFormPage() {
 
       try {
         if (workspaceZip) {
+          setSubmitPhase("Uploading workspace & detecting tech…");
           setDetectingStacks(true);
-          const upload = await uploadProjectWorkspace(projectId, workspaceZip);
-          const detected = upload.detected_tech_stacks ?? [];
-          const byName = new Map(
-            stackOptions.map((t) => [t.name.toLowerCase(), stackNumericId(t)])
-          );
-          const ids = detected
-            .map((name) => byName.get(name.toLowerCase()) ?? null)
-            .filter((v): v is number => v !== null);
-
-          setDetectedTechNames(detected);
-          if (ids.length > 0) setSelectedStackIds(ids);
-          setPendingProjectId(projectId);
-          setShowDetectModal(true);
+          await uploadProjectWorkspace(projectId, workspaceZip);
+          const fresh = await fetchProject(projectId);
+          const rawIds = Array.isArray(fresh.tech_stack_ids) ? fresh.tech_stack_ids : [];
+          const fromServer = [
+            ...new Set(
+              rawIds
+                .map((id) => (typeof id === "number" ? id : Number(id)))
+                .filter((id): id is number => Number.isFinite(id))
+            ),
+          ];
+          if (fromServer.length > 0) {
+            setSelectedStackIds(fromServer);
+          }
+          setTechConfirmContext({ projectId, warnings: [...warnings] });
+          setShowTechConfirmModal(true);
           setDetectingStacks(false);
           setLoading(false);
+          setSubmitPhase(null);
           submitLock.current = false;
           return;
-          }
+        }
       } catch (err) {
-        setDetectingStacks(false);
         warnings.push(`Workspace ZIP: ${getApiErrorMessage(err)}`);
+      } finally {
+        setDetectingStacks(false);
       }
 
       if (isEdit) {
@@ -294,36 +388,52 @@ export function ProjectFormPage() {
       setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
+      setSubmitPhase(null);
       submitLock.current = false;
     }
   }
 
-  async function confirmDetectedTechStacks() {
-    if (!pendingProjectId) return;
-    setConfirmingStacks(true);
+  async function confirmTechStacksAndFinish() {
+    if (!techConfirmContext) return;
+    setConfirmingTechStacks(true);
     setError(null);
     try {
-      const latest = await fetchProject(pendingProjectId);
-      await updateProject(pendingProjectId, {
-        title: title.trim(),
-        short_description: shortDescription.trim(),
-        full_description: fullDescription.trim(),
-        category: category as ProjectCategory,
-        visibility,
+      const latest = await fetchProject(techConfirmContext.projectId);
+      await updateProject(techConfirmContext.projectId, {
+        ...projectPayloadBase(),
         tech_stack_ids: selectedStackIds,
         cover_image_url:
           typeof latest.cover_image_url === "string" ? latest.cover_image_url : null,
         demo_video_url:
           typeof latest.demo_video_url === "string" ? latest.demo_video_url : null,
       });
-      setShowDetectModal(false);
-      const target = isEdit ? `/project/${pendingProjectId}` : "/profile";
-      navigate(target, { replace: true });
+      const w = techConfirmContext.warnings;
+      const pid = techConfirmContext.projectId;
+      setShowTechConfirmModal(false);
+      setTechConfirmContext(null);
+      const target = isEdit ? `/project/${pid}` : "/profile";
+      navigate(target, {
+        replace: true,
+        state: w.length > 0 ? { uploadWarnings: w } : undefined,
+      });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
-      setConfirmingStacks(false);
+      setConfirmingTechStacks(false);
     }
+  }
+
+  function dismissTechModalAndFinish() {
+    if (!techConfirmContext) return;
+    const w = techConfirmContext.warnings;
+    const pid = techConfirmContext.projectId;
+    setShowTechConfirmModal(false);
+    setTechConfirmContext(null);
+    const target = isEdit ? `/project/${pid}` : "/profile";
+    navigate(target, {
+      replace: true,
+      state: w.length > 0 ? { uploadWarnings: w } : undefined,
+    });
   }
 
   const fieldClass =
@@ -384,9 +494,94 @@ export function ProjectFormPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 p-6 sm:p-8 shadow-sm shadow-slate-200/50 ring-1 ring-slate-100">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
+                Your progress
+              </p>
+              <div className="mt-6 flex w-full items-start justify-between gap-0 sm:gap-1">
+                {STEP_META.map((s, stepIdx) => {
+                  const Icon = s.icon;
+                  const n = stepIdx + 1;
+                  const active = step === n;
+                  const done = step > n;
+                  const segmentComplete = step > n;
+                  return (
+                    <Fragment key={s.n}>
+                      <div className="flex min-w-0 flex-1 flex-col items-center">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-11 sm:w-11 ${
+                            active
+                              ? "border-indigo-500 bg-white text-indigo-600 shadow-lg shadow-indigo-500/20 ring-[3px] ring-indigo-100"
+                              : done
+                                ? "border-transparent bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md"
+                                : "border-slate-200 bg-white text-slate-400"
+                          }`}
+                        >
+                          {done ? (
+                            <span className="text-sm font-bold" aria-hidden>
+                              ✓
+                            </span>
+                          ) : (
+                            <Icon className="h-[18px] w-[18px]" aria-hidden />
+                          )}
+                        </div>
+                        <p className="mt-3 max-w-[100px] text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:max-w-none sm:text-[11px]">
+                          {s.title}
+                        </p>
+                        <p className="mt-1 hidden max-w-[120px] text-center text-[10px] leading-snug text-slate-500 sm:block">
+                          {s.subtitle}
+                        </p>
+                      </div>
+                      {stepIdx < TOTAL_STEPS - 1 && (
+                        <div
+                          className="relative mx-0.5 mt-[18px] h-[3px] min-w-[1rem] flex-[1.15] shrink self-start sm:mx-1 sm:min-w-[1.5rem]"
+                          aria-hidden
+                        >
+                          <div className="absolute inset-0 rounded-full bg-slate-100" />
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-400 via-violet-500 to-fuchsia-500 transition-[width] duration-500 ease-out"
+                            style={{
+                              width: segmentComplete ? "100%" : "0%",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </div>
+              <div className="mx-auto mt-8 max-w-lg px-1">
+                <div className="relative h-2 overflow-hidden rounded-full bg-slate-100/90 shadow-inner">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 shadow-[0_0_12px_-2px_rgba(99,102,241,0.5)] transition-[width] duration-500 ease-out"
+                    style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <p className="mt-5 text-center text-sm text-slate-600">
+                <span className="font-semibold text-slate-800">
+                  Step {step} of {TOTAL_STEPS}
+                </span>
+                <span className="text-slate-300"> · </span>
+                <span className="text-slate-500">
+                  {STEP_META[step - 1]?.subtitle ?? ""}
+                </span>
+              </p>
+              {stepError && step < 3 && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  {stepError}
+                </div>
+              )}
+            </div>
+
+            <section
+              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
+                step === 1 ? "" : "hidden"
+              }`}
+              aria-hidden={step !== 1}
+            >
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Basics
+                Project details
               </h2>
               <div>
                 <label
@@ -399,8 +594,8 @@ export function ProjectFormPage() {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  required
                   className={fieldClass}
+                  placeholder="e.g. Campus food finder"
                 />
               </div>
               <div>
@@ -414,7 +609,6 @@ export function ProjectFormPage() {
                   id="short_description"
                   value={shortDescription}
                   onChange={(e) => setShortDescription(e.target.value)}
-                  required
                   rows={3}
                   placeholder="One line summary"
                   className={`${fieldClass} resize-y min-h-[88px]`}
@@ -431,11 +625,37 @@ export function ProjectFormPage() {
                   id="full_description"
                   value={fullDescription}
                   onChange={(e) => setFullDescription(e.target.value)}
-                  required
                   rows={6}
+                  placeholder="What it does, what you learned, stack highlights…"
                   className={`${fieldClass} resize-y min-h-[160px]`}
                 />
               </div>
+              <div className="flex flex-wrap justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
+
+            <section
+              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
+                step === 2 ? "" : "hidden"
+              }`}
+              aria-hidden={step !== 2}
+            >
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Category & visibility
+              </h2>
+              <p className="text-sm text-slate-600">
+                Categories match the platform taxonomy. If you pick{" "}
+                <span className="font-medium">Other</span>, add a short custom label (one or two
+                words).
+              </p>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label
@@ -447,13 +667,13 @@ export function ProjectFormPage() {
                   <select
                     id="category"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      if (e.target.value !== "Other") setCategoryOther("");
+                    }}
                     className={fieldClass}
                   >
-                    <option value="" disabled>
-                      Select category
-                    </option>
+                    <option value="">Select category</option>
                     {PROJECT_CATEGORIES.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -474,7 +694,6 @@ export function ProjectFormPage() {
                     onChange={(e) =>
                       setVisibility(e.target.value as ProjectVisibility)
                     }
-                    required
                     className={fieldClass}
                   >
                     {PROJECT_VISIBILITY_OPTIONS.map((opt) => (
@@ -485,9 +704,30 @@ export function ProjectFormPage() {
                   </select>
                 </div>
               </div>
+              {category === "Other" && (
+                <div>
+                  <label
+                    htmlFor="category_other"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
+                    Custom label <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    id="category_other"
+                    value={categoryOther}
+                    onChange={(e) => setCategoryOther(e.target.value)}
+                    className={fieldClass}
+                    placeholder="e.g. IoT, Blockchain, DevOps"
+                    maxLength={64}
+                  />
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Shown as “Other — your label” on the project page.
+                  </p>
+                </div>
+              )}
               {!isEdit ? (
-                <p className="text-sm text-slate-500">
-                  Tech stack is auto-detected from workspace files after ZIP upload.
+                <p className="text-sm text-slate-500 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                  After you upload a workspace ZIP, tech stacks are set from your files (catalog matches only).
                 </p>
               ) : (
                 <div>
@@ -503,16 +743,13 @@ export function ProjectFormPage() {
                       {stackOptions.map((t) => {
                         const id = stackNumericId(t);
                         if (id === null) return null;
+                        const selected = selectedStackIds.includes(id);
                         return (
                           <button
                             key={`${t.id}-${t.name}`}
                             type="button"
                             onClick={() => toggleStackId(id)}
-                            className={`px-3 py-2 rounded-xl border text-sm font-medium transition ${
-                              selectedStackIds.includes(id)
-                                ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                            }`}
+                            className={`px-3 py-2 rounded-xl text-sm font-medium transition ${getTechStackToggleClasses(t.name, selected)}`}
                           >
                             {t.name}
                           </button>
@@ -521,13 +758,36 @@ export function ProjectFormPage() {
                     </div>
                   )}
                   <p className="text-xs text-slate-500 mt-2">
-                    If you upload a new workspace ZIP, detected stacks may update automatically.
+                    Uploading a new ZIP re-indexes files and updates stacks from file types when you save.
                   </p>
                 </div>
               )}
+              <div className="flex flex-wrap justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium hover:bg-slate-50"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+            <section
+              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6 ${
+                step === 3 ? "" : "hidden"
+              }`}
+              aria-hidden={step !== 3}
+            >
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
                 Media
               </h2>
@@ -638,68 +898,100 @@ export function ProjectFormPage() {
                   <p className="text-xs text-slate-500">Optional.</p>
                 )}
               </div>
-            </section>
 
-            {detectingStacks && (
-              <section className="rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-5 shadow-sm">
-                <p className="text-sm font-medium text-indigo-900 mb-2">
-                  Detecting technologies from workspace files...
-                </p>
-                <div className="h-2 rounded-full bg-indigo-100 overflow-hidden">
-                  <div className="h-full w-2/3 bg-indigo-500 animate-pulse" />
-                </div>
-              </section>
-            )}
-
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Files
-              </h2>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                    <FileArchive className="w-4 h-4 text-indigo-600" />
-                    Workspace (.zip)
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {workspaceZip && (
+              <div className="border-t border-slate-100 pt-6 space-y-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Workspace
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-800 flex items-center gap-2">
+                      <FileArchive className="w-4 h-4 text-indigo-600" />
+                      Project folder (.zip)
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {workspaceZip && (
+                        <button
+                          type="button"
+                          onClick={clearZip}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={clearZip}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50"
+                        onClick={() => zipInputRef.current?.click()}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Remove
+                        {workspaceZip ? "Replace" : "Choose"}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => zipInputRef.current?.click()}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
-                    >
-                      {workspaceZip ? "Replace" : "Choose"}
-                    </button>
+                    </div>
+                  </div>
+                  <input
+                    ref={zipInputRef}
+                    type="file"
+                    accept=".zip,application/zip"
+                    className="hidden"
+                    onChange={(e) => setWorkspaceZip(e.target.files?.[0] ?? null)}
+                  />
+                  {workspaceZip ? (
+                    <p className="text-sm text-slate-600 truncate">{workspaceZip.name}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      {isEdit
+                        ? "Optional. Upload a new ZIP to replace the indexed workspace."
+                        : "Optional. Zip your project root — files are indexed and known tech stacks are set from file types."}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {detectingStacks && (
+                <div className="rounded-xl border border-indigo-200/70 bg-indigo-50/70 p-4">
+                  <p className="text-sm font-medium text-indigo-900 mb-2">
+                    Detecting technologies from workspace files…
+                  </p>
+                  <div className="h-2 rounded-full bg-indigo-100 overflow-hidden">
+                    <div className="h-full w-2/3 bg-indigo-500 animate-pulse" />
                   </div>
                 </div>
-                <input
-                  ref={zipInputRef}
-                  type="file"
-                  accept=".zip,application/zip"
-                  className="hidden"
-                  onChange={(e) => setWorkspaceZip(e.target.files?.[0] ?? null)}
-                />
-                {workspaceZip ? (
-                  <p className="text-sm text-slate-600 truncate">
-                    {workspaceZip.name}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    {isEdit
-                      ? "Optional. Upload a new ZIP to replace the indexed workspace."
-                      : "Optional. Full project folder as zip."}
-                  </p>
-                )}
+              )}
+
+              <div className="flex flex-wrap justify-between gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium hover:bg-slate-50"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to={isEdit && editProjectId ? `/project/${editProjectId}` : "/profile"}
+                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex items-center justify-center gap-2 min-h-[48px] px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:pointer-events-none transition"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {submitPhase ?? (isEdit ? "Saving…" : "Creating…")}
+                      </>
+                    ) : isEdit ? (
+                      "Save changes"
+                    ) : (
+                      "Create project"
+                    )}
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -708,89 +1000,76 @@ export function ProjectFormPage() {
                 {error}
               </div>
             )}
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 min-h-[48px] px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:pointer-events-none transition"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    {isEdit ? "Saving…" : "Creating…"}
-                  </>
-                ) : isEdit ? (
-                  "Save changes"
-                ) : (
-                  "Create project"
-                )}
-              </button>
-              <Link
-                to={isEdit && editProjectId ? `/project/${editProjectId}` : "/profile"}
-                className="inline-flex items-center justify-center min-h-[48px] px-6 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50"
-              >
-                Cancel
-              </Link>
-            </div>
           </form>
         )}
       </main>
 
-      {showDetectModal && (
-        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              Confirm detected tech stack
+      {showTechConfirmModal && techConfirmContext && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 backdrop-blur-[1px]">
+          <div
+            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:max-w-2xl sm:p-8"
+            role="dialog"
+            aria-labelledby="tech-confirm-title"
+            aria-modal="true"
+          >
+            <h3
+              id="tech-confirm-title"
+              className="text-lg font-semibold text-slate-900 sm:text-xl"
+            >
+              Confirm tech stacks
             </h3>
-            <p className="text-sm text-slate-600 mb-4">
-              We detected:{" "}
-              <span className="font-medium">
-                {detectedTechNames.length > 0
-                  ? detectedTechNames.join(", ")
-                  : "none from current extension mapping"}
-              </span>
+            <p className="mt-2 text-sm text-slate-600">
+              We matched stacks from your workspace files. Toggle the ones that best describe this
+              project, then continue.
             </p>
-            <p className="text-sm text-slate-600 mb-3">
-              You can confirm or edit before we finish.
-            </p>
-            <div className="flex flex-wrap gap-2 mb-6 max-h-44 overflow-y-auto">
-              {stackOptions.map((t) => {
-                const id = stackNumericId(t);
-                if (id === null) return null;
-                const active = selectedStackIds.includes(id);
-                return (
-                  <button
-                    key={`${t.id}-${t.name}`}
-                    type="button"
-                    onClick={() => toggleStackId(id)}
-                    className={`px-3 py-2 rounded-xl border text-sm font-medium transition ${
-                      active
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-3 justify-end">
+            {loadingStacks ? (
+              <p className="mt-6 text-sm text-slate-500">Loading options…</p>
+            ) : stackOptions.length === 0 ? (
+              <p className="mt-6 text-sm text-amber-800">
+                Tech stack list could not be loaded. You can set stacks later from the project edit
+                page.
+              </p>
+            ) : (
+              <div className="mt-6 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
+                {stackOptions.map((t) => {
+                  const id = stackNumericId(t);
+                  if (id === null) return null;
+                  const active = selectedStackIds.includes(id);
+                  return (
+                    <button
+                      key={`${t.id}-${t.name}`}
+                      type="button"
+                      onClick={() => toggleStackId(id)}
+                      className={`rounded-xl px-3 py-2 text-sm font-medium transition ${getTechStackToggleClasses(t.name, active)}`}
+                    >
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {!loadingStacks && stackOptions.length > 0 && selectedStackIds.length === 0 && (
+              <p className="mt-3 text-xs text-slate-500">
+                None selected — you can add stacks above, or continue with no stacks (they will be
+                cleared on save).
+              </p>
+            )}
+            <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setShowDetectModal(false)}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
-                disabled={confirmingStacks}
+                onClick={dismissTechModalAndFinish}
+                disabled={confirmingTechStacks}
+                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
-                Keep editing
+                Skip for now
               </button>
               <button
                 type="button"
-                onClick={confirmDetectedTechStacks}
-                disabled={confirmingStacks}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-60"
+                onClick={confirmTechStacksAndFinish}
+                disabled={confirmingTechStacks}
+                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
               >
-                {confirmingStacks ? "Saving..." : "Confirm and continue"}
+                {confirmingTechStacks ? "Saving…" : "Save & continue"}
               </button>
             </div>
           </div>

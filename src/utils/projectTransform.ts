@@ -51,6 +51,7 @@ export function transformApiProject(api: ApiProject, index: number): Project {
     views: api.views ?? 0,
     comments: api.comments ?? 0,
     featured: index < 4,
+    visibility: typeof api.visibility === "string" ? api.visibility : undefined,
     author: {
       name: api.owner?.name ?? username,
       username,
