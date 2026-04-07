@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2, Pencil, Trash2, User } from "lucide-react";
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-markup";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-jsx";
+import "prismjs/components/prism-tsx";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-markdown";
 import { Navbar } from "../components/Navbar";
 import {
   deleteProject,
@@ -22,6 +37,36 @@ import type { FileTreeNode } from "../utils/buildFileTree";
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
 
+function escapeHtml(text: string): string {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function languageFromPath(path: string | null): string {
+  if (!path) return "none";
+  const ext = path.toLowerCase().split(".").pop() ?? "";
+  const byExt: Record<string, string> = {
+    html: "markup",
+    xml: "markup",
+    css: "css",
+    js: "javascript",
+    jsx: "jsx",
+    ts: "typescript",
+    tsx: "tsx",
+    json: "json",
+    py: "python",
+    java: "java",
+    sh: "bash",
+    bash: "bash",
+    yml: "yaml",
+    yaml: "yaml",
+    md: "markdown",
+  };
+  return byExt[ext] ?? "none";
+}
+
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,6 +86,19 @@ export function ProjectDetailPage() {
     () => buildFileTreeFromEntries(files),
     [files]
   );
+  const highlightedFile = useMemo(() => {
+    const language = languageFromPath(activeFilePath);
+    if (!activeFilePath) {
+      return { language: "none", html: "" };
+    }
+    if (language !== "none" && Prism.languages[language]) {
+      return {
+        language,
+        html: Prism.highlight(activeFileContent, Prism.languages[language], language),
+      };
+    }
+    return { language: "none", html: escapeHtml(activeFileContent) };
+  }, [activeFilePath, activeFileContent]);
 
   const isOwner =
     project?.is_owner === true ||
@@ -281,8 +339,14 @@ export function ProjectDetailPage() {
                       ) : fileContentError ? (
                         <p className="text-sm text-red-300">{fileContentError}</p>
                       ) : activeFilePath ? (
-                        <pre className="text-xs whitespace-pre-wrap break-words font-mono max-h-[420px] overflow-auto">
-                          {activeFileContent}
+                        <pre
+                          className="text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
+                          style={{ whiteSpace: "pre" }}
+                        >
+                          <code
+                            className={`language-${highlightedFile.language} !bg-transparent block whitespace-pre`}
+                            dangerouslySetInnerHTML={{ __html: highlightedFile.html }}
+                          />
                         </pre>
                       ) : (
                         <p className="text-sm text-slate-400">
