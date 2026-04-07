@@ -100,6 +100,7 @@ export async function uploadProjectMedia(
 export interface WorkspaceUploadResponse {
   message: string;
   total_files: number;
+  detected_tech_stacks?: string[];
 }
 
 /** One row from GET /projects/{id}/files */
