@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2, Pencil, Trash2, User } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import { deleteProject, fetchProject, fetchProjectFiles } from "../api/projects";
+import {
+  deleteProject,
+  fetchProject,
+  fetchProjectFileContent,
+  fetchProjectFiles,
+} from "../api/projects";
 import type { ProjectFileEntry } from "../api/projects";
 import { resolveApiAssetUrl } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -12,6 +17,7 @@ import { ProjectFileTree } from "../components/ProjectFileTree";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
 import { isProjectOwner } from "../utils/projectOwnership";
+import type { FileTreeNode } from "../utils/buildFileTree";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
@@ -26,6 +32,10 @@ export function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  const [activeFileContent, setActiveFileContent] = useState<string>("");
+  const [loadingFileContent, setLoadingFileContent] = useState(false);
+  const [fileContentError, setFileContentError] = useState<string | null>(null);
 
   const fileTreeRoots = useMemo(
     () => buildFileTreeFromEntries(files),
@@ -55,6 +65,9 @@ export function ProjectDetailPage() {
     setError(null);
     setFilesError(null);
     setFiles([]);
+    setActiveFilePath(null);
+    setActiveFileContent("");
+    setFileContentError(null);
 
     (async () => {
       try {
@@ -108,6 +121,22 @@ export function ProjectDetailPage() {
       alert(getApiErrorMessage(err));
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleFileClick(node: FileTreeNode) {
+    if (!id || node.is_directory) return;
+    setActiveFilePath(node.path);
+    setFileContentError(null);
+    setLoadingFileContent(true);
+    try {
+      const res = await fetchProjectFileContent(id, node.path);
+      setActiveFileContent(typeof res.content === "string" ? res.content : "");
+    } catch (err) {
+      setActiveFileContent("");
+      setFileContentError(getApiErrorMessage(err));
+    } finally {
+      setLoadingFileContent(false);
     }
   }
 
@@ -233,7 +262,36 @@ export function ProjectDetailPage() {
                   from edit) to see the folder structure here.
                 </p>
               ) : (
-                <ProjectFileTree roots={fileTreeRoots} />
+                <>
+                  <ProjectFileTree
+                    roots={fileTreeRoots}
+                    selectedPath={activeFilePath}
+                    onFileClick={handleFileClick}
+                  />
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-950 text-slate-100 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-slate-800 text-xs font-mono text-slate-300">
+                      {activeFilePath ?? "Select a file to preview"}
+                    </div>
+                    <div className="p-4">
+                      {loadingFileContent ? (
+                        <div className="flex items-center gap-2 text-sm text-slate-300">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading file…
+                        </div>
+                      ) : fileContentError ? (
+                        <p className="text-sm text-red-300">{fileContentError}</p>
+                      ) : activeFilePath ? (
+                        <pre className="text-xs whitespace-pre-wrap break-words font-mono max-h-[420px] overflow-auto">
+                          {activeFileContent}
+                        </pre>
+                      ) : (
+                        <p className="text-sm text-slate-400">
+                          Click any file in the tree to view its content.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </section>
           </article>

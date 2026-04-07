@@ -137,6 +137,21 @@ export async function fetchProjectFiles(
   return Array.isArray(data) ? data : [];
 }
 
+export interface ProjectFileContentResponse {
+  content: string;
+}
+
+export async function fetchProjectFileContent(
+  projectId: string,
+  path: string
+): Promise<ProjectFileContentResponse> {
+  const { data } = await api.get<ProjectFileContentResponse>(
+    `/projects/${projectId}/file`,
+    { params: { path } }
+  );
+  return data;
+}
+
 export async function fetchProject(projectId: string): Promise<ApiProject> {
   const { data } = await api.get<ApiProject>(`/projects/${projectId}`);
   return data;
