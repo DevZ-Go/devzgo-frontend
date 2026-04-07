@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -45,6 +46,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setTokenState(null);
     setUser(null);
   }, []);
+
+  useEffect(() => {
+    const onExpired = () => {
+      logout();
+    };
+    window.addEventListener("devzgo:session-expired", onExpired);
+    return () => window.removeEventListener("devzgo:session-expired", onExpired);
+  }, [logout]);
 
   const refreshUser = useCallback(async () => {
     const t = getToken();

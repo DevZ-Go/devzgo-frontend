@@ -1,6 +1,6 @@
 /**
- * Allowed values for project category (must match backend / Pydantic enums if applicable).
- * Edit this list to match your API.
+ * Allowed project categories — must match `ProjectCategory` in
+ * devzgo-backend `app/models/enums.py` (values sent to the API).
  */
 export const PROJECT_CATEGORIES = [
   // Must match backend `ProjectCategory` enum values.
@@ -16,7 +16,7 @@ export const PROJECT_CATEGORIES = [
 export type ProjectCategory = (typeof PROJECT_CATEGORIES)[number];
 
 /**
- * Allowed visibility values (must match backend).
+ * Allowed visibility values (must match backend `ProjectVisibility`).
  */
 export const PROJECT_VISIBILITY_OPTIONS = [
   { value: "Public", label: "Public — anyone can view" },
