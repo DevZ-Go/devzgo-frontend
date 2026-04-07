@@ -14,8 +14,13 @@ export interface CreateProjectPayload {
   full_description: string;
   category: string;
   visibility: ProjectVisibility;
-  /** Backend expects stack names, e.g. ["React", "JavaScript"] */
-  tech_stacks: string[];
+  /** Backend `ProjectCreate.tech_stack_ids` — numeric IDs from GET /projects/techstacks */
+  tech_stack_ids: number[];
+}
+
+/** Response from POST /projects — enough to chain uploads by id */
+export interface CreateProjectResponse {
+  id: string;
 }
 
 function normalizeTechStackResponse(data: unknown): TechStackItem[] {
@@ -76,9 +81,107 @@ export async function fetchTechStacks(): Promise<TechStackItem[]> {
   return [];
 }
 
+/**
+ * Upload cover image and/or demo video for an existing project.
+ * Backend: POST /projects/{project_id}/media — multipart fields `cover_image`, `demo_video`.
+ */
+export async function uploadProjectMedia(
+  projectId: string,
+  files: { cover_image?: File | null; demo_video?: File | null }
+): Promise<void> {
+  const formData = new FormData();
+  if (files.cover_image) formData.append("cover_image", files.cover_image);
+  if (files.demo_video) formData.append("demo_video", files.demo_video);
+  if (!formData.has("cover_image") && !formData.has("demo_video")) return;
+  await api.post(`/projects/${projectId}/media`, formData);
+}
+
+/** Response from POST /projects/{id}/workspace/upload */
+export interface WorkspaceUploadResponse {
+  message: string;
+  total_files: number;
+}
+
+/** One row from GET /projects/{id}/files */
+export interface ProjectFileEntry {
+  id: string;
+  file_name: string;
+  file_path: string;
+  is_directory: boolean;
+  parent_path: string | null;
+}
+
+/**
+ * Upload a project workspace as a single .zip (extracted under storage/project_<id>/ on the server).
+ * Backend: POST /projects/{project_id}/workspace/upload — multipart field name `file`.
+ */
+export async function uploadProjectWorkspace(
+  projectId: string,
+  zipFile: File
+): Promise<WorkspaceUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", zipFile);
+  const { data } = await api.post<WorkspaceUploadResponse>(
+    `/projects/${projectId}/workspace/upload`,
+    formData
+  );
+  return data;
+}
+
+export async function fetchProjectFiles(
+  projectId: string
+): Promise<ProjectFileEntry[]> {
+  const { data } = await api.get<ProjectFileEntry[]>(
+    `/projects/${projectId}/files`
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchProject(projectId: string): Promise<ApiProject> {
+  const { data } = await api.get<ApiProject>(`/projects/${projectId}`);
+  return data;
+}
+
 export async function createProject(
   payload: CreateProjectPayload
-): Promise<unknown> {
-  const { data } = await api.post("/projects", payload);
+): Promise<CreateProjectResponse> {
+  const body = {
+    title: payload.title,
+    short_description: payload.short_description || null,
+    full_description: payload.full_description || null,
+    category: payload.category,
+    visibility: payload.visibility,
+    tech_stack_ids: payload.tech_stack_ids,
+  };
+  const { data } = await api.post<CreateProjectResponse>("/projects", body);
   return data;
+}
+
+export interface UpdateProjectPayload extends CreateProjectPayload {
+  cover_image_url?: string | null;
+  demo_video_url?: string | null;
+}
+
+export async function updateProject(
+  projectId: string,
+  payload: UpdateProjectPayload
+): Promise<ApiProject> {
+  const body = {
+    title: payload.title,
+    short_description: payload.short_description || null,
+    full_description: payload.full_description || null,
+    category: payload.category,
+    visibility: payload.visibility,
+    tech_stack_ids: payload.tech_stack_ids,
+    cover_image_url: payload.cover_image_url ?? null,
+    demo_video_url: payload.demo_video_url ?? null,
+  };
+  const { data } = await api.put<ApiProject>(`/projects/${projectId}`, body);
+  return data;
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  await api.delete(`/projects/${encodeURIComponent(projectId)}`, {
+    validateStatus: (s) => s === 204 || (s >= 200 && s < 300),
+  });
 }

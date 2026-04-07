@@ -1,3 +1,4 @@
+import { resolveApiAssetUrl } from "../api/config";
 import type { ApiProject } from "../types/project";
 import type { Project } from "../types/project";
 
@@ -34,15 +35,17 @@ export function transformApiProject(api: ApiProject, index: number): Project {
       ? [api.category]
       : [];
 
+  const coverRaw = api.cover_image_url ?? api.image_url;
   const cover =
-    api.cover_image_url ?? api.image_url;
+    typeof coverRaw === "string" && coverRaw
+      ? resolveApiAssetUrl(coverRaw)
+      : "";
 
   return {
     id,
     title: api.title ?? "Untitled Project",
     shortDescription: api.short_description ?? "",
-    imageUrl:
-      (typeof cover === "string" && cover) || PLACEHOLDER_IMAGE,
+    imageUrl: cover || PLACEHOLDER_IMAGE,
     techStack,
     likes: api.likes ?? 0,
     views: api.views ?? 0,
