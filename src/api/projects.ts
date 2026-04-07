@@ -13,6 +13,8 @@ export interface CreateProjectPayload {
   short_description: string;
   full_description: string;
   category: string;
+  /** Sent when category is `Other` — short custom label (optional) */
+  category_other?: string | null;
   visibility: ProjectVisibility;
   /** Backend `ProjectCreate.tech_stack_ids` — numeric IDs from GET /projects/techstacks */
   tech_stack_ids: number[];
@@ -166,6 +168,8 @@ export async function createProject(
     short_description: payload.short_description || null,
     full_description: payload.full_description || null,
     category: payload.category,
+    category_other:
+      payload.category === "Other" ? payload.category_other?.trim() || null : null,
     visibility: payload.visibility,
     tech_stack_ids: payload.tech_stack_ids,
   };
@@ -187,6 +191,8 @@ export async function updateProject(
     short_description: payload.short_description || null,
     full_description: payload.full_description || null,
     category: payload.category,
+    category_other:
+      payload.category === "Other" ? payload.category_other?.trim() || null : null,
     visibility: payload.visibility,
     tech_stack_ids: payload.tech_stack_ids,
     cover_image_url: payload.cover_image_url ?? null,

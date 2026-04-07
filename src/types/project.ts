@@ -15,6 +15,8 @@ export interface ApiProject {
   short_description: string;
   full_description?: string;
   category?: string;
+  /** When category is Other — short custom label from API */
+  category_other?: string | null;
   visibility?: string;
   /** Numeric tech stack ids from API (for edit form) */
   tech_stack_ids?: number[];
@@ -48,4 +50,6 @@ export interface Project {
     username: string;
     avatar: string;
   };
+  /** From API for dashboards */
+  visibility?: string;
 }

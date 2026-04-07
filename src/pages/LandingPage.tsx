@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowRight, Star, Zap, Loader2, AlertCircle } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import { ProjectCard } from "../components/ProjectCard";
 import { FeedSection } from "../components/FeedSection";
+import heroImage from "../assets/Hero1.jpeg";
 import { fetchProjects, fetchTechStacks } from "../api/projects";
 import type { TechStackItem } from "../api/projects";
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { Project } from "../types/project";
+import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 
 export function LandingPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -48,9 +49,6 @@ export function LandingPage() {
       cancelled = true;
     };
   }, []);
-
-  const heroProject = projects[0] ?? null;
-  const feedProjects = projects.slice(1);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -150,24 +148,26 @@ export function LandingPage() {
               </motion.div>
             </div>
 
-            {loading && (
-              <div className="hidden lg:flex items-center justify-center min-h-[320px]">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative hidden lg:block"
+            >
+              <div
+                className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 opacity-25 blur-2xl"
+                aria-hidden
+              />
+              <div className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-2xl ring-1 ring-slate-200/60">
+                <img
+                  src={heroImage}
+                  alt="Developers collaborating and building projects on DevZ-Go"
+                  className="aspect-[4/3] w-full object-cover object-center"
+                  loading="eager"
+                  decoding="async"
+                />
               </div>
-            )}
-            {!loading && heroProject && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="relative hidden lg:block"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl blur-2xl opacity-20" />
-                <div className="relative">
-                  <ProjectCard project={heroProject} variant="hero" />
-                </div>
-              </motion.div>
-            )}
+            </motion.div>
           </div>
         </div>
       </section>
@@ -180,10 +180,7 @@ export function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {techStacks.map((t) => (
-                <span
-                  key={t.id}
-                  className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 text-sm border border-gray-200/80"
-                >
+                <span key={t.id} className={getTechStackChipClasses(t.name, "onLight")}>
                   {t.name}
                 </span>
               ))}
@@ -213,7 +210,7 @@ export function LandingPage() {
         </section>
       ) : (
         <FeedSection
-          projects={feedProjects}
+          projects={projects}
           title="Projects Making Waves"
           subtitle="Trending Now"
         />
@@ -268,13 +265,6 @@ export function LandingPage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-8 border-t border-gray-200">
-        <div className="max-w-[1440px] mx-auto text-center text-gray-600">
-          <p>© 2026 DevZ-Go. Built by developers, for developers.</p>
-        </div>
-      </footer>
     </div>
   );
 }

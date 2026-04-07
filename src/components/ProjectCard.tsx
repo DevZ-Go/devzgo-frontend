@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart, Eye, MessageCircle, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./ImageWithFallback";
-import { techStackColors } from "../data/mockData";
+import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 import type { Project } from "../types/project";
 
 interface ProjectCardProps {
@@ -10,8 +10,7 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) {
-  const colors = (tech: string) =>
-    techStackColors[tech] ?? { bg: "bg-gray-500/10", text: "text-gray-300" };
+  const techClass = (tech: string) => getTechStackChipClasses(tech, "onDark");
 
   if (variant === "hero") {
     return (
@@ -31,7 +30,7 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
               {project.techStack.slice(0, 3).map((tech) => (
                 <span
                   key={tech}
-                  className={`px-3 py-1 rounded-full text-xs backdrop-blur-sm border border-white/10 ${colors(tech).bg} ${colors(tech).text}`}
+                  className={`backdrop-blur-sm ${techClass(tech)}`}
                 >
                   {tech}
                 </span>
@@ -100,10 +99,7 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
             </p>
             <div className="flex items-center gap-2 mb-4">
               {project.techStack.map((tech) => (
-                <span
-                  key={tech}
-                  className={`px-3 py-1.5 rounded-full text-xs backdrop-blur-sm border border-white/10 ${colors(tech).bg} ${colors(tech).text}`}
-                >
+                <span key={tech} className={`backdrop-blur-sm ${techClass(tech)}`}>
                   {tech}
                 </span>
               ))}
@@ -149,7 +145,7 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
             {project.techStack.slice(0, 2).map((tech) => (
               <span
                 key={tech}
-                className={`px-2 py-1 rounded-lg text-xs backdrop-blur-sm border border-white/10 ${colors(tech).bg} ${colors(tech).text}`}
+                className={`rounded-lg text-[11px] backdrop-blur-sm ${techClass(tech)} px-2 py-1`}
               >
                 {tech}
               </span>
