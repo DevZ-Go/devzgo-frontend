@@ -16,3 +16,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const url = String(error.config?.url ?? "");
+      const skip =
+        url.includes("/auth/login") || url.includes("/auth/register");
+      if (!skip) {
+        window.dispatchEvent(new CustomEvent("devzgo:session-expired"));
+      }
+    }
+    return Promise.reject(error);
+  }
+);

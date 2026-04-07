@@ -1,10 +1,12 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AddProjectPage } from "./pages/AddProjectPage";
+import { ProjectFormPage } from "./pages/ProjectFormPage";
 import { LandingPage } from "./pages/LandingPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
-import { UploadProjectAssetsPage } from "./pages/UploadProjectAssetsPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
+import { ExplorePage } from "./pages/ExplorePage";
 
 export const router = createBrowserRouter([
   {
@@ -30,33 +32,41 @@ export const router = createBrowserRouter([
   {
     path: "/explore",
     element: (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Explore page – coming soon</p>
-      </div>
+      <ProtectedRoute>
+        <ExplorePage />
+      </ProtectedRoute>
     ),
   },
   {
     path: "/add-project",
     element: (
       <ProtectedRoute>
-        <AddProjectPage />
+        <ProjectFormPage />
       </ProtectedRoute>
     ),
   },
   {
-    path: "/project/:id/uploads",
+    path: "/project/:id/edit",
     element: (
       <ProtectedRoute>
-        <UploadProjectAssetsPage />
+        <ProjectFormPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
       </ProtectedRoute>
     ),
   },
   {
     path: "/project/:id",
     element: (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">Project detail page – coming soon</p>
-      </div>
+      <ProtectedRoute>
+        <ProjectDetailPage />
+      </ProtectedRoute>
     ),
   },
   {
