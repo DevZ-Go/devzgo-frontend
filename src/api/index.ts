@@ -13,6 +13,7 @@ export {
   fetchTechStacks,
   fetchProject,
   fetchProjectFiles,
+  fetchProjectFileContent,
   createProject,
   updateProject,
   deleteProject,
@@ -23,6 +24,7 @@ export {
   type CreateProjectResponse,
   type UpdateProjectPayload,
   type ProjectFileEntry,
+  type ProjectFileContentResponse,
   type ProjectVisibility,
   type WorkspaceUploadResponse,
 } from "./projects";
