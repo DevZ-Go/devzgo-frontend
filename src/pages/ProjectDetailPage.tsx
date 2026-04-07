@@ -67,6 +67,12 @@ function languageFromPath(path: string | null): string {
   return byExt[ext] ?? "none";
 }
 
+function isImagePath(path: string | null): boolean {
+  if (!path) return false;
+  const ext = path.toLowerCase().split(".").pop() ?? "";
+  return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico"].includes(ext);
+}
+
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -80,6 +86,7 @@ export function ProjectDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
+  const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [activeFileContent, setActiveFileContent] = useState<string>("");
   const [loadingFileContent, setLoadingFileContent] = useState(false);
   const [fileContentError, setFileContentError] = useState<string | null>(null);
@@ -126,6 +133,7 @@ export function ProjectDetailPage() {
     setFilesError(null);
     setFiles([]);
     setActiveFilePath(null);
+    setActiveImageUrl(null);
     setActiveFileContent("");
     setFileContentError(null);
 
@@ -185,6 +193,21 @@ export function ProjectDetailPage() {
     if (!id || node.is_directory) return;
     setActiveFilePath(node.path);
     setFileContentError(null);
+
+    if (isImagePath(node.path)) {
+      const encodedPath = node.path
+        .split("/")
+        .map((part) => encodeURIComponent(part))
+        .join("/");
+      setActiveImageUrl(
+        resolveApiAssetUrl(`/storage/project_${id}/${encodedPath}`)
+      );
+      setActiveFileContent("");
+      setLoadingFileContent(false);
+      return;
+    }
+
+    setActiveImageUrl(null);
     setLoadingFileContent(true);
     try {
       const res = await fetchProjectFileContent(id, node.path);
@@ -335,11 +358,19 @@ export function ProjectDetailPage() {
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Loading file…
                         </div>
+                      ) : activeImageUrl ? (
+                        <div className="rounded-lg border border-slate-800 bg-slate-900 p-2">
+                          <img
+                            src={activeImageUrl}
+                            alt={activeFilePath ?? "Image preview"}
+                            className="max-h-[420px] w-auto max-w-full mx-auto rounded"
+                          />
+                        </div>
                       ) : fileContentError ? (
                         <p className="text-sm text-red-300">{fileContentError}</p>
                       ) : activeFilePath ? (
                         <pre
-                          className="text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
+                          className="dark-scrollbar text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
                           style={{ whiteSpace: "pre" }}
                         >
                           <code
