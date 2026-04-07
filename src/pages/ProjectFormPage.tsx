@@ -51,6 +51,11 @@ export function ProjectFormPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStacks, setLoadingStacks] = useState(true);
   const [loadingProject, setLoadingProject] = useState(isEdit);
+  const [detectingStacks, setDetectingStacks] = useState(false);
+  const [showDetectModal, setShowDetectModal] = useState(false);
+  const [detectedTechNames, setDetectedTechNames] = useState<string[]>([]);
+  const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
+  const [confirmingStacks, setConfirmingStacks] = useState(false);
 
   /** Server URLs when editing (for PUT when user does not replace media). */
   const [savedCoverUrl, setSavedCoverUrl] = useState<string | null>(null);
@@ -75,6 +80,7 @@ export function ProjectFormPage() {
   }, [coverFile, coverRemoved, savedCoverUrl]);
 
   useEffect(() => {
+    // Needed for edit override and post-upload detection confirmation.
     let cancelled = false;
     fetchTechStacks()
       .then((list) => {
@@ -249,9 +255,27 @@ export function ProjectFormPage() {
 
       try {
         if (workspaceZip) {
-          await uploadProjectWorkspace(projectId, workspaceZip);
-        }
+          setDetectingStacks(true);
+          const upload = await uploadProjectWorkspace(projectId, workspaceZip);
+          const detected = upload.detected_tech_stacks ?? [];
+          const byName = new Map(
+            stackOptions.map((t) => [t.name.toLowerCase(), stackNumericId(t)])
+          );
+          const ids = detected
+            .map((name) => byName.get(name.toLowerCase()) ?? null)
+            .filter((v): v is number => v !== null);
+
+          setDetectedTechNames(detected);
+          if (ids.length > 0) setSelectedStackIds(ids);
+          setPendingProjectId(projectId);
+          setShowDetectModal(true);
+          setDetectingStacks(false);
+          setLoading(false);
+          submitLock.current = false;
+          return;
+          }
       } catch (err) {
+        setDetectingStacks(false);
         warnings.push(`Workspace ZIP: ${getApiErrorMessage(err)}`);
       }
 
@@ -271,6 +295,34 @@ export function ProjectFormPage() {
     } finally {
       setLoading(false);
       submitLock.current = false;
+    }
+  }
+
+  async function confirmDetectedTechStacks() {
+    if (!pendingProjectId) return;
+    setConfirmingStacks(true);
+    setError(null);
+    try {
+      const latest = await fetchProject(pendingProjectId);
+      await updateProject(pendingProjectId, {
+        title: title.trim(),
+        short_description: shortDescription.trim(),
+        full_description: fullDescription.trim(),
+        category: category as ProjectCategory,
+        visibility,
+        tech_stack_ids: selectedStackIds,
+        cover_image_url:
+          typeof latest.cover_image_url === "string" ? latest.cover_image_url : null,
+        demo_video_url:
+          typeof latest.demo_video_url === "string" ? latest.demo_video_url : null,
+      });
+      setShowDetectModal(false);
+      const target = isEdit ? `/project/${pendingProjectId}` : "/profile";
+      navigate(target, { replace: true });
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setConfirmingStacks(false);
     }
   }
 
@@ -433,37 +485,46 @@ export function ProjectFormPage() {
                   </select>
                 </div>
               </div>
-              <div>
-                <span className="block text-sm font-medium text-slate-700 mb-2">
-                  Tech stacks
-                </span>
-                {loadingStacks ? (
-                  <p className="text-sm text-slate-500">Loading…</p>
-                ) : stackOptions.length === 0 ? (
-                  <p className="text-sm text-slate-500">No options available.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {stackOptions.map((t) => {
-                      const id = stackNumericId(t);
-                      if (id === null) return null;
-                      return (
-                        <button
-                          key={`${t.id}-${t.name}`}
-                          type="button"
-                          onClick={() => toggleStackId(id)}
-                          className={`px-3 py-2 rounded-xl border text-sm font-medium transition ${
-                            selectedStackIds.includes(id)
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                          }`}
-                        >
-                          {t.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              {!isEdit ? (
+                <p className="text-sm text-slate-500">
+                  Tech stack is auto-detected from workspace files after ZIP upload.
+                </p>
+              ) : (
+                <div>
+                  <span className="block text-sm font-medium text-slate-700 mb-2">
+                    Tech stacks (manual override on edit)
+                  </span>
+                  {loadingStacks ? (
+                    <p className="text-sm text-slate-500">Loading…</p>
+                  ) : stackOptions.length === 0 ? (
+                    <p className="text-sm text-slate-500">No options available.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {stackOptions.map((t) => {
+                        const id = stackNumericId(t);
+                        if (id === null) return null;
+                        return (
+                          <button
+                            key={`${t.id}-${t.name}`}
+                            type="button"
+                            onClick={() => toggleStackId(id)}
+                            className={`px-3 py-2 rounded-xl border text-sm font-medium transition ${
+                              selectedStackIds.includes(id)
+                                ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            {t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-500 mt-2">
+                    If you upload a new workspace ZIP, detected stacks may update automatically.
+                  </p>
+                </div>
+              )}
             </section>
 
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
@@ -579,6 +640,17 @@ export function ProjectFormPage() {
               </div>
             </section>
 
+            {detectingStacks && (
+              <section className="rounded-2xl border border-indigo-200/70 bg-indigo-50/70 p-5 shadow-sm">
+                <p className="text-sm font-medium text-indigo-900 mb-2">
+                  Detecting technologies from workspace files...
+                </p>
+                <div className="h-2 rounded-full bg-indigo-100 overflow-hidden">
+                  <div className="h-full w-2/3 bg-indigo-500 animate-pulse" />
+                </div>
+              </section>
+            )}
+
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
                 Files
@@ -664,6 +736,66 @@ export function ProjectFormPage() {
           </form>
         )}
       </main>
+
+      {showDetectModal && (
+        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Confirm detected tech stack
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              We detected:{" "}
+              <span className="font-medium">
+                {detectedTechNames.length > 0
+                  ? detectedTechNames.join(", ")
+                  : "none from current extension mapping"}
+              </span>
+            </p>
+            <p className="text-sm text-slate-600 mb-3">
+              You can confirm or edit before we finish.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-6 max-h-44 overflow-y-auto">
+              {stackOptions.map((t) => {
+                const id = stackNumericId(t);
+                if (id === null) return null;
+                const active = selectedStackIds.includes(id);
+                return (
+                  <button
+                    key={`${t.id}-${t.name}`}
+                    type="button"
+                    onClick={() => toggleStackId(id)}
+                    className={`px-3 py-2 rounded-xl border text-sm font-medium transition ${
+                      active
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    {t.name}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowDetectModal(false)}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                disabled={confirmingStacks}
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                onClick={confirmDetectedTechStacks}
+                disabled={confirmingStacks}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {confirmingStacks ? "Saving..." : "Confirm and continue"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

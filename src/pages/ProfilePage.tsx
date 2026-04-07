@@ -17,6 +17,8 @@ export function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ id: string; title: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (clearedState.current) return;
@@ -57,17 +59,15 @@ export function ProfilePage() {
     };
   }, []);
 
-  async function handleDeleteProject(projectId: string, title: string) {
-    const ok = window.confirm(
-      `Delete “${title}”? This cannot be undone. All workspace files, cover image, and demo video will be removed.`
-    );
-    if (!ok) return;
+  async function handleDeleteProject(projectId: string) {
     setDeletingId(projectId);
+    setDeleteError(null);
     try {
       await deleteProject(projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setDeleteDialog(null);
     } catch (err) {
-      alert(getApiErrorMessage(err));
+      setDeleteError(getApiErrorMessage(err));
     } finally {
       setDeletingId(null);
     }
@@ -169,7 +169,7 @@ export function ProfilePage() {
                     <button
                       type="button"
                       disabled={deletingId === project.id}
-                      onClick={() => handleDeleteProject(project.id, project.title)}
+                      onClick={() => setDeleteDialog({ id: project.id, title: project.title })}
                       className="inline-flex items-center gap-1 font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -182,6 +182,43 @@ export function ProfilePage() {
           )}
         </section>
       </main>
+
+      {deleteDialog && (
+        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Delete project?
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Delete “{deleteDialog.title}”? This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="text-sm text-red-700 mb-3">{deleteError}</p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteDialog(null);
+                  setDeleteError(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                disabled={deletingId === deleteDialog.id}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteProject(deleteDialog.id)}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-60"
+                disabled={deletingId === deleteDialog.id}
+              >
+                {deletingId === deleteDialog.id ? "Deleting..." : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

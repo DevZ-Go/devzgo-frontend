@@ -77,6 +77,8 @@ export function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [activeFileContent, setActiveFileContent] = useState<string>("");
   const [loadingFileContent, setLoadingFileContent] = useState(false);
@@ -167,16 +169,13 @@ export function ProjectDetailPage() {
 
   async function handleDeleteProject() {
     if (!id || !project || deleting) return;
-    const ok = window.confirm(
-      "Delete this project permanently? All files, cover image, and demo video will be removed."
-    );
-    if (!ok) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await deleteProject(id);
       navigate("/profile", { replace: true });
     } catch (err) {
-      alert(getApiErrorMessage(err));
+      setDeleteError(getApiErrorMessage(err));
     } finally {
       setDeleting(false);
     }
@@ -271,7 +270,7 @@ export function ProjectDetailPage() {
                       </Link>
                       <button
                         type="button"
-                        onClick={handleDeleteProject}
+                        onClick={() => setShowDeleteModal(true)}
                         disabled={deleting}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
                       >
@@ -361,6 +360,43 @@ export function ProjectDetailPage() {
           </article>
         )}
       </main>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Delete project?
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              This action cannot be undone. Workspace files, cover image, and demo video will be removed.
+            </p>
+            {deleteError && (
+              <p className="text-sm text-red-700 mb-3">{deleteError}</p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteError(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteProject}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-60"
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
