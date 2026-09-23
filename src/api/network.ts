@@ -26,6 +26,67 @@ function saveLocalFeed(feed: FeedActivity[]) {
   }
 }
 
+export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
+  const proj = (a.project as Record<string, unknown>) || null;
+  return {
+    id: String(a.id),
+    userId: (a.user_id || a.userId || "") as string,
+    authorName: (a.author_name || a.authorName || "Developer") as string,
+    authorUsername: (a.author_username || a.authorUsername || "developer") as string,
+    authorAvatar: (a.author_avatar || a.authorAvatar || null) as string | null,
+    authorHeadline: (a.author_headline || a.authorHeadline || null) as string | null,
+    activityType: ((a.activity_type || a.activityType || "post") as FeedActivity["activityType"]),
+    title: (a.title || null) as string | null,
+    content: (a.content || "") as string,
+    mediaUrl: (a.media_url || a.mediaUrl || null) as string | null,
+    isDemo: Boolean(a.is_demo ?? a.isDemo ?? false),
+    createdAt: (a.created_at || a.createdAt || new Date().toISOString()) as string,
+    likesCount:
+      typeof a.likes_count === "number"
+        ? a.likes_count
+        : typeof a.likesCount === "number"
+          ? a.likesCount
+          : 0,
+    isLiked: Boolean(a.is_liked ?? a.isLiked ?? false),
+    commentsCount:
+      typeof a.comments_count === "number"
+        ? a.comments_count
+        : Array.isArray(a.comments)
+          ? a.comments.length
+          : 0,
+    comments: Array.isArray(a.comments)
+      ? (a.comments as Record<string, unknown>[]).map((c) => ({
+          id: String(c.id),
+          activityId: (c.activity_id || c.activityId || String(a.id)) as string,
+          authorId: (c.author_id || c.authorId || "") as string,
+          authorName: (c.author_name || c.authorName || "Developer") as string,
+          authorUsername: (c.author_username || c.authorUsername || "dev") as string,
+          authorAvatar: (c.author_avatar || c.authorAvatar || null) as string | null,
+          commentText: (c.comment_text || c.commentText || "") as string,
+          createdAt: (c.created_at || c.createdAt || new Date().toISOString()) as string,
+        }))
+      : [],
+    project: proj
+      ? {
+          id: String(proj.id),
+          title: (proj.title || "") as string,
+          shortDescription:
+            (proj.short_description || proj.shortDescription || null) as string | null,
+          coverImageUrl:
+            (proj.cover_image_url || proj.coverImageUrl || null) as string | null,
+          techStacks: (proj.tech_stacks || proj.techStacks || []) as string[],
+          category: (proj.category || null) as string | null,
+          githubUrl: (proj.github_url || proj.githubUrl || null) as string | null,
+          complexity: (proj.complexity || null) as string | null,
+          contributionInfo:
+            (proj.contribution_info || proj.contributionInfo || null) as string | null,
+          ownerUsername:
+            (proj.owner_username || proj.ownerUsername || null) as string | null,
+        }
+      : null,
+  };
+}
+
 export async function fetchFeed(filter: string = "all", search?: string): Promise<FeedActivity[]> {
   try {
     const params: Record<string, string> = { filter };
@@ -34,10 +95,10 @@ export async function fetchFeed(filter: string = "all", search?: string): Promis
     }
     const res = await api.get("/network/feed", { params });
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapFeedActivity);
     }
     if (res.data?.activities && Array.isArray(res.data.activities)) {
-      return res.data.activities;
+      return res.data.activities.map(mapFeedActivity);
     }
   } catch (err) {
     console.warn("Backend unavailable, using local interactive store:", err);
@@ -79,7 +140,9 @@ export async function createPost(payload: {
 }): Promise<FeedActivity> {
   try {
     const res = await api.post("/network/posts", payload);
-    return res.data;
+    if (res.data) {
+      return mapFeedActivity(res.data);
+    }
   } catch (err) {
     console.warn("Backend unavailable, creating post locally:", err);
   }
@@ -115,7 +178,12 @@ export async function toggleActivityLike(
 ): Promise<{ likesCount: number; isLiked: boolean }> {
   try {
     const res = await api.post(`/network/activities/${activityId}/like`);
-    return res.data;
+    if (res.data) {
+      return {
+        likesCount: res.data.likes_count ?? res.data.likesCount ?? 0,
+        isLiked: Boolean(res.data.is_liked ?? res.data.isLiked),
+      };
+    }
   } catch (err) {
     console.warn("Backend unavailable, toggling like locally:", err);
   }
@@ -149,7 +217,18 @@ export async function addActivityComment(
     const res = await api.post(`/network/activities/${activityId}/comments`, {
       comment_text: commentText,
     });
-    return res.data;
+    if (res.data) {
+      return {
+        id: String(res.data.id),
+        activityId: res.data.activity_id || res.data.activityId || activityId,
+        authorId: res.data.author_id || res.data.authorId || "",
+        authorName: res.data.author_name || res.data.authorName || "Janasi Rajput",
+        authorUsername: res.data.author_username || res.data.authorUsername || "janasi",
+        authorAvatar: res.data.author_avatar || res.data.authorAvatar || null,
+        commentText: res.data.comment_text || res.data.commentText || commentText,
+        createdAt: res.data.created_at || res.data.createdAt || new Date().toISOString(),
+      };
+    }
   } catch (err) {
     console.warn("Backend unavailable, adding comment locally:", err);
   }

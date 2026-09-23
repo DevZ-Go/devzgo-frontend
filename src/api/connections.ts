@@ -26,15 +26,70 @@ function saveLocalConnections(connections: Connection[]) {
   }
 }
 
+function mapConnection(raw: Record<string, unknown>): Connection {
+  const partner = (raw.partner as Record<string, unknown>) || null;
+  return {
+    id: String(raw.id),
+    requesterId: (raw.requester_id || raw.requesterId || "") as string,
+    receiverId: (raw.receiver_id || raw.receiverId || "") as string,
+    status: (raw.status || "pending") as Connection["status"],
+    createdAt: (raw.created_at || raw.createdAt || new Date().toISOString()) as string,
+    updatedAt: (raw.updated_at || raw.updatedAt || null) as string | null,
+    partner: partner
+      ? {
+          id: String(partner.id),
+          username: (partner.username || "developer") as string,
+          fullName: (partner.full_name || partner.fullName || partner.username || "Developer") as string,
+          headline: (partner.headline || null) as string | null,
+          avatarUrl: (partner.avatar_url || partner.avatarUrl || null) as string | null,
+        }
+      : {
+          id: String(raw.id),
+          username: "developer",
+          fullName: "Developer",
+          headline: null,
+          avatarUrl: null,
+        },
+  };
+}
+
 export async function fetchConnections(): Promise<{
   accepted: Connection[];
   pendingIncoming: Connection[];
   pendingOutgoing: Connection[];
 }> {
   try {
-    const res = await api.get("/connections");
+    const res = await api.get("/connections?status_filter=");
     if (res.data) {
-      return res.data;
+      if (Array.isArray(res.data)) {
+        const accepted: Connection[] = [];
+        const pendingIncoming: Connection[] = [];
+        const pendingOutgoing: Connection[] = [];
+
+        for (const item of res.data) {
+          const conn = mapConnection(item);
+          if (conn.status === "accepted") {
+            accepted.push(conn);
+          } else if (conn.status === "pending") {
+            if (item.receiver_id && item.partner && item.receiver_id === item.partner.id) {
+              pendingOutgoing.push(conn);
+            } else {
+              pendingIncoming.push(conn);
+            }
+          }
+        }
+        return { accepted, pendingIncoming, pendingOutgoing };
+      } else if (typeof res.data === "object") {
+        return {
+          accepted: Array.isArray(res.data.accepted) ? res.data.accepted.map(mapConnection) : [],
+          pendingIncoming: Array.isArray(res.data.pendingIncoming)
+            ? res.data.pendingIncoming.map(mapConnection)
+            : [],
+          pendingOutgoing: Array.isArray(res.data.pendingOutgoing)
+            ? res.data.pendingOutgoing.map(mapConnection)
+            : [],
+        };
+      }
     }
   } catch (err) {
     console.warn("Backend unavailable, using local connections:", err);
@@ -161,7 +216,15 @@ export async function fetchConnectionStatus(targetUserId: string): Promise<{
 export async function fetchSuggestedDevelopers(): Promise<ConnectionUserSummary[]> {
   try {
     const res = await api.get("/connections/suggested");
-    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data)) {
+      return (res.data as Record<string, unknown>[]).map((u) => ({
+        id: String(u.id),
+        username: (u.username || "") as string,
+        fullName: (u.full_name || u.fullName || u.username || "Developer") as string,
+        headline: (u.headline || null) as string | null,
+        avatarUrl: (u.avatar_url || u.avatarUrl || null) as string | null,
+      }));
+    }
   } catch (err) {
     console.warn("Backend unavailable, returning suggested peers locally:", err);
   }
