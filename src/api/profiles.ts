@@ -26,11 +26,34 @@ function saveLocalProfiles(profiles: DeveloperProfile[]) {
   }
 }
 
+function mapProfile(p: Record<string, unknown>): DeveloperProfile {
+  return {
+    id: String(p.id),
+    userId: String(p.user_id || p.userId || p.id),
+    username: (p.username || "") as string,
+    email: (p.email || "") as string,
+    fullName: (p.full_name || p.fullName || p.username || "") as string,
+    headline: (p.headline || null) as string | null,
+    bio: (p.bio || null) as string | null,
+    avatarUrl: (p.avatar_url || p.avatarUrl || null) as string | null,
+    githubUrl: (p.github_url || p.githubUrl || null) as string | null,
+    linkedinUrl: (p.linkedin_url || p.linkedinUrl || null) as string | null,
+    websiteUrl: (p.website_url || p.websiteUrl || null) as string | null,
+    skills: (p.skills || null) as string | null,
+    location: (p.location || null) as string | null,
+    createdAt: (p.created_at || p.createdAt) as string | undefined,
+    projectsCount: (p.projects_count ?? p.projectsCount ?? 0) as number,
+    connectionsCount: (p.connections_count ?? p.connectionsCount ?? 0) as number,
+    collaborationsCount: (p.collaborations_count ?? p.collaborationsCount ?? 0) as number,
+    connectionStatus: (p.connection_status ?? p.connectionStatus ?? null) as DeveloperProfile["connectionStatus"],
+  };
+}
+
 export async function fetchUserProfile(userIdOrUsername: string): Promise<DeveloperProfile> {
   try {
     const res = await api.get(`/profiles/${userIdOrUsername}`);
     if (res.data) {
-      return res.data;
+      return mapProfile(res.data);
     }
   } catch (err) {
     console.warn("Backend unavailable, loading local profile:", err);
@@ -67,7 +90,9 @@ export async function updateMyProfile(
 ): Promise<DeveloperProfile> {
   try {
     const res = await api.put("/profiles/me", payload);
-    return res.data;
+    if (res.data) {
+      return mapProfile(res.data);
+    }
   } catch (err) {
     console.warn("Backend unavailable, updating profile locally:", err);
   }
@@ -90,7 +115,7 @@ export async function searchDevelopers(query: string): Promise<DeveloperProfile[
   try {
     const res = await api.get("/profiles/search", { params: { q: query } });
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapProfile);
     }
   } catch (err) {
     console.warn("Backend unavailable, searching developers locally:", err);

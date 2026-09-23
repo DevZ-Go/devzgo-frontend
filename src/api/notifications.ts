@@ -26,11 +26,28 @@ function saveLocalNotifications(notifications: NotificationItem[]) {
   }
 }
 
+function mapNotification(n: Record<string, unknown>): NotificationItem {
+  const a = (n.actor as Record<string, unknown>) || {};
+  return {
+    id: String(n.id),
+    recipientId: (n.recipient_id || n.recipientId || "") as string,
+    actorId: (n.actor_id || n.actorId || "") as string,
+    actorName: (n.actor_name || a.full_name || a.fullName || a.username || "Developer") as string,
+    actorUsername: (n.actor_username || a.username || "dev") as string,
+    actorAvatar: (n.actor_avatar || a.avatar_url || a.avatarUrl || null) as string | null,
+    type: n.type as NotificationItem["type"],
+    relatedId: (n.related_id || n.relatedId || null) as string | null,
+    message: (n.message || "") as string,
+    read: Boolean(n.read),
+    createdAt: (n.created_at || n.createdAt || new Date().toISOString()) as string,
+  };
+}
+
 export async function fetchNotifications(): Promise<NotificationItem[]> {
   try {
     const res = await api.get("/notifications");
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapNotification);
     }
   } catch (err) {
     console.warn("Backend unavailable, loading local notifications:", err);

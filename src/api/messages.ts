@@ -26,11 +26,39 @@ function saveLocalMessages(messages: Record<string, Message[]>) {
   }
 }
 
+function mapMessage(m: Record<string, unknown>): Message {
+  return {
+    id: String(m.id),
+    senderId: (m.sender_id || m.senderId || "") as string,
+    receiverId: (m.receiver_id || m.receiverId || "") as string,
+    content: (m.content || "") as string,
+    read: Boolean(m.read),
+    createdAt: (m.created_at || m.createdAt || new Date().toISOString()) as string,
+    isOutgoing: Boolean(m.is_outgoing ?? m.isOutgoing ?? false),
+  };
+}
+
+function mapConversation(c: Record<string, unknown>): Conversation {
+  const other = ((c.other_user || c.otherUser) as Record<string, unknown>) || {};
+  const last = ((c.last_message || c.lastMessage) as Record<string, unknown>) || {};
+  return {
+    otherUser: {
+      id: String(other.id),
+      username: (other.username || "developer") as string,
+      fullName: (other.full_name || other.fullName || other.username || "Developer") as string,
+      headline: (other.headline || null) as string | null,
+      avatarUrl: (other.avatar_url || other.avatarUrl || null) as string | null,
+    },
+    lastMessage: mapMessage(last),
+    unreadCount: (c.unread_count ?? c.unreadCount ?? 0) as number,
+  };
+}
+
 export async function fetchConversations(): Promise<Conversation[]> {
   try {
     const res = await api.get("/messages/conversations");
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapConversation);
     }
   } catch (err) {
     console.warn("Backend unavailable, using local conversations:", err);
@@ -72,7 +100,7 @@ export async function fetchConversationThread(otherUserId: string): Promise<Mess
   try {
     const res = await api.get(`/messages/conversations/${otherUserId}`);
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapMessage);
     }
   } catch (err) {
     console.warn("Backend unavailable, loading local thread:", err);
@@ -89,7 +117,9 @@ export async function sendMessage(receiverId: string, content: string): Promise<
       receiver_id: receiverId,
       content,
     });
-    return res.data;
+    if (res.data) {
+      return mapMessage(res.data);
+    }
   } catch (err) {
     console.warn("Backend unavailable, sending message locally:", err);
   }

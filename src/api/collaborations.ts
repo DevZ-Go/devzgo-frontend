@@ -46,11 +46,48 @@ function saveLocalRequests(requests: CollaborationRequest[]) {
   }
 }
 
+function mapCollaborator(c: Record<string, unknown>): ProjectCollaborator {
+  const u = (c.user as Record<string, unknown>) || {};
+  return {
+    id: String(c.id),
+    projectId: (c.project_id || c.projectId || "") as string,
+    userId: (c.user_id || c.userId || String(u.id || "")) as string,
+    username: (u.username || c.username || "developer") as string,
+    fullName: (u.full_name || u.fullName || c.fullName || u.username || "Developer") as string,
+    headline: (u.headline || c.headline || null) as string | null,
+    avatarUrl: (u.avatar_url || u.avatarUrl || c.avatarUrl || null) as string | null,
+    role: (c.role || "Collaborator") as string,
+    createdAt: (c.joined_at || c.createdAt || new Date().toISOString()) as string,
+  };
+}
+
+function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
+  const u = ((r.requester || r.user) as Record<string, unknown>) || {};
+  return {
+    id: String(r.id),
+    projectId: (r.project_id || r.projectId || "") as string,
+    projectTitle: (r.project_title || r.projectTitle || "Project Collaboration") as string,
+    requesterId: (r.requester_id || r.requesterId || r.user_id || r.userId || String(u.id || "")) as string,
+    requester: {
+      id: String(u.id || r.requester_id || r.requesterId || r.user_id || r.userId || ""),
+      username: (u.username || "developer") as string,
+      fullName: (u.full_name || u.fullName || u.username || "Developer") as string,
+      headline: (u.headline || null) as string | null,
+      avatarUrl: (u.avatar_url || u.avatarUrl || null) as string | null,
+    },
+    projectOwnerId: (r.project_owner_id || r.projectOwnerId || "") as string,
+    role: (r.role || "Collaborator") as string,
+    message: (r.message || null) as string | null,
+    status: (r.status || "pending") as CollaborationRequest["status"],
+    createdAt: (r.created_at || r.createdAt || new Date().toISOString()) as string,
+  };
+}
+
 export async function fetchProjectCollaborators(projectId: string): Promise<ProjectCollaborator[]> {
   try {
     const res = await api.get(`/projects/${projectId}/collaborators`);
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapCollaborator);
     }
   } catch (err) {
     console.warn("Backend unavailable, loading local collaborators:", err);
@@ -66,7 +103,7 @@ export async function fetchProjectCollaborationRequests(
   try {
     const res = await api.get(`/projects/${projectId}/collaboration-requests`);
     if (Array.isArray(res.data)) {
-      return res.data;
+      return res.data.map(mapCollabRequest);
     }
   } catch (err) {
     console.warn("Backend unavailable, loading local collaboration requests:", err);
@@ -82,7 +119,9 @@ export async function requestCollaboration(
 ): Promise<CollaborationRequest> {
   try {
     const res = await api.post(`/projects/${projectId}/collaboration-requests`, payload);
-    return res.data;
+    if (res.data) {
+      return mapCollabRequest(res.data);
+    }
   } catch (err) {
     console.warn("Backend unavailable, creating collaboration request locally:", err);
   }

@@ -103,8 +103,12 @@ export function NetworkPage() {
         fetchConnections(),
         fetchSuggestedDevelopers(),
       ]);
-      setConnections(connData);
-      setSuggested(suggData);
+      if (connData && Array.isArray(connData.accepted)) {
+        setConnections(connData);
+      }
+      if (Array.isArray(suggData)) {
+        setSuggested(suggData);
+      }
     } catch {
       // Ignore
     }
@@ -532,7 +536,7 @@ export function NetworkPage() {
                           <div className="p-5">
                             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                {activity.project.techStacks.map((t) => (
+                                {(activity.project.techStacks || []).map((t) => (
                                   <span
                                     key={t}
                                     className={getTechStackChipClasses(t, "onDark")}
@@ -660,12 +664,12 @@ export function NetworkPage() {
 
                         {/* Comments Stream */}
                         <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                          {activity.comments.length === 0 ? (
+                          {(activity.comments || []).length === 0 ? (
                             <p className="text-xs text-gray-400 italic py-2">
                               No comments yet. Start the conversation!
                             </p>
                           ) : (
-                            activity.comments.map((comment) => (
+                            (activity.comments || []).map((comment) => (
                               <div
                                 key={comment.id}
                                 className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs"
@@ -735,13 +739,13 @@ export function NetworkPage() {
                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
                   <p className="text-xs text-gray-500 font-medium">Connections</p>
                   <p className="text-2xl font-black text-gray-900 mt-1">
-                    {connections.accepted.length}
+                    {connections?.accepted?.length || 0}
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
                   <p className="text-xs text-gray-500 font-medium">Pending</p>
                   <p className="text-2xl font-black text-blue-600 mt-1">
-                    {connections.pendingIncoming.length}
+                    {connections?.pendingIncoming?.length || 0}
                   </p>
                 </div>
               </div>
@@ -756,21 +760,21 @@ export function NetworkPage() {
             </div>
 
             {/* Pending Requests Box */}
-            {connections.pendingIncoming.length > 0 && (
+            {(connections?.pendingIncoming?.length || 0) > 0 && (
               <div className="rounded-3xl border border-amber-200 bg-amber-50/50 p-6 shadow-sm">
                 <div className="flex items-center gap-2 text-amber-800 text-xs font-bold uppercase tracking-wider mb-4">
                   <Sparkles className="w-4 h-4 text-amber-600" />
-                  Connection Requests ({connections.pendingIncoming.length})
+                  Connection Requests ({(connections?.pendingIncoming?.length || 0)})
                 </div>
 
                 <div className="space-y-3">
-                  {connections.pendingIncoming.map((conn) => (
+                  {(connections?.pendingIncoming || []).map((conn) => (
                     <div
                       key={conn.id}
                       className="p-3.5 rounded-2xl bg-white border border-amber-200/80 shadow-2xs"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        {conn.partner.avatarUrl ? (
+                        {conn.partner?.avatarUrl ? (
                           <img
                             src={conn.partner.avatarUrl}
                             alt={conn.partner.fullName || conn.partner.username}
@@ -778,12 +782,12 @@ export function NetworkPage() {
                           />
                         ) : (
                           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center text-xs">
-                            {conn.partner.username.slice(0, 2).toUpperCase()}
+                            {(conn.partner?.username || "dev").slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <Link
-                            to={`/profile/${conn.partner.id || conn.partner.username}`}
+                            to={`/profile/${conn.partner?.id || conn.partner?.username}`}
                             className="text-xs font-bold text-gray-900 hover:text-blue-600 truncate block"
                           >
                             {conn.partner.fullName || conn.partner.username}
