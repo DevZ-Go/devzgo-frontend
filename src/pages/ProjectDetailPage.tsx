@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Pencil, Trash2, User } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2, User, Users, Handshake, CheckCircle2 } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-markup";
@@ -17,6 +17,14 @@ import "prismjs/components/prism-bash";
 import "prismjs/components/prism-yaml";
 import "prismjs/components/prism-markdown";
 import { Navbar } from "../components/Navbar";
+import { CollaborationModal } from "../components/CollaborationModal";
+import {
+  fetchProjectCollaborators,
+  fetchProjectCollaborationRequests,
+  acceptCollaborationRequest,
+  declineCollaborationRequest,
+} from "../api/collaborations";
+import type { ProjectCollaborator, CollaborationRequest } from "../types/network";
 import {
   deleteProject,
   fetchProject,
@@ -94,6 +102,10 @@ export function ProjectDetailPage() {
   const [activeFileContent, setActiveFileContent] = useState<string>("");
   const [loadingFileContent, setLoadingFileContent] = useState(false);
   const [fileContentError, setFileContentError] = useState<string | null>(null);
+  const [collaborators, setCollaborators] = useState<ProjectCollaborator[]>([]);
+  const [collabRequests, setCollabRequests] = useState<CollaborationRequest[]>([]);
+  const [showCollabModal, setShowCollabModal] = useState(false);
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
 
   const fileTreeRoots = useMemo(
     () => buildFileTreeFromEntries(files),
@@ -165,6 +177,49 @@ export function ProjectDetailPage() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const currentId = id;
+    let cancelled = false;
+    async function loadCollab() {
+      try {
+        const list = await fetchProjectCollaborators(currentId);
+        if (!cancelled) setCollaborators(list);
+        if (isOwner) {
+          const reqs = await fetchProjectCollaborationRequests(currentId);
+          if (!cancelled) setCollabRequests(reqs);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+    loadCollab();
+    const handleUpdate = () => {
+      loadCollab();
+    };
+    window.addEventListener("devzgo:collaborations-updated", handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("devzgo:collaborations-updated", handleUpdate);
+    };
+  }, [id, isOwner]);
+
+  async function handleAcceptCollab(reqId: string) {
+    if (!id) return;
+    await acceptCollaborationRequest(reqId, id);
+    const updatedCollabs = await fetchProjectCollaborators(id);
+    setCollaborators(updatedCollabs);
+    setCollabRequests((prev) => prev.filter((r) => r.id !== reqId));
+    setActionSuccessMessage("Collaboration request accepted!");
+    setTimeout(() => setActionSuccessMessage(null), 3000);
+  }
+
+  async function handleDeclineCollab(reqId: string) {
+    await declineCollaborationRequest(reqId);
+    setCollabRequests((prev) => prev.filter((r) => r.id !== reqId));
+  }
+
 
   const coverRaw = project?.cover_image_url ?? project?.image_url;
   const coverUrl =
@@ -310,6 +365,16 @@ export function ProjectDetailPage() {
                       </button>
                     </div>
                   )}
+                  {!isOwner && id && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCollabModal(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      Request Collaboration
+                    </button>
+                  )}
                 </div>
                 {project.short_description && (
                   <p className="text-lg text-slate-700 leading-relaxed mb-6">
@@ -334,6 +399,139 @@ export function ProjectDetailPage() {
                   controls
                   className="w-full rounded-xl bg-black max-h-[480px]"
                 />
+              </section>
+            )}
+
+            {actionSuccessMessage && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-900 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span className="text-sm font-semibold">{actionSuccessMessage}</span>
+              </div>
+            )}
+
+            {/* Project Collaborators Section */}
+            <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-slate-900">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-bold">Project Collaborators ({collaborators.length})</h2>
+                </div>
+                {!isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCollabModal(true)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <Handshake className="w-3.5 h-3.5" />
+                    Join team
+                  </button>
+                )}
+              </div>
+
+              {collaborators.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  No external collaborators on this project yet. Request collaboration to build with the author.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {collaborators.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/profile/${c.userId || c.username}`}
+                      className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-100/80 transition group"
+                    >
+                      {c.avatarUrl ? (
+                        <img
+                          src={c.avatarUrl}
+                          alt={c.fullName || c.username}
+                          className="w-10 h-10 rounded-full object-cover ring-1 ring-slate-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center text-xs">
+                          {c.username.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold text-slate-900 group-hover:text-blue-600 truncate block">
+                          {c.fullName || c.username}
+                        </span>
+                        <span className="text-[11px] font-medium text-slate-500 block truncate">
+                          {c.role}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Owner: Collaboration Requests Review Section */}
+            {isOwner && collabRequests.length > 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/50 p-6 sm:p-8">
+                <div className="flex items-center gap-2 text-amber-900 mb-4">
+                  <Handshake className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-lg font-bold">
+                    Pending Collaboration Requests ({collabRequests.length})
+                  </h2>
+                </div>
+
+                <div className="space-y-3">
+                  {collabRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-4 rounded-xl bg-white border border-amber-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        {req.requester.avatarUrl ? (
+                          <img
+                            src={req.requester.avatarUrl}
+                            alt={req.requester.fullName || req.requester.username}
+                            className="w-10 h-10 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                            {req.requester.username.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/profile/${req.requester.id || req.requester.username}`}
+                              className="text-sm font-bold text-slate-900 hover:text-blue-600"
+                            >
+                              {req.requester.fullName || req.requester.username}
+                            </Link>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-100">
+                              {req.role}
+                            </span>
+                          </div>
+                          {req.message && (
+                            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                              “{req.message}”
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptCollab(req.id)}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeclineCollab(req.id)}
+                          className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
 
@@ -435,6 +633,21 @@ export function ProjectDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showCollabModal && id && project && (
+        <CollaborationModal
+          projectId={id}
+          projectTitle={project.title}
+          isOpen={showCollabModal}
+          onClose={() => setShowCollabModal(false)}
+          onSuccess={async () => {
+            if (id) {
+              const list = await fetchProjectCollaborators(id);
+              setCollaborators(list);
+            }
+          }}
+        />
       )}
     </div>
   );

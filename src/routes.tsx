@@ -8,6 +8,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
+import { NetworkPage } from "./pages/NetworkPage";
+import { MessagesPage } from "./pages/MessagesPage";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +34,22 @@ export const router = createBrowserRouter([
       {
         path: "/register",
         element: <RegisterPage />,
+      },
+      {
+        path: "/network",
+        element: (
+          <ProtectedRoute>
+            <NetworkPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/messages",
+        element: (
+          <ProtectedRoute>
+            <MessagesPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/explore",
@@ -59,6 +77,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile/:id",
         element: (
           <ProtectedRoute>
             <ProfilePage />
