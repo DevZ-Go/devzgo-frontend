@@ -14,6 +14,7 @@ export {
   fetchProject,
   fetchProjectFiles,
   fetchProjectFileContent,
+  fetchProjectFileBlob,
   createProject,
   updateProject,
   deleteProject,
