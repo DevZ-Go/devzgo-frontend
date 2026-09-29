@@ -29,10 +29,10 @@ function stackNumericId(t: TechStackItem): number | null {
 export function ExplorePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [techStacks, setTechStacks] = useState<TechStackItem[]>([]);
-
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [filterStackId, setFilterStackId] = useState<number | "all">("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,8 @@ export function ExplorePage() {
       const params: {
         search?: string;
         category?: string;
-        tech_stack_id?: number;
+        tech_stack_ids?: string;
+        sort_by?: string;
       } = {};
 
       const trimmedSearch = search.trim();
@@ -59,8 +60,10 @@ export function ExplorePage() {
       }
 
       if (filterStackId !== "all") {
-        params.tech_stack_id = filterStackId;
+        params.tech_stack_ids = String(filterStackId);
       }
+
+      params.sort_by = sortBy;
 
       const list = await fetchProjects(
         Object.keys(params).length > 0 ? params : undefined
@@ -75,7 +78,7 @@ export function ExplorePage() {
     } finally {
       setLoading(false);
     }
-  }, [search, category, filterStackId]);
+  }, [search, category, filterStackId, sortBy]);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,12 +108,14 @@ export function ExplorePage() {
     setSearch("");
     setCategory("");
     setFilterStackId("all");
+    setSortBy("newest");
   }
 
   const hasFilters =
     search.trim() !== "" ||
     category !== "" ||
-    filterStackId !== "all";
+    filterStackId !== "all" ||
+    sortBy !== "newest";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -121,9 +126,9 @@ export function ExplorePage() {
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 text-blue-600 mb-2">
-         
 
-              
+
+
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
@@ -228,6 +233,28 @@ export function ExplorePage() {
             </div>
           </div>
 
+          <div>
+            <label
+              htmlFor="project-sort"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Sort by
+            </label>
+
+            <select
+              id="project-sort"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="updated">Recently Updated</option>
+              <option value="title_asc">Title: A-Z</option>
+              <option value="title_desc">Title: Z-A</option>
+            </select>
+          </div>
+
           {/* Tech stacks */}
           {techStacks.length > 0 && (
             <div>
@@ -239,11 +266,10 @@ export function ExplorePage() {
                 <button
                   type="button"
                   onClick={() => setFilterStackId("all")}
-                  className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                    filterStackId === "all"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                  }`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition ${filterStackId === "all"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                    }`}
                 >
                   All technologies
                 </button>
