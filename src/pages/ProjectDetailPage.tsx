@@ -22,8 +22,8 @@ import {
   fetchProject,
   fetchProjectFileContent,
   fetchProjectFiles,
-} from "../api/projects";
-import type { ProjectFileEntry } from "../api/projects";
+} from "../api";
+import type { ProjectFileEntry } from "../api";
 import { resolveApiAssetUrl } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { ApiProject } from "../types/project";

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
-import { deleteProject, fetchMyProjects } from "../api/projects";
+import { deleteProject, fetchMyProjects } from "../api";
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { Project } from "../types/project";
