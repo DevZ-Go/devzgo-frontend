@@ -3,7 +3,6 @@ const useMock = import.meta.env.VITE_MOCK_API === "true";
 /* ── Config & Client (always real) ── */
 export { API_BASE_URL, resolveApiAssetUrl } from "./config";
 export { api } from "./client";
-
 /* ── Types (always from real modules) ── */
 export type { LoginTokenResponse, RegisterPayload } from "./auth";
 export type {
@@ -74,6 +73,16 @@ export const fetchProjectFileContent: typeof import("./projects").fetchProjectFi
     (useMock
       ? import("./mock").then((m) => m.fetchProjectFileContent(...args))
       : import("./projects").then((m) => m.fetchProjectFileContent(...args)));
+
+export const fetchProjectFileBlob: typeof import("./projects").fetchProjectFileBlob =
+  (...args) =>
+    (useMock
+      ? import("./mock").then((m) =>
+          "fetchProjectFileBlob" in m && typeof (m as any).fetchProjectFileBlob === "function"
+            ? (m as any).fetchProjectFileBlob(...args)
+            : import("./projects").then((p) => p.fetchProjectFileBlob(...args))
+        )
+      : import("./projects").then((m) => m.fetchProjectFileBlob(...args)));
 
 export const createProject: typeof import("./projects").createProject =
   (...args) =>

@@ -336,7 +336,16 @@ export async function fetchProjectFileContent(
   path: string
 ): Promise<ProjectFileContentResponse> {
   await delay(200);
+  const name = path.split("/").pop() || path;
+  const ext = name.includes(".") ? `.${name.split(".").pop()}` : "";
   return {
+    path,
+    name,
+    extension: ext,
+    size: 64,
+    is_binary: false,
+    is_secret: false,
+    is_image: false,
     content: `# Mock file content for: ${path}\n\nprint("Hello from DevZ-Go mock!")\n`,
   };
 }
