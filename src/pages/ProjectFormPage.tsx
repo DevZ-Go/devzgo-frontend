@@ -21,8 +21,8 @@ import {
   uploadProjectMedia,
   uploadProjectWorkspace,
   type ProjectVisibility,
-} from "../api/projects";
-import type { TechStackItem } from "../api/projects";
+} from "../api";
+import type { TechStackItem } from "../api";
 import { Navbar } from "../components/Navbar";
 import {
   PROJECT_CATEGORIES,
