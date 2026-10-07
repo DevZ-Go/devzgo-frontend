@@ -20,15 +20,19 @@ import { Navbar } from "../components/Navbar";
 import {
   deleteProject,
   fetchProject,
+  fetchProjectFileBlob,
   fetchProjectFileContent,
   fetchProjectFiles,
-} from "../api/projects";
-import type { ProjectFileEntry } from "../api/projects";
+} from "../api";
+import type { ProjectFileEntry } from "../api";
 import { resolveApiAssetUrl } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { ApiProject } from "../types/project";
 import { ImageWithFallback } from "../components/ImageWithFallback";
-import { ProjectFileTree } from "../components/ProjectFileTree";
+import {
+  FilePathBreadcrumb,
+  ProjectFileTree,
+} from "../components/ProjectFileTree";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
 import { isProjectOwner } from "../utils/projectOwnership";
@@ -48,7 +52,23 @@ function escapeHtml(text: string): string {
     .replaceAll(">", "&gt;");
 }
 
-function languageFromPath(path: string | null): string {
+/** Map API language ids to Prism grammar names. */
+function prismLanguage(apiLanguage: string | null | undefined, path: string | null): string {
+  const fromApi = (apiLanguage ?? "").toLowerCase();
+  const byApi: Record<string, string> = {
+    html: "markup",
+    xml: "markup",
+    css: "css",
+    javascript: "javascript",
+    typescript: "typescript",
+    json: "json",
+    python: "python",
+    java: "java",
+    bash: "bash",
+    yaml: "yaml",
+    markdown: "markdown",
+  };
+  if (fromApi && byApi[fromApi]) return byApi[fromApi];
   if (!path) return "none";
   const ext = path.toLowerCase().split(".").pop() ?? "";
   const byExt: Record<string, string> = {
@@ -71,12 +91,6 @@ function languageFromPath(path: string | null): string {
   return byExt[ext] ?? "none";
 }
 
-function isImagePath(path: string | null): boolean {
-  if (!path) return false;
-  const ext = path.toLowerCase().split(".").pop() ?? "";
-  return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico"].includes(ext);
-}
-
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -92,6 +106,8 @@ export function ProjectDetailPage() {
   const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [activeFileContent, setActiveFileContent] = useState<string>("");
+  const [activeFileLanguage, setActiveFileLanguage] = useState<string | null>(null);
+  const [fileStatusMessage, setFileStatusMessage] = useState<string | null>(null);
   const [loadingFileContent, setLoadingFileContent] = useState(false);
   const [fileContentError, setFileContentError] = useState<string | null>(null);
 
@@ -100,8 +116,8 @@ export function ProjectDetailPage() {
     [files]
   );
   const highlightedFile = useMemo(() => {
-    const language = languageFromPath(activeFilePath);
-    if (!activeFilePath) {
+    const language = prismLanguage(activeFileLanguage, activeFilePath);
+    if (!activeFilePath || !activeFileContent) {
       return { language: "none", html: "" };
     }
     if (language !== "none" && Prism.languages[language]) {
@@ -111,7 +127,16 @@ export function ProjectDetailPage() {
       };
     }
     return { language: "none", html: escapeHtml(activeFileContent) };
-  }, [activeFilePath, activeFileContent]);
+  }, [activeFilePath, activeFileContent, activeFileLanguage]);
+
+  // Revoke blob URLs created for image previews.
+  useEffect(() => {
+    return () => {
+      if (activeImageUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(activeImageUrl);
+      }
+    };
+  }, [activeImageUrl]);
 
   const isOwner =
     project?.is_owner === true ||
@@ -137,8 +162,13 @@ export function ProjectDetailPage() {
     setFilesError(null);
     setFiles([]);
     setActiveFilePath(null);
-    setActiveImageUrl(null);
+    setActiveImageUrl((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
     setActiveFileContent("");
+    setActiveFileLanguage(null);
+    setFileStatusMessage(null);
     setFileContentError(null);
 
     (async () => {
@@ -201,27 +231,44 @@ export function ProjectDetailPage() {
     if (!id || node.is_directory) return;
     setActiveFilePath(node.path);
     setFileContentError(null);
-
-    if (isImagePath(node.path)) {
-      const encodedPath = node.path
-        .split("/")
-        .map((part) => encodeURIComponent(part))
-        .join("/");
-      setActiveImageUrl(
-        resolveApiAssetUrl(`/storage/project_${id}/${encodedPath}`)
-      );
-      setActiveFileContent("");
-      setLoadingFileContent(false);
-      return;
-    }
-
-    setActiveImageUrl(null);
+    setFileStatusMessage(null);
+    setActiveFileContent("");
+    setActiveFileLanguage(null);
+    setActiveImageUrl((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
     setLoadingFileContent(true);
+
     try {
       const res = await fetchProjectFileContent(id, node.path);
-      setActiveFileContent(typeof res.content === "string" ? res.content : "");
+      setActiveFileLanguage(res.language ?? null);
+
+      if (res.is_secret && !res.content) {
+        setFileStatusMessage(
+          res.message ??
+            "This file may contain secrets and is hidden from public preview."
+        );
+        return;
+      }
+
+      if (res.is_image) {
+        const blob = await fetchProjectFileBlob(id, node.path);
+        setActiveImageUrl(URL.createObjectURL(blob));
+        setFileStatusMessage(null);
+        return;
+      }
+
+      if (res.is_binary || res.content == null) {
+        setFileStatusMessage(
+          res.message ?? "Binary or unsupported file — preview is not available."
+        );
+        return;
+      }
+
+      setActiveFileContent(res.content);
+      if (res.message) setFileStatusMessage(res.message);
     } catch (err) {
-      setActiveFileContent("");
       setFileContentError(getApiErrorMessage(err));
     } finally {
       setLoadingFileContent(false);
@@ -323,6 +370,33 @@ export function ProjectDetailPage() {
                     </p>
                   </div>
                 )}
+                {Array.isArray(project.languages) && project.languages.length > 0 && (
+                  <div className="mt-8">
+                    <h2 className="text-sm font-semibold text-slate-900 mb-3">
+                      Languages (auto-detected)
+                    </h2>
+                    <ul className="space-y-2.5">
+                      {project.languages.map((lang) => (
+                        <li key={lang.name}>
+                          <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+                            <span className="font-medium text-slate-800">{lang.name}</span>
+                            <span className="font-mono tabular-nums">
+                              {Number(lang.percentage).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, Number(lang.percentage)))}%`,
+                              }}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -358,7 +432,7 @@ export function ProjectDetailPage() {
                   />
                   <div className="mt-4 rounded-xl border border-slate-200 bg-slate-950 text-slate-100 overflow-hidden">
                     <div className="px-4 py-2 border-b border-slate-800 text-xs font-mono text-slate-300">
-                      {activeFilePath ?? "Select a file to preview"}
+                      <FilePathBreadcrumb path={activeFilePath} />
                     </div>
                     <div className="p-4">
                       {loadingFileContent ? (
@@ -376,16 +450,23 @@ export function ProjectDetailPage() {
                         </div>
                       ) : fileContentError ? (
                         <p className="text-sm text-red-300">{fileContentError}</p>
-                      ) : activeFilePath ? (
-                        <pre
-                          className="dark-scrollbar text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
-                          style={{ whiteSpace: "pre" }}
-                        >
-                          <code
-                            className={`language-${highlightedFile.language} !bg-transparent block whitespace-pre`}
-                            dangerouslySetInnerHTML={{ __html: highlightedFile.html }}
-                          />
-                        </pre>
+                      ) : fileStatusMessage && !activeFileContent ? (
+                        <p className="text-sm text-amber-200/90">{fileStatusMessage}</p>
+                      ) : activeFilePath && activeFileContent ? (
+                        <>
+                          {fileStatusMessage && (
+                            <p className="text-xs text-amber-200/80 mb-2">{fileStatusMessage}</p>
+                          )}
+                          <pre
+                            className="dark-scrollbar text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
+                            style={{ whiteSpace: "pre" }}
+                          >
+                            <code
+                              className={`language-${highlightedFile.language} !bg-transparent block whitespace-pre`}
+                              dangerouslySetInnerHTML={{ __html: highlightedFile.html }}
+                            />
+                          </pre>
+                        </>
                       ) : (
                         <p className="text-sm text-slate-400">
                           Click any file in the tree to view its content.
