@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Zap } from "lucide-react";
-import { registerUser } from "../api/auth";
+import { registerUser } from "../api";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 

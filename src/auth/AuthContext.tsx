@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { fetchCurrentUser } from "../api/auth";
+import { fetchCurrentUser } from "../api";
 import type { AuthUser } from "../types/auth";
 import { getToken, removeToken, setToken } from "./token";
 

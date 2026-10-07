@@ -21,8 +21,8 @@ import {
   uploadProjectMedia,
   uploadProjectWorkspace,
   type ProjectVisibility,
-} from "../api/projects";
-import type { TechStackItem } from "../api/projects";
+} from "../api";
+import type { TechStackItem } from "../api";
 import { Navbar } from "../components/Navbar";
 import {
   PROJECT_CATEGORIES,
@@ -346,9 +346,18 @@ export function ProjectFormPage() {
         if (workspaceZip) {
           setSubmitPhase("Uploading workspace & detecting tech…");
           setDetectingStacks(true);
-          await uploadProjectWorkspace(projectId, workspaceZip);
+          const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip);
           const fresh = await fetchProject(projectId);
-          const rawIds = Array.isArray(fresh.tech_stack_ids) ? fresh.tech_stack_ids : [];
+          const detectedIds = Array.isArray(uploadRes.detected_tech_stack_ids)
+            ? uploadRes.detected_tech_stack_ids
+            : Array.isArray(fresh.detected_tech_stack_ids)
+              ? fresh.detected_tech_stack_ids
+              : [];
+          const confirmedIds = Array.isArray(fresh.tech_stack_ids)
+            ? fresh.tech_stack_ids
+            : [];
+          // Prefer detected for the confirm modal; fall back to already-confirmed.
+          const rawIds = detectedIds.length > 0 ? detectedIds : confirmedIds;
           const fromServer = [
             ...new Set(
               rawIds
@@ -1019,8 +1028,9 @@ export function ProjectFormPage() {
               Confirm tech stacks
             </h3>
             <p className="mt-2 text-sm text-slate-600">
-              We matched stacks from your workspace files. Toggle the ones that best describe this
-              project, then continue.
+              We detected stacks from your workspace (extensions + dependency files). Toggle to
+              confirm what should appear on the project. Re-uploading later will not wipe these
+              until you save here again.
             </p>
             {loadingStacks ? (
               <p className="mt-6 text-sm text-slate-500">Loading options…</p>
