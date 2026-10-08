@@ -36,6 +36,8 @@ export interface ApiProject {
   comments?: number;
   owner?: ApiProjectOwner;
   owner_username?: string;
+  /** ISO timestamp from the backend (used to keep TV world positions stable) */
+  created_at?: string;
 }
 
 /** Normalized project for UI components */
