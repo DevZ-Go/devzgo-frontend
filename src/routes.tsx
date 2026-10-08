@@ -8,6 +8,10 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
+import { ThemeSelectPage } from "./pages/ThemeSelectPage";
+import { CardsWorldPage } from "./pages/CardsWorldPage";
+import { WrapPage } from "./pages/WrapPage";
+
 
 export const router = createBrowserRouter([
   {
@@ -37,7 +41,23 @@ export const router = createBrowserRouter([
         path: "/explore",
         element: (
           <ProtectedRoute>
+            <ThemeSelectPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/explore/tv",
+        element: (
+          <ProtectedRoute>
             <ExplorePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/explore/cards",
+        element: (
+          <ProtectedRoute>
+            <CardsWorldPage />
           </ProtectedRoute>
         ),
       },
@@ -73,6 +93,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "/wrap",
+        element: (
+          <ProtectedRoute>
+            <WrapPage />
+          </ProtectedRoute>
+        ),
+      },
+
     ],
   },
   {

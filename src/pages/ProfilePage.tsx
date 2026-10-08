@@ -185,6 +185,13 @@ export function ProfilePage() {
                     <Compass className="w-4 h-4 text-blue-600" />
                     Explore
                   </Link>
+                  <Link
+                    to="/wrap"
+                    className="inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                  >
+                    <Sparkles className="w-4 h-4" /> View your Wrapped
+                  </Link>
+
                 </div>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Navbar } from "../components/Navbar";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
+import { ExploreLink } from "../components/tvworld/ExploreLink";
 
 // Floating vintage/editorial stamp badges (stacked on right margin like reference photo)
 function EditorialStamps() {
@@ -125,12 +126,11 @@ export function LandingPage() {
             transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}
             className="mt-8"
           >
-            <Link
-              to="/explore"
+            <ExploreLink
               className="inline-block px-8 py-2.5 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs font-semibold uppercase tracking-widest transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
             >
               Explore Projects
-            </Link>
+            </ExploreLink>
           </motion.div>
         </div>
       </section>
