@@ -50,9 +50,12 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
 // }
 
 export interface ProjectFilters {
+  [key: string]: string | number | boolean | undefined;
   search?: string;
   category?: string;
   tech_stack_id?: number;
+  tech_stack_ids?: string;
+  sort_by?: string;
 }
 
 export async function fetchProjects(
