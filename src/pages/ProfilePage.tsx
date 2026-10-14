@@ -370,6 +370,12 @@ export function ProfilePage() {
                       >
                         New project
                       </Link>
+                      <Link
+                        to="/wrap"
+                        className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-xs font-semibold text-white hover:bg-gray-800 transition"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" /> View your Wrapped
+                      </Link>
                     </>
                   ) : (
                     <>
