@@ -1,608 +1,489 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Compass,
-  Loader2,
-  AlertCircle,
-  Users,
-  UserPlus,
-  Send,
-  Check,
-  MapPin,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
-import { Navbar } from "../components/Navbar";
-import { ProjectCard } from "../components/ProjectCard";
-import {
-  fetchProjects,
-  fetchTechStacks,
-} from "../api/projects";
-import type { TechStackItem } from "../api/projects";
-import { transformApiProject } from "../utils/projectTransform";
-import { getApiErrorMessage } from "../utils/apiError";
-import type { Project } from "../types/project";
-import type { DeveloperProfile } from "../types/network";
-import { searchDevelopers } from "../api/profiles";
-import { sendConnectionRequest } from "../api/connections";
-import { getTechStackFilterClasses } from "../utils/techStackChipStyle";
+import { ExploreFilters } from "../components/ExploreFilters";
+import { useExploreProjects } from "../hooks/useExploreProjects";
+import { CameraController } from "../components/tvworld/CameraController";
+import type { Cam, ViewRect } from "../components/tvworld/CameraController";
+import { PixelTV } from "../components/tvworld/PixelTV";
+import { layoutProjects, toTvProject } from "../components/tvworld/worldLayout";
+import type { PlacedTv } from "../components/tvworld/types";
+import "../components/tvworld/tvworld.css";
 
-function stackNumericId(t: TechStackItem): number | null {
-  const n = typeof t.id === "number" ? t.id : Number(t.id);
-  return Number.isFinite(n) ? n : null;
+const CAM_KEY = "devzgo:tvworld:cam";
+/** How far outside the viewport (world px) a TV is still kept mounted. */
+const CULL_MARGIN = 560;
+const PANEL_W = 420;
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v));
 }
 
+/** Camera pose that shows the first few TVs of a list. */
+function overviewPose(list: PlacedTv[], viewportW: number): Cam {
+  const head = list.slice(0, 4);
+  if (head.length === 0) return { x: 0, y: 0, zoom: 0.7 };
+  const x = head.reduce((s, t) => s + t.x, 0) / head.length;
+  const y = head.reduce((s, t) => s + t.y, 0) / head.length;
+  return { x, y, zoom: clamp(viewportW / 2100, 0.45, 0.85) };
+}
+
+/** One-shot: only present when the user left to a project page and is coming back. */
+function readSavedCam(): Cam | null {
+  try {
+    const raw = sessionStorage.getItem(CAM_KEY);
+    sessionStorage.removeItem(CAM_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as Partial<Cam>;
+    if (
+      typeof c.x === "number" &&
+      typeof c.y === "number" &&
+      typeof c.zoom === "number" &&
+      Number.isFinite(c.x + c.y + c.zoom)
+    ) {
+      return { x: c.x, y: c.y, zoom: c.zoom };
+    }
+  } catch {
+    /* ignore corrupt storage */
+  }
+  return null;
+}
+
+function isTypingTarget(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null;
+  return !!el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA");
+}
+
+/**
+ * "Explore Projects": a dark pixel-art room where every public project is a CRT TV.
+ * Projects come from the same GET /projects call the old grid used; positions are a
+ * deterministic function of the project (see worldLayout.ts), so uploads appear
+ * automatically and nothing moves between page loads.
+ */
 export function ExplorePage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"projects" | "developers">("projects");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
-  const [devSearch, setDevSearch] = useState("");
-  const [techStacks, setTechStacks] = useState<TechStackItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [filterStackId, setFilterStackId] = useState<number | "all">("all");
-  const [sortBy, setSortBy] = useState("newest");
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const ctrlRef = useRef<CameraController | null>(null);
+  const savedCamRef = useRef<Cam | null>(null);
+  const introDoneRef = useRef(false);
+  const openingRef = useRef(false);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [requestedUsers, setRequestedUsers] = useState<Record<string, boolean>>({});
+  const {
+    filters,
+    setFilters,
+    clearFilters,
+    hasFilters,
+    isNarrowed,
+    projects: apiProjects,
+    appliedKey,
+    error,
+    reload,
+    techStacks,
+  } = useExploreProjects();
+  const [view, setView] = useState<ViewRect | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [booting, setBooting] = useState(true);
+  const [diving, setDiving] = useState(false);
 
-  const loadProjects = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  /* ───────────── data: GET /projects with the active filters ───────────── */
 
-    try {
-      const params: {
-        search?: string;
-        category?: string;
-        tech_stack_ids?: string;
-        sort_by?: string;
-      } = {};
+  const layout = useMemo(
+    () => layoutProjects((apiProjects ?? []).map((p, i) => toTvProject(p, i))),
+    [apiProjects]
+  );
 
-      const trimmedSearch = search.trim();
-      if (trimmedSearch) {
-        params.search = trimmedSearch;
-      }
+  // The server already filtered, so every placed TV is shown. New filters repack the spiral.
+  const shown = layout.placed;
 
-      if (category) {
-        params.category = category;
-      }
-
-      if (filterStackId !== "all") {
-        params.tech_stack_ids = String(filterStackId);
-      }
-
-      params.sort_by = sortBy;
-
-      const list = await fetchProjects(
-        Object.keys(params).length > 0 ? params : undefined
+  const visible = useMemo(() => {
+    if (!view) return shown.slice(0, 12);
+    return shown.filter((t) => {
+      if (t.project.id === focusedId) return true;
+      const hw = (t.w * t.scale) / 2;
+      const hh = (t.h * t.scale) / 2;
+      return (
+        t.x + hw > view.left - CULL_MARGIN &&
+        t.x - hw < view.right + CULL_MARGIN &&
+        t.y + hh > view.top - CULL_MARGIN &&
+        t.y - hh < view.bottom + CULL_MARGIN
       );
+    });
+  }, [shown, view, focusedId]);
 
-      setProjects(
-        list.map((api, i) => transformApiProject(api, i))
-      );
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-      setProjects([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, category, filterStackId, sortBy]);
+  const focused = useMemo(
+    () => (focusedId ? (layout.placed.find((t) => t.project.id === focusedId) ?? null) : null),
+    [layout.placed, focusedId]
+  );
 
-  const loadDevelopers = useCallback(async (query: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const devs = await searchDevelopers(query);
-      setDevelopers(devs);
-    } catch {
-      // Ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  /* ───────────── camera lifecycle ───────────── */
 
   useEffect(() => {
-    let cancelled = false;
+    const viewport = viewportRef.current;
+    const world = worldRef.current;
+    if (!viewport || !world) return;
+    const ctrl = new CameraController(
+      { viewport, world, backdrop: backdropRef.current, onView: setView },
+      { x: 0, y: 0, zoom: 0.6 }
+    );
+    ctrl.attach();
+    ctrlRef.current = ctrl;
 
-    fetchTechStacks()
-      .then((stacks) => {
-        if (!cancelled) {
-          setTechStacks(stacks);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Could not load tech stack filters.");
-        }
-      });
+    // Free the page scrollbar while inside the world.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
-      cancelled = true;
+      document.body.style.overflow = prevOverflow;
+      ctrl.destroy();
+      ctrlRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (activeTab === "projects") {
-      void loadProjects();
-    } else {
-      void loadDevelopers(devSearch);
-    }
-  }, [activeTab, filterStackId, devSearch, sortBy, category, loadProjects, loadDevelopers]);
+    ctrlRef.current?.setBounds(layout.bounds);
+  }, [layout.bounds]);
 
-  async function handleConnect(devId: string) {
-    setRequestedUsers((prev) => ({ ...prev, [devId]: true }));
-    try {
-      await sendConnectionRequest(devId);
-    } catch {
-      // Ignore
+  // Opening shot: start zoomed out near the first TVs and push in (or resume a saved pose).
+  useEffect(() => {
+    const ctrl = ctrlRef.current;
+    if (!ctrl || apiProjects === null || introDoneRef.current) return;
+    introDoneRef.current = true;
+    const saved = readSavedCam();
+    if (saved) {
+      ctrl.set(saved);
+      return;
     }
+    const pose = overviewPose(layout.placed, ctrl.size().w);
+    ctrl.set({ ...pose, zoom: pose.zoom * 0.55 });
+    ctrl.flyTo(pose, { rate: 2.4, settleMs: 2000 });
+  }, [apiProjects, layout.placed]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setBooting(false), 1500);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  /* ───────────── focus / unfocus ───────────── */
+
+  const focusTv = useCallback(
+    (id: string) => {
+      const ctrl = ctrlRef.current;
+      const tv = layout.placed.find((t) => t.project.id === id);
+      if (!ctrl || !tv) return;
+      // Remember the exploration pose only once, so cycling between TVs still returns to it.
+      if (!savedCamRef.current) savedCamRef.current = ctrl.snapshot();
+      const { w: vw, h: vh } = ctrl.size();
+      const bw = tv.w * tv.scale;
+      const bh = tv.h * tv.scale + 50;
+      let zoom: number;
+      let x = tv.x;
+      let y = tv.y;
+      if (vw >= 900) {
+        // Info panel on the right: park the TV in the left part of the screen.
+        zoom = Math.min(((vw - PANEL_W) * 0.78) / bw, (vh * 0.72) / bh, 2.2);
+        x = tv.x + PANEL_W / 2 / zoom;
+        y = tv.y + 14 / zoom;
+      } else {
+        // Info sheet at the bottom: TV in the upper part.
+        zoom = Math.min((vw * 0.86) / bw, (vh * 0.4) / bh, 2.2);
+        y = tv.y + (vh / 2 - vh * 0.27) / zoom;
+      }
+      ctrl.locked = true;
+      setFocusedId(id);
+      ctrl.flyTo({ x, y, zoom }, { rate: 6, settleMs: 1300 });
+    },
+    [layout.placed]
+  );
+
+  const unfocus = useCallback(() => {
+    const ctrl = ctrlRef.current;
+    if (!ctrl) return;
+    ctrl.locked = false;
+    const saved = savedCamRef.current;
+    savedCamRef.current = null;
+    setFocusedId(null);
+    if (saved) ctrl.flyTo(saved, { rate: 6, settleMs: 1300 });
+  }, []);
+
+  const cycle = useCallback(
+    (dir: 1 | -1) => {
+      if (!focusedId || shown.length < 2) return;
+      const i = shown.findIndex((t) => t.project.id === focusedId);
+      const next = shown[(i + dir + shown.length) % shown.length];
+      focusTv(next.project.id);
+    },
+    [focusedId, shown, focusTv]
+  );
+
+  const recenter = useCallback(() => {
+    const ctrl = ctrlRef.current;
+    if (!ctrl || ctrl.locked) return;
+    ctrl.flyTo(overviewPose(shown, ctrl.size().w), { rate: 4, settleMs: 1600 });
+  }, [shown]);
+
+  const openProject = useCallback(
+    (id: string) => {
+      const ctrl = ctrlRef.current;
+      const tv = layout.placed.find((t) => t.project.id === id);
+      if (!ctrl || !tv || openingRef.current) return;
+      openingRef.current = true;
+      try {
+        sessionStorage.setItem(CAM_KEY, JSON.stringify(savedCamRef.current ?? ctrl.snapshot()));
+      } catch {
+        /* ignore */
+      }
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        navigate(`/project/${id}`);
+        return;
+      }
+      // Dive into the screen, fade to black, then hand over to the detail page.
+      setDiving(true);
+      ctrl.flyTo({ x: tv.x, y: tv.y, zoom: ctrl.cam.zoom * 1.8 }, { rate: 5, settleMs: 800 });
+      window.setTimeout(() => navigate(`/project/${id}`), 480);
+    },
+    [layout.placed, navigate]
+  );
+
+  // Results for a new filter set fly the camera to the surviving TVs.
+  const lastAppliedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (appliedKey === null) return;
+    const previous = lastAppliedKeyRef.current;
+    lastAppliedKeyRef.current = appliedKey;
+    if (previous === null || previous === appliedKey) return;
+    const ctrl = ctrlRef.current;
+    if (!ctrl) return;
+    if (savedCamRef.current) {
+      ctrl.locked = false;
+      savedCamRef.current = null;
+    }
+    setFocusedId(null);
+    ctrl.flyTo(overviewPose(shown, ctrl.size().w), { rate: 3.5, settleMs: 1800 });
+  }, [appliedKey, shown]);
+
+  /* ───────────── keyboard (focus mode + extras) ───────────── */
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "Escape" && focusedId) {
+        e.preventDefault();
+        unfocus();
+      } else if (focusedId && e.key === "ArrowRight") {
+        e.preventDefault();
+        cycle(1);
+      } else if (focusedId && e.key === "ArrowLeft") {
+        e.preventDefault();
+        cycle(-1);
+      } else if (!focusedId && (e.key === "Home" || e.key.toLowerCase() === "r")) {
+        recenter();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusedId, unfocus, cycle, recenter]);
+
+  // A tap on empty space (not a drag) leaves focus mode.
+  function onRootClick(e: MouseEvent<HTMLDivElement>) {
+    if (!focusedId) return;
+    const el = e.target as Element;
+    if (el.closest(".tv-body") || el.closest("[data-ui]")) return;
+    unfocus();
   }
 
-  function clearFilters() {
-    setSearch("");
-    setCategory("");
-    setFilterStackId("all");
-    setSortBy("newest");
+  function onSelect(id: string) {
+    if (id === focusedId) return;
+    focusTv(id);
   }
 
-  const hasFilters =
-    search.trim() !== "" ||
-    category !== "" ||
-    filterStackId !== "all" ||
-    sortBy !== "newest";
+  /* ───────────── render ───────────── */
+
+  const loading = apiProjects === null;
+  const noResults = !loading && !error && layout.placed.length === 0;
+  const empty = noResults && !isNarrowed;
+  const total = layout.placed.length;
+  const idx = focused ? shown.findIndex((t) => t.project.id === focused.project.id) + 1 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900">
-      <Navbar />
+    <div
+      ref={viewportRef}
+      className={`tvw-root${focusedId ? " has-focus" : ""}`}
+      onClick={onRootClick}
+    >
+      <div ref={backdropRef} className="tvw-backdrop" />
 
-      <main className="max-w-[1440px] mx-auto px-6 sm:px-8 pt-28 pb-16">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-blue-600 mb-2 font-semibold uppercase tracking-wider text-xs">
-              <Compass className="w-4 h-4" />
-              Talent & Project Discovery
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-              Explore DevZ-Go
-            </h1>
-            <p className="text-gray-600 max-w-2xl mt-1">
-              Discover engineering talent, explore open source portfolios, and form project collaborations.
-            </p>
-          </div>
+      <div ref={worldRef} className="tvw-world">
+        {visible.map((tv) => (
+          <PixelTV
+            key={tv.project.id}
+            tv={tv}
+            focused={tv.project.id === focusedId}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
 
-          <Link
-            to="/home"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 shrink-0"
-          >
-            ← Back to home
+      <div className="tvw-vignette" />
+
+      {/* ── HUD: tiny, in the corners, never over the screens ── */}
+      <div className="tvw-hud tvw-hud--tl">
+        <b>PROJECT ARCHIVE</b>
+        {loading
+          ? "TUNING..."
+          : `${total} ${isNarrowed ? "MATCHING " : ""}PROJECT${total === 1 ? "" : "S"}`}
+      </div>
+
+      <div className="tvw-hud tvw-hud--bl">
+        {focused ? (
+          <>ESC &middot; BACK TO EXPLORE &nbsp; &larr; &rarr; SWITCH TV</>
+        ) : (
+          <>
+            DRAG TO EXPLORE
+            <br />
+            <span className="tvw-hint-keys">&uarr; &darr; &larr; &rarr; / WASD &middot; SCROLL &middot; PINCH TO ZOOM</span>
+            <span className="tvw-hint-touch">TAP A TV TO OPEN IT</span>
+          </>
+        )}
+      </div>
+
+      <div className="tvw-hud tvw-hud--tr" data-ui>
+        <ExploreFilters
+          filters={filters}
+          onChange={setFilters}
+          techStacks={techStacks}
+          hasFilters={hasFilters}
+          onClear={clearFilters}
+          classes={{
+            root: "tvw-filters",
+            input: "tvw-input",
+            select: "tvw-select",
+            button: "tvw-btn",
+          }}
+        />
+        <Link to="/home" className="tvw-btn">
+          &larr; EXIT
+        </Link>
+      </div>
+
+      <div className="tvw-hud tvw-hud--br" data-ui>
+        <button type="button" className="tvw-btn tvw-btn--sq" aria-label="Zoom out" onClick={() => ctrlRef.current?.zoomBy(1 / 1.25)}>
+          -
+        </button>
+        <button type="button" className="tvw-btn tvw-btn--sq" aria-label="Zoom in" onClick={() => ctrlRef.current?.zoomBy(1.25)}>
+          +
+        </button>
+        <button type="button" className="tvw-btn" onClick={recenter}>
+          CENTER
+        </button>
+      </div>
+
+      {/* ── states ── */}
+      {loading && (
+        <div className="tvw-center">
+          <span className="tvw-blink">TUNING...</span>
+        </div>
+      )}
+      {error && (
+        <div className="tvw-center" data-ui>
+          <span>SIGNAL LOST</span>
+          <span style={{ color: "#4b4f57", letterSpacing: "0.12em" }}>{error}</span>
+          <button type="button" className="tvw-btn" onClick={reload}>
+            RETRY
+          </button>
+        </div>
+      )}
+      {empty && (
+        <div className="tvw-center" data-ui>
+          <span>NO SIGNAL</span>
+          <span style={{ color: "#4b4f57" }}>NO PUBLIC PROJECTS YET</span>
+          <Link to="/add-project" className="tvw-btn tvw-btn--primary">
+            UPLOAD THE FIRST ONE
           </Link>
         </div>
-
-        {/* Explore Sub-navigation Tabs */}
-        <div className="flex border-b border-gray-200/80 mb-8 gap-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("projects")}
-            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center gap-2 ${
-              activeTab === "projects"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            Explore Projects
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("developers")}
-            className={`pb-3 text-sm font-bold border-b-2 transition flex items-center gap-2 ${
-              activeTab === "developers"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Find Developers & Recruiter View
+      )}
+      {noResults && isNarrowed && (
+        <div className="tvw-center" data-ui>
+          <span>NOTHING TUNED IN FOR THESE FILTERS</span>
+          <button type="button" className="tvw-btn" onClick={clearFilters}>
+            SHOW ALL
           </button>
         </div>
+      )}
 
-        {/* Tab 1: Projects Discovery */}
-        {activeTab === "projects" && (
-          <div>
-            {/* Filters */}
-            <div className="mb-10 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-5">
-                <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-                <h2 className="font-semibold text-gray-900">Find a project</h2>
-              </div>
-
-              {/* Search + category */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-                {/* Search */}
-                <div>
-                  <label
-                    htmlFor="project-search"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Search
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="project-search"
-                      type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          void loadProjects();
-                        }
-                      }}
-                      placeholder="Search projects..."
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label
-                    htmlFor="project-category"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="project-category"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  >
-                    <option value="">All categories</option>
-                    <option value="AI/ML">AI/ML</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Mobile Development">Mobile Development</option>
-                    <option value="Desktop Application">Desktop Application</option>
-                    <option value="Game Development">Game Development</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Cybersecurity">Cybersecurity</option>
-                    <option value="Cloud/DevOps">Cloud/DevOps</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="project-sort"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Sort by
-                </label>
-                <select
-                  id="project-sort"
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="updated">Recently Updated</option>
-                  <option value="title_asc">Title: A-Z</option>
-                  <option value="title_desc">Title: Z-A</option>
-                </select>
-              </div>
-
-              {/* Tech stacks */}
-              {techStacks.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">
-                    Technology
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFilterStackId("all")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                        filterStackId === "all"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      All technologies
-                    </button>
-                    {techStacks.map((t) => {
-                      const id = stackNumericId(t);
-                      if (id === null) return null;
-                      const active = filterStackId === id;
-                      return (
-                        <button
-                          key={`${t.id}-${t.name}`}
-                          type="button"
-                          onClick={() => setFilterStackId(id)}
-                          className={getTechStackFilterClasses(t.name, active)}
-                        >
-                          {t.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Filter actions */}
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => void loadProjects()}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Apply filters
-                </button>
-                {hasFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear filters
-                  </button>
-                )}
-              </div>
+      {/* ── focused project info ── */}
+      {focused && (
+        <aside className="tvw-panel" data-ui key={focused.project.id} aria-label="Project details">
+          <div className="tvw-panel-kicker">
+            TV {String(focused.number).padStart(2, "0")} &middot; {idx} / {shown.length}
+          </div>
+          <h2>{focused.project.title}</h2>
+          {focused.project.shortDescription && <p>{focused.project.shortDescription}</p>}
+          {focused.project.fullDescription && (
+            <p className="tvw-panel-long">{focused.project.fullDescription}</p>
+          )}
+          {focused.project.techStack.length > 0 && (
+            <div className="tvw-chips">
+              {focused.project.techStack.map((t) => (
+                <span key={t}>{t}</span>
+              ))}
             </div>
-
-            {error && (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 mb-8">
-                <AlertCircle className="w-6 h-6 shrink-0" />
-                <p>{error}</p>
+          )}
+          <div className="tvw-meta">
+            <div>
+              BY<b>@{focused.project.author}</b>
+            </div>
+            {focused.project.category && (
+              <div>
+                CATEGORY<b>{focused.project.category}</b>
               </div>
             )}
-
-            {loading && (
-              <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-600">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-                <p>Loading projects…</p>
+            {focused.project.videoUrl && (
+              <div>
+                DEMO<b>PLAYING ON SCREEN</b>
               </div>
             )}
-
-            {!loading && !error && projects.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-white/80 px-8 py-16 text-center text-gray-600">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No projects found
-                </h3>
-                <p className="mb-5">
-                  Try changing your search or filters.
-                </p>
-                {hasFilters ? (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    Clear filters
-                  </button>
-                ) : (
-                  <Link
-                    to="/add-project"
-                    className="font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    Be the first to add one
-                  </Link>
-                )}
-              </div>
+          </div>
+          <div className="tvw-sep" />
+          <div className="tvw-actions">
+            <button
+              type="button"
+              className="tvw-btn tvw-btn--primary"
+              onClick={() => openProject(focused.project.id)}
+            >
+              OPEN PROJECT &rarr;
+            </button>
+            {focused.project.isOwner && (
+              <Link to={`/project/${focused.project.id}/edit`} className="tvw-btn">
+                EDIT
+              </Link>
             )}
-
-            {!loading && !error && projects.length > 0 && (
+          </div>
+          <div className="tvw-actions">
+            <button type="button" className="tvw-btn" onClick={unfocus}>
+              &larr; BACK TO EXPLORE
+            </button>
+            {shown.length > 1 && (
               <>
-                <div className="flex items-center justify-between mb-5">
-                  <p className="text-sm text-gray-500">
-                    Showing{" "}
-                    <span className="font-semibold text-gray-900">
-                      {projects.length}
-                    </span>{" "}
-                    {projects.length === 1 ? "project" : "projects"}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {projects.map((project) => (
-                    <div key={project.id} className="flex flex-col gap-2">
-                      <ProjectCard project={project} variant="compact" />
-                      {project.author?.username && (
-                        <div className="flex items-center justify-between px-2 pt-1">
-                          <Link
-                            to={`/profile/${project.author.username}`}
-                            className="text-xs font-semibold text-gray-600 hover:text-blue-600 transition flex items-center gap-1.5"
-                          >
-                            <img
-                              src={project.author.avatar}
-                              alt={project.author.name}
-                              className="w-5 h-5 rounded-full object-cover"
-                            />
-                            <span>By @{project.author.username}</span>
-                          </Link>
-                          <Link
-                            to={`/profile/${project.author.username}`}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                          >
-                            View Profile →
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <button type="button" className="tvw-btn tvw-btn--sq" aria-label="Previous TV" onClick={() => cycle(-1)}>
+                  &lt;
+                </button>
+                <button type="button" className="tvw-btn tvw-btn--sq" aria-label="Next TV" onClick={() => cycle(1)}>
+                  &gt;
+                </button>
               </>
             )}
           </div>
-        )}
+        </aside>
+      )}
 
-        {/* Tab 2: Developers & Talent Discovery */}
-        {activeTab === "developers" && (
-          <div>
-            <div className="mb-8 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, skill (Python, React...), or title..."
-                  value={devSearch}
-                  onChange={(e) => setDevSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-600">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                <p className="text-sm">Finding developers…</p>
-              </div>
-            ) : developers.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-gray-200 bg-white/80 px-8 py-16 text-center text-gray-500 text-sm">
-                No developers match your query.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {developers.map((dev) => {
-                  const hasRequested = requestedUsers[dev.userId || dev.id];
-                  const skills = dev.skills
-                    ? dev.skills.split(",").map((s) => s.trim()).filter(Boolean)
-                    : [];
-
-                  return (
-                    <div
-                      key={dev.id}
-                      className="rounded-3xl border border-gray-200/90 bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-start gap-4 mb-4">
-                          <Link to={`/profile/${dev.userId || dev.id || dev.username}`}>
-                            {dev.avatarUrl ? (
-                              <img
-                                src={dev.avatarUrl}
-                                alt={dev.fullName || dev.username}
-                                className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center text-base shrink-0 shadow-sm">
-                                {dev.username.slice(0, 2).toUpperCase()}
-                              </div>
-                            )}
-                          </Link>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <Link
-                                to={`/profile/${dev.userId || dev.id || dev.username}`}
-                                className="font-bold text-gray-900 text-base hover:text-blue-600 truncate block"
-                              >
-                                {dev.fullName || dev.username}
-                              </Link>
-                            </div>
-                            <span className="text-xs text-gray-400 font-mono">
-                              @{dev.username}
-                            </span>
-                            {dev.headline && (
-                              <p className="text-xs text-gray-600 font-medium line-clamp-1 mt-1">
-                                {dev.headline}
-                              </p>
-                            )}
-                            {dev.location && (
-                              <div className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
-                                <MapPin className="w-3 h-3" />
-                                <span>{dev.location}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {dev.bio && (
-                          <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-4">
-                            {dev.bio}
-                          </p>
-                        )}
-
-                        {skills.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-6">
-                            {skills.slice(0, 4).map((skill) => (
-                              <span
-                                key={skill}
-                                className="text-[11px] px-2.5 py-0.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {skills.length > 4 && (
-                              <span className="text-[11px] px-2 py-0.5 rounded-lg text-gray-400">
-                                +{skills.length - 4}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
-                        <Link
-                          to={`/profile/${dev.userId || dev.id || dev.username}`}
-                          className="text-xs font-semibold text-gray-700 hover:text-blue-600 transition"
-                        >
-                          View Profile
-                        </Link>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/messages?user=${dev.userId || dev.id || dev.username}`
-                              )
-                            }
-                            className="p-2 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition"
-                            title="Direct Message"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={hasRequested}
-                            onClick={() => handleConnect(dev.userId || dev.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                              hasRequested
-                                ? "bg-gray-100 text-gray-500"
-                                : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm hover:shadow"
-                            }`}
-                          >
-                            {hasRequested ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" /> Pending
-                              </>
-                            ) : (
-                              <>
-                                <UserPlus className="w-3.5 h-3.5" /> Connect
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+      {booting && (
+        <div className="tvw-boot" aria-hidden="true">
+          <i />
+        </div>
+      )}
+      {diving && <div className="tvw-dive" aria-hidden="true" />}
     </div>
   );
 }
