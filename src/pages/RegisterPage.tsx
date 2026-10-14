@@ -6,6 +6,7 @@ import { Zap } from "lucide-react";
 import { registerUser } from "../api";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
+import { GitHubButton } from "../components/GitHubButton";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -127,6 +128,12 @@ export function RegisterPage() {
               {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
+          <div className="px-8 pb-8 -mt-3">
+            <div className="mb-4 flex items-center gap-3 text-xs text-gray-300">
+              <span className="h-px flex-1 bg-cream-200" />or<span className="h-px flex-1 bg-cream-200" />
+            </div>
+            <GitHubButton />
+          </div>
         </div>
 
         <p className="mt-8 text-center text-gray-600">
