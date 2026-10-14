@@ -15,12 +15,18 @@ React + TypeScript + Vite app for the DevZ-Go developer portfolio platform. Inte
 ## Quick start
 
 ```bash
-cp .env.example .env   # optional: set VITE_API_BASE_URL
+cp .env.example .env.local   # or .env — set VITE_API_BASE_URL if needed
 npm install
-npm run dev            # http://localhost:5173
+npm run dev                  # http://localhost:5173
 ```
 
-Run your FastAPI server separately on port **8000**.
+Run the FastAPI backend separately on port **8000** (see `../devzgo-backend/README.md`).
+
+### macOS notes
+
+- Re-run `npm install` on this machine; do not copy `node_modules` from Windows.
+- Prefer `http://127.0.0.1:8000` for `VITE_API_BASE_URL` (matches CORS defaults).
+- Quote paths if your Capstone folder path contains spaces.
 
 ---
 

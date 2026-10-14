@@ -1,4 +1,4 @@
-import type { ProjectFileEntry } from "../api/projects";
+import type { ProjectFileEntry } from "../api";
 
 export interface FileTreeNode {
   id: string;

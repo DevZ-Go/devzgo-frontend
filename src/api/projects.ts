@@ -39,13 +39,33 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
   });
 }
 
+// export async function fetchProjects(
+//   params?: Record<string, string | number | boolean | undefined>
+// ): Promise<ApiProject[]> {
+//   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
+//     "/projects",
+//     params && Object.keys(params).length ? { params } : undefined
+//   );
+//   return Array.isArray(data) ? data : data.projects ?? [];
+// }
+
+export interface ProjectFilters {
+  [key: string]: string | number | boolean | undefined;
+  search?: string;
+  category?: string;
+  tech_stack_id?: number;
+  tech_stack_ids?: string;
+  sort_by?: string;
+}
+
 export async function fetchProjects(
-  params?: Record<string, string | number | boolean | undefined>
+  params?: ProjectFilters
 ): Promise<ApiProject[]> {
   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
     "/projects",
     params && Object.keys(params).length ? { params } : undefined
   );
+
   return Array.isArray(data) ? data : data.projects ?? [];
 }
 
@@ -103,6 +123,9 @@ export interface WorkspaceUploadResponse {
   message: string;
   total_files: number;
   detected_tech_stacks?: string[];
+  detected_tech_stack_ids?: number[];
+  languages?: Array<{ name: string; percentage: number }>;
+  applied_to_confirmed?: boolean;
 }
 
 /** One row from GET /projects/{id}/files */
@@ -141,7 +164,16 @@ export async function fetchProjectFiles(
 }
 
 export interface ProjectFileContentResponse {
-  content: string;
+  path: string;
+  name: string;
+  extension: string;
+  language?: string | null;
+  size: number;
+  is_binary: boolean;
+  is_secret: boolean;
+  is_image: boolean;
+  content?: string | null;
+  message?: string | null;
 }
 
 export async function fetchProjectFileContent(
@@ -152,6 +184,18 @@ export async function fetchProjectFileContent(
     `/projects/${projectId}/file`,
     { params: { path } }
   );
+  return data;
+}
+
+/** Permissioned binary/image stream (replaces public /storage/project_* URLs). */
+export async function fetchProjectFileBlob(
+  projectId: string,
+  path: string
+): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/projects/${projectId}/file/raw`, {
+    params: { path },
+    responseType: "blob",
+  });
   return data;
 }
 
