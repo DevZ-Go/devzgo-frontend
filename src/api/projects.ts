@@ -39,13 +39,30 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
   });
 }
 
+// export async function fetchProjects(
+//   params?: Record<string, string | number | boolean | undefined>
+// ): Promise<ApiProject[]> {
+//   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
+//     "/projects",
+//     params && Object.keys(params).length ? { params } : undefined
+//   );
+//   return Array.isArray(data) ? data : data.projects ?? [];
+// }
+
+export interface ProjectFilters {
+  search?: string;
+  category?: string;
+  tech_stack_id?: number;
+}
+
 export async function fetchProjects(
-  params?: Record<string, string | number | boolean | undefined>
+  params?: ProjectFilters
 ): Promise<ApiProject[]> {
   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
     "/projects",
     params && Object.keys(params).length ? { params } : undefined
   );
+
   return Array.isArray(data) ? data : data.projects ?? [];
 }
 
