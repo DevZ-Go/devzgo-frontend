@@ -105,14 +105,12 @@ export function NotificationsDropdown() {
     } else if (notif.type === "new_message") {
       navigate(`/messages?user=${notif.actorId}`);
     } else if (
-      notif.type === "collaboration_request" ||
-      notif.type === "collaboration_accepted"
+      (notif.type === "collaboration_request" ||
+        notif.type === "collaboration_accepted" ||
+        notif.type === "project_like") &&
+      notif.relatedId
     ) {
-      if (notif.relatedId && notif.relatedId.startsWith("proj")) {
-        navigate(`/project/${notif.relatedId}`);
-      } else {
-        navigate(`/project/${notif.relatedId || ""}`);
-      }
+      navigate(`/project/${notif.relatedId}`);
     } else {
       navigate("/network");
     }
@@ -121,6 +119,7 @@ export function NotificationsDropdown() {
   const getIcon = (type: string) => {
     switch (type) {
       case "like":
+      case "project_like":
         return <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />;
       case "comment":
         return <MessageSquare className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20" />;

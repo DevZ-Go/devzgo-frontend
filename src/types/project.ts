@@ -32,6 +32,8 @@ export interface ApiProject {
   detected_tech_stacks?: string[];
   detected_tech_stack_ids?: number[];
   likes?: number;
+  likes_count?: number;
+  is_liked?: boolean;
   views?: number;
   comments?: number;
   owner?: ApiProjectOwner;
@@ -48,6 +50,7 @@ export interface Project {
   imageUrl: string;
   techStack: string[];
   likes: number;
+  isLiked?: boolean;
   views: number;
   comments: number;
   featured: boolean;

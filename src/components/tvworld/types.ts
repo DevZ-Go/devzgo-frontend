@@ -16,6 +16,7 @@ export interface TvProject {
   /** True when the logged-in viewer owns the project (from the API). */
   isOwner: boolean;
   likes: number;
+  isLiked: boolean;
 }
 
 /** A project placed in world space. Coordinates are the TV's centre. */
