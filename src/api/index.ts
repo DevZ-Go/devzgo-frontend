@@ -15,6 +15,49 @@ export type {
   ProjectVisibility,
   WorkspaceUploadResponse,
 } from "./projects";
+export {
+  fetchFeed,
+  createPost,
+  toggleActivityLike,
+  addActivityComment,
+  deleteActivityComment,
+} from "./network";
+export {
+  fetchConnections,
+  sendConnectionRequest,
+  acceptConnection,
+  declineConnection,
+  removeConnection,
+  fetchConnectionStatus,
+  fetchSuggestedDevelopers,
+} from "./connections";
+export {
+  fetchConversations,
+  fetchConversationThread,
+  sendMessage,
+  markConversationRead,
+  fetchUnreadMessagesCount,
+} from "./messages";
+export {
+  fetchProjectCollaborators,
+  fetchProjectCollaborationRequests,
+  requestCollaboration,
+  acceptCollaborationRequest,
+  declineCollaborationRequest,
+} from "./collaborations";
+export {
+  fetchNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  fetchUnreadNotificationsCount,
+} from "./notifications";
+export {
+  fetchUserProfile,
+  updateMyProfile,
+  searchDevelopers,
+} from "./profiles";
+export { fetchDashboardSummary } from "./analytics";
+
 
 /* ── Runtime re-exports: real or mock ── */
 

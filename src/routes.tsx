@@ -10,8 +10,10 @@ import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
 import { ThemeSelectPage } from "./pages/ThemeSelectPage";
 import { CardsWorldPage } from "./pages/CardsWorldPage";
+import { DevelopersPage } from "./pages/DevelopersPage";
 import { WrapPage } from "./pages/WrapPage";
-
+import { NetworkPage } from "./pages/NetworkPage";
+import { MessagesPage } from "./pages/MessagesPage";
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +40,22 @@ export const router = createBrowserRouter([
         element: <RegisterPage />,
       },
       {
+        path: "/network",
+        element: (
+          <ProtectedRoute>
+            <NetworkPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/messages",
+        element: (
+          <ProtectedRoute>
+            <MessagesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/explore",
         element: (
           <ProtectedRoute>
@@ -62,6 +80,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/explore/developers",
+        element: (
+          <ProtectedRoute>
+            <DevelopersPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/add-project",
         element: (
           <ProtectedRoute>
@@ -79,6 +105,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile/:id",
         element: (
           <ProtectedRoute>
             <ProfilePage />

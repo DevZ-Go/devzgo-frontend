@@ -52,6 +52,7 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
 export type ProjectSort = "newest" | "oldest" | "updated" | "title_asc" | "title_desc";
 
 export interface ProjectFilters {
+  [key: string]: string | number | boolean | undefined;
   search?: string;
   category?: string;
   tech_stack_id?: number;
