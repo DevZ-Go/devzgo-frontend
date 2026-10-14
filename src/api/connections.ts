@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, assetUrlOrNull } from "./config";
 import type { Connection, ConnectionUserSummary } from "../types/network";
 import { INITIAL_DEMO_CONNECTIONS, INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
@@ -41,7 +42,7 @@ function mapConnection(raw: Record<string, unknown>): Connection {
           username: (partner.username || "developer") as string,
           fullName: (partner.full_name || partner.fullName || partner.username || "Developer") as string,
           headline: (partner.headline || null) as string | null,
-          avatarUrl: (partner.avatar_url || partner.avatarUrl || null) as string | null,
+          avatarUrl: assetUrlOrNull(partner.avatar_url || partner.avatarUrl),
         }
       : {
           id: String(raw.id),
@@ -92,7 +93,7 @@ export async function fetchConnections(): Promise<{
       }
     }
   } catch (err) {
-    console.warn("Backend unavailable, using local connections:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -110,9 +111,9 @@ export async function fetchConnections(): Promise<{
 export async function sendConnectionRequest(targetUserId: string): Promise<Connection> {
   try {
     const res = await api.post("/connections/request", { target_user_id: targetUserId });
-    return res.data;
+    return mapConnection(res.data);
   } catch (err) {
-    console.warn("Backend unavailable, sending connection request locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -142,9 +143,9 @@ export async function sendConnectionRequest(targetUserId: string): Promise<Conne
 export async function acceptConnection(connectionId: string): Promise<Connection> {
   try {
     const res = await api.put(`/connections/${connectionId}/accept`);
-    return res.data;
+    return mapConnection(res.data);
   } catch (err) {
-    console.warn("Backend unavailable, accepting connection locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -166,7 +167,7 @@ export async function declineConnection(connectionId: string): Promise<void> {
     await api.put(`/connections/${connectionId}/decline`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, declining connection locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -179,7 +180,7 @@ export async function removeConnection(connectionId: string): Promise<void> {
     await api.delete(`/connections/${connectionId}`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, removing connection locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -192,10 +193,11 @@ export async function fetchConnectionStatus(targetUserId: string): Promise<{
   connectionId?: string;
 }> {
   try {
-    const res = await api.get(`/connections/status/${targetUserId}`);
-    return res.data;
+    const { data } = await api.get(`/connections/status/${targetUserId}`);
+    const status = data.status === "accepted" ? "connected" : data.status === "pending_sent" || data.status === "pending_received" ? data.status : "none";
+    return { status, connectionId: data.connection_id ? String(data.connection_id) : undefined };
   } catch (err) {
-    console.warn("Backend unavailable, checking status locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalConnections();
@@ -222,11 +224,11 @@ export async function fetchSuggestedDevelopers(): Promise<ConnectionUserSummary[
         username: (u.username || "") as string,
         fullName: (u.full_name || u.fullName || u.username || "Developer") as string,
         headline: (u.headline || null) as string | null,
-        avatarUrl: (u.avatar_url || u.avatarUrl || null) as string | null,
+        avatarUrl: assetUrlOrNull(u.avatar_url || u.avatarUrl),
       }));
     }
   } catch (err) {
-    console.warn("Backend unavailable, returning suggested peers locally:", err);
+    demoFallback(err);
   }
 
   return INITIAL_DEMO_USERS.filter((u) => u.username !== "janasi").map((u) => ({
