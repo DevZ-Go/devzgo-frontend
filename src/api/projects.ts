@@ -49,10 +49,15 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
 //   return Array.isArray(data) ? data : data.projects ?? [];
 // }
 
+export type ProjectSort = "newest" | "oldest" | "updated" | "title_asc" | "title_desc";
+
 export interface ProjectFilters {
   search?: string;
   category?: string;
   tech_stack_id?: number;
+  /** Comma-separated tech stack ids; a project must include every one. */
+  tech_stack_ids?: string;
+  sort_by?: ProjectSort;
 }
 
 export async function fetchProjects(
