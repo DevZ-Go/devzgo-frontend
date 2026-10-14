@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Compass, FolderPlus, User, LogOut, Menu, X, Sparkles, Search } from "lucide-react";
@@ -21,72 +21,162 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Editorial Navbar matching the reference design layout
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
+
+  useEffect(() => {
+    if (variant !== "editorial") return;
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40);
+
+      const sectionIds = ["faq", "ecosystem", "showcase", "about", "hero"];
+      const scrollPos = window.scrollY + 200;
+      let current = "";
+
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollPos) {
+          current = id === "hero" ? "" : id;
+          break;
+        }
+      }
+      setActiveSection(current);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [variant]);
+
+  const scrollToSection = (id: string) => {
+    if (location.pathname !== "/home" && location.pathname !== "/") {
+      navigate(`/home#${id}`);
+      return;
+    }
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+    setMobileOpen(false);
+  };
+
+  // Editorial Navbar matching Hack the North style continuous page navigation
   if (variant === "editorial") {
+    const navSections = [
+      { id: "about", label: "About" },
+      { id: "showcase", label: "Showcase" },
+      { id: "ecosystem", label: "Ecosystem" },
+      { id: "faq", label: "FAQ" },
+    ];
+
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-stone-950/80 backdrop-blur-md border-b border-white/10 shadow-xl py-0"
+            : "bg-transparent py-1"
+        }`}
+      >
         {/* Subtle top announcement bar */}
-        <div className="bg-black/20 backdrop-blur-sm text-[11px] text-white/80 text-center py-1 tracking-wider uppercase font-medium">
-          DevZ-Go — Community Showcase
+        <div
+          className={`transition-all duration-300 overflow-hidden ${
+            isScrolled ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
+          } bg-black/25 backdrop-blur-xs text-[11px] text-white/80 text-center py-1 tracking-wider uppercase font-medium`}
+        >
+          DevZ-Go — Continuous Student Developer Showcase
         </div>
 
-        <nav className="max-w-[1400px] mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
-          {/* Top Left: Profile & Submit Your Work */}
-          <div className="flex items-center gap-6 text-sm font-medium">
+        <nav className="max-w-[1400px] mx-auto px-6 md:px-10 py-3.5 flex items-center justify-between">
+          {/* Brand Logo / Home */}
+          <div className="flex items-center gap-4">
+            <Link
+              to="/home"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="font-serif text-2xl md:text-3xl text-white tracking-tight drop-shadow-md hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <span>DevZ-Go</span>
+            </Link>
+          </div>
+
+          {/* Center: Floating Section Nav Pills (Hack the North style) */}
+          <div className="hidden lg:flex items-center gap-1 bg-stone-900/60 backdrop-blur-md p-1 rounded-full border border-white/15 shadow-inner">
+            {navSections.map((sec) => {
+              const isCurrent = activeSection === sec.id;
+              return (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => scrollToSection(sec.id)}
+                  className={`relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
+                    isCurrent
+                      ? "text-stone-950 shadow-sm"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  {isCurrent && (
+                    <motion.div
+                      layoutId="active-pill"
+                      className="absolute inset-0 bg-[#fced96] rounded-full z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{sec.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right Action Icons & Direct Links */}
+          <div className="flex items-center gap-3 md:gap-4 text-white/90">
             <Link
               to="/profile"
-              className="text-white/90 hover:text-white drop-shadow-sm tracking-wide transition-colors font-sans hover:underline underline-offset-4"
+              className="hidden sm:inline-block text-white/85 hover:text-white text-xs font-semibold tracking-wide uppercase transition-colors px-2 py-1 hover:underline underline-offset-4"
             >
               Profile
             </Link>
+
             <Link
               to="/add-project"
-              className="text-white/90 hover:text-white drop-shadow-sm tracking-wide transition-colors font-sans hover:underline underline-offset-4"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-semibold tracking-wide transition-all shadow-xs"
             >
-              Submit Your Work
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>Submit Work</span>
             </Link>
-          </div>
 
-          {/* Top Center: Brand Title */}
-          <div className="absolute left-1/2 -translate-x-1/2">
             <Link
-              to="/home"
-              className="font-serif text-2xl md:text-3xl text-white tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
+              to="/wrap"
+              className="hidden xl:inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-pink-500/20 border border-amber-300/30 text-amber-200 hover:text-white text-xs font-semibold tracking-wide transition-all"
+              title="2026 Monthly Wrap"
             >
-              DevZ-Go
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>'26 Wrap</span>
             </Link>
-          </div>
 
-          {/* Top Right: Icons */}
-          <div className="flex items-center gap-4 text-white/90">
             <Link
               to="/explore"
-              className="p-1.5 hover:text-white hover:bg-white/10 rounded-full transition-all"
+              className="p-2 hover:text-white hover:bg-white/15 rounded-full transition-all"
               title="Explore Projects"
             >
-              <Search className="w-5 h-5 drop-shadow-sm" />
+              <Search className="w-4 h-4 drop-shadow-sm" />
             </Link>
-            <Link
-              to="/profile"
-              className="p-1.5 hover:text-white hover:bg-white/10 rounded-full transition-all"
-              title="My Account"
-            >
-              <User className="w-5 h-5 drop-shadow-sm" />
-            </Link>
+
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 hover:text-red-300 hover:bg-white/10 rounded-full transition-all"
+              className="p-2 hover:text-red-300 hover:bg-white/15 rounded-full transition-all"
               title="Log Out"
             >
-              <LogOut className="w-5 h-5 drop-shadow-sm" />
+              <LogOut className="w-4 h-4 drop-shadow-sm" />
             </button>
 
             {/* Mobile hamburger */}
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="md:hidden p-1.5 hover:text-white hover:bg-white/10 rounded-full transition-all"
+              className="lg:hidden p-2 hover:text-white hover:bg-white/15 rounded-full transition-all"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -101,39 +191,64 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-black/85 backdrop-blur-xl border-b border-white/10 text-white px-6 py-4 space-y-3"
+              className="lg:hidden bg-stone-950/95 backdrop-blur-xl border-b border-white/15 text-white px-6 py-5 space-y-3"
             >
-              <Link
-                to="/profile"
-                onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium py-1"
-              >
-                Profile
-              </Link>
-              <Link
-                to="/add-project"
-                onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium py-1"
-              >
-                Submit Your Work
-              </Link>
-              <Link
-                to="/explore"
-                onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium py-1"
-              >
-                Explore Projects
-              </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  handleLogout();
-                  setMobileOpen(false);
-                }}
-                className="block text-sm text-red-300 py-1"
-              >
-                Log Out
-              </button>
+              <div className="text-xs uppercase tracking-wider text-stone-400 font-bold mb-2">
+                Sections
+              </div>
+              <div className="grid grid-cols-2 gap-2 pb-3 border-b border-white/10">
+                {navSections.map((sec) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => scrollToSection(sec.id)}
+                    className="text-left text-sm font-medium py-1.5 px-2 rounded hover:bg-white/10 text-stone-200 transition-colors"
+                  >
+                    {sec.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Profile
+                </Link>
+                <Link
+                  to="/add-project"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Submit Your Work
+                </Link>
+                <Link
+                  to="/explore"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Explore Projects (TV & Cards)
+                </Link>
+                <Link
+                  to="/wrap"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-amber-300 hover:text-amber-200 flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Monthly Wrap
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileOpen(false);
+                  }}
+                  className="block text-sm text-red-300 py-1"
+                >
+                  Log Out
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
