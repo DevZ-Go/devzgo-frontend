@@ -4,19 +4,31 @@ import { motion, AnimatePresence } from "motion/react";
 import { ExploreFilters } from "../components/ExploreFilters";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { toTvProject } from "../components/tvworld/worldLayout";
+import type { TvProject } from "../components/tvworld/types";
+import { useProjectLike } from "../hooks/useProjectLike";
+import { useAuth } from "../auth/AuthContext";
 
-// A simple deterministic hash to decide if "liked by coders" (red) or "employers" (green)
-function getLikeStatus(id: string, likes: number) {
-  if (likes >= 10000) return { color: "bg-purple-500", text: "10K+ LIKES" };
-  if (likes >= 5000) return { color: "bg-blue-500", text: "5K+ LIKES" };
-  
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const isCoders = Math.abs(hash) % 2 === 0;
-  if (isCoders) return { color: "bg-red-500", text: "LIKED BY CODERS" };
-  return { color: "bg-green-500", text: "LIKED BY EMPLOYERS" };
+function CardLikeButton({ project }: { project: TvProject }) {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { count, liked, busy, toggle } = useProjectLike(project.id, project.likes, project.isLiked);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!token) navigate("/login");
+        else void toggle();
+      }}
+      className={`w-full py-3 rounded-2xl font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
+        liked ? "bg-red-500 text-white" : "bg-stone-200 text-stone-700"
+      }`}
+    >
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+      {liked ? "LIKED" : "LIKE"} · {count.toLocaleString()}
+    </button>
+  );
 }
 
 export function CardsWorldPage() {
@@ -135,8 +147,6 @@ export function CardsWorldPage() {
 
                 if (!isCenter && !isLeft && !isRight) return null;
 
-                const likeData = getLikeStatus(t.id, t.likes);
-
                 // Media: Try video first, fallback to image
                 const mediaUrl = t.videoUrl || t.coverUrl;
 
@@ -213,10 +223,7 @@ export function CardsWorldPage() {
                       {/* Action Bar (Bottom) */}
                       {isCenter && (
                         <div className="p-4 bg-white border-t-4 border-stone-200 shrink-0 space-y-3">
-                          <button className={`w-full py-3 rounded-2xl text-white font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${likeData.color}`}>
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
-                            {likeData.text}
-                          </button>
+                          <CardLikeButton project={t} />
                           <div className="flex gap-2">
                             <button
                               onClick={() => navigate(`/project/${t.id}`)}

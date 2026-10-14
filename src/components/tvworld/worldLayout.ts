@@ -90,6 +90,7 @@ export function toTvProject(api: ApiProject, index: number): TvProject {
     createdAt: api.created_at ?? null,
     isOwner: api.is_owner === true,
     likes: ui.likes,
+    isLiked: Boolean(ui.isLiked),
   };
 }
 

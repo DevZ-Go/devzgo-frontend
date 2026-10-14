@@ -249,6 +249,15 @@ export async function updateProject(
   return data;
 }
 
+export async function setProjectLiked(
+  projectId: string,
+  liked: boolean
+): Promise<{ likes_count: number; is_liked: boolean }> {
+  const url = `/projects/${encodeURIComponent(projectId)}/like`;
+  const { data } = liked ? await api.post(url) : await api.delete(url);
+  return data;
+}
+
 export async function deleteProject(projectId: string): Promise<void> {
   await api.delete(`/projects/${encodeURIComponent(projectId)}`, {
     validateStatus: (s) => s === 204 || (s >= 200 && s < 300),
