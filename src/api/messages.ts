@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, USE_MOCK, assetUrlOrNull } from "./config";
 import type { Conversation, Message } from "../types/network";
 import { INITIAL_DEMO_MESSAGES, INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
@@ -47,7 +48,7 @@ function mapConversation(c: Record<string, unknown>): Conversation {
       username: (other.username || "developer") as string,
       fullName: (other.full_name || other.fullName || other.username || "Developer") as string,
       headline: (other.headline || null) as string | null,
-      avatarUrl: (other.avatar_url || other.avatarUrl || null) as string | null,
+      avatarUrl: assetUrlOrNull(other.avatar_url || other.avatarUrl),
     },
     lastMessage: mapMessage(last),
     unreadCount: (c.unread_count ?? c.unreadCount ?? 0) as number,
@@ -61,7 +62,7 @@ export async function fetchConversations(): Promise<Conversation[]> {
       return res.data.map(mapConversation);
     }
   } catch (err) {
-    console.warn("Backend unavailable, using local conversations:", err);
+    demoFallback(err);
   }
 
   const allMsgs = getLocalMessages();
@@ -103,7 +104,7 @@ export async function fetchConversationThread(otherUserId: string): Promise<Mess
       return res.data.map(mapMessage);
     }
   } catch (err) {
-    console.warn("Backend unavailable, loading local thread:", err);
+    demoFallback(err);
   }
 
   const allMsgs = getLocalMessages();
@@ -121,7 +122,7 @@ export async function sendMessage(receiverId: string, content: string): Promise<
       return mapMessage(res.data);
     }
   } catch (err) {
-    console.warn("Backend unavailable, sending message locally:", err);
+    demoFallback(err);
   }
 
   const allMsgs = getLocalMessages();
@@ -149,7 +150,7 @@ export async function markConversationRead(otherUserId: string): Promise<void> {
     await api.put(`/messages/read/${otherUserId}`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, marking conversation read locally:", err);
+    demoFallback(err);
   }
 
   const allMsgs = getLocalMessages();
@@ -169,7 +170,7 @@ export async function fetchUnreadMessagesCount(): Promise<number> {
       return res.data.unread_count;
     }
   } catch {
-    // fallback
+    if (!USE_MOCK) return 0;
   }
 
   const allMsgs = getLocalMessages();

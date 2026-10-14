@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, USE_MOCK, assetUrlOrNull } from "./config";
 import type { DeveloperProfile } from "../types/network";
 import { INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
@@ -35,7 +36,7 @@ function mapProfile(p: Record<string, unknown>): DeveloperProfile {
     fullName: (p.full_name || p.fullName || p.username || "") as string,
     headline: (p.headline || null) as string | null,
     bio: (p.bio || null) as string | null,
-    avatarUrl: (p.avatar_url || p.avatarUrl || null) as string | null,
+    avatarUrl: assetUrlOrNull(p.avatar_url || p.avatarUrl),
     githubUrl: (p.github_url || p.githubUrl || null) as string | null,
     linkedinUrl: (p.linkedin_url || p.linkedinUrl || null) as string | null,
     websiteUrl: (p.website_url || p.websiteUrl || null) as string | null,
@@ -56,7 +57,7 @@ export async function fetchUserProfile(userIdOrUsername: string): Promise<Develo
       return mapProfile(res.data);
     }
   } catch (err) {
-    console.warn("Backend unavailable, loading local profile:", err);
+    demoFallback(err);
   }
 
   const list = getLocalProfiles();
@@ -67,34 +68,35 @@ export async function fetchUserProfile(userIdOrUsername: string): Promise<Develo
       u.username.toLowerCase() === userIdOrUsername.toLowerCase()
   );
 
-  if (match) return match;
+  if (!match) throw new Error("Profile not found");
+  return match;
+}
 
-  // Fallback profile if not found
-  return {
-    id: userIdOrUsername,
-    userId: userIdOrUsername,
-    username: userIdOrUsername,
-    email: `${userIdOrUsername}@devzgo.com`,
-    fullName: userIdOrUsername.charAt(0).toUpperCase() + userIdOrUsername.slice(1),
-    headline: "DevZ-Go Developer",
-    bio: "Passionate developer showcasing work on DevZ-Go.",
-    projectsCount: 1,
-    connectionsCount: 5,
-    collaborationsCount: 1,
-    connectionStatus: "none",
-  };
+export async function fetchMyProfile(): Promise<DeveloperProfile> {
+  if (USE_MOCK) return fetchUserProfile("janasi");
+  return mapProfile((await api.get("/profiles/me")).data);
 }
 
 export async function updateMyProfile(
   payload: Partial<DeveloperProfile>
 ): Promise<DeveloperProfile> {
   try {
-    const res = await api.put("/profiles/me", payload);
+    const res = await api.put("/profiles/me", {
+      full_name: payload.fullName,
+      headline: payload.headline,
+      bio: payload.bio,
+      avatar_url: payload.avatarUrl,
+      github_url: payload.githubUrl,
+      linkedin_url: payload.linkedinUrl,
+      website_url: payload.websiteUrl,
+      skills: payload.skills,
+      location: payload.location,
+    });
     if (res.data) {
       return mapProfile(res.data);
     }
   } catch (err) {
-    console.warn("Backend unavailable, updating profile locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalProfiles();
@@ -113,12 +115,12 @@ export async function updateMyProfile(
 
 export async function searchDevelopers(query: string): Promise<DeveloperProfile[]> {
   try {
-    const res = await api.get("/profiles/search", { params: { q: query } });
+    const res = await api.get("/profiles/search", { params: { query } });
     if (Array.isArray(res.data)) {
       return res.data.map(mapProfile);
     }
   } catch (err) {
-    console.warn("Backend unavailable, searching developers locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalProfiles();

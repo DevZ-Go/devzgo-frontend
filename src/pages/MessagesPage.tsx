@@ -20,6 +20,7 @@ import {
 import { fetchUserProfile } from "../api/profiles";
 import type { Conversation, Message, ConnectionUserSummary } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
+import { getApiErrorMessage } from "../utils/apiError";
 
 function formatMessageTime(isoString: string): string {
   try {
@@ -46,6 +47,7 @@ export function MessagesPage() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -138,11 +140,12 @@ export function MessagesPage() {
     if (!inputContent.trim() || !selectedUser || sending) return;
 
     const content = inputContent.trim();
-    setInputContent("");
     setSending(true);
+    setSendError(null);
 
     try {
       const newMsg = await sendMessage(selectedUser.id, content);
+      setInputContent("");
       setMessages((prev) => [...prev, newMsg]);
 
       // Update conversation in list
@@ -164,8 +167,8 @@ export function MessagesPage() {
           ...prev,
         ];
       });
-    } catch {
-      // rollback
+    } catch (err) {
+      setSendError(getApiErrorMessage(err));
     } finally {
       setSending(false);
     }
@@ -253,7 +256,6 @@ export function MessagesPage() {
                             {conv.otherUser.username.slice(0, 2).toUpperCase()}
                           </div>
                         )}
-                        <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -410,6 +412,9 @@ export function MessagesPage() {
                   <div ref={messagesEndRef} />
                 </div>
 
+                {sendError && (
+                  <p className="px-4 pt-2 text-xs text-rose-600 bg-white">{sendError}</p>
+                )}
                 {/* Input Dock */}
                 <form
                   onSubmit={handleSendMessage}
