@@ -407,10 +407,19 @@
 .tvw-hud--tr {
   right: 20px;
   top: 16px;
+  max-width: calc(100% - 260px);
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   align-items: center;
   pointer-events: auto;
+}
+.tvw-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .tvw-hud--br {
   right: 20px;
@@ -477,6 +486,21 @@
   padding: 8px 10px;
   max-width: 160px;
 }
+.tvw-input {
+  font-family: var(--tvw-font);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--tvw-ink);
+  background: #060607;
+  border: 1px solid var(--tvw-line);
+  padding: 8px 10px;
+  width: 180px;
+}
+.tvw-input::placeholder {
+  color: var(--tvw-dim);
+  text-transform: uppercase;
+}
+.tvw-input:focus-visible,
 .tvw-select:focus-visible,
 .tvw-btn:focus-visible {
   outline: 1px solid #8a97ab;

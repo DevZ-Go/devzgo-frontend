@@ -13,6 +13,7 @@ import type {
   CreateProjectResponse,
   ProjectFileEntry,
   ProjectFileContentResponse,
+  ProjectFilters,
   UpdateProjectPayload,
   WorkspaceUploadResponse,
 } from "./projects";
@@ -223,7 +224,7 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
 /* ── Project mocks ── */
 
 export async function fetchProjects(
-  _params?: Record<string, string | number | boolean | undefined>
+  _params?: ProjectFilters
 ): Promise<ApiProject[]> {
   await delay(500);
   return [...MOCK_PROJECTS];
