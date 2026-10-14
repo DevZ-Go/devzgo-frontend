@@ -16,7 +16,9 @@ import {
   fetchConversationThread,
   sendMessage,
   markConversationRead,
+  mapMessage,
 } from "../api/messages";
+import { useRealtimeEvent } from "../realtime/RealtimeProvider";
 import { fetchUserProfile } from "../api/profiles";
 import type { Conversation, Message, ConnectionUserSummary } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
@@ -129,6 +131,21 @@ export function MessagesPage() {
       cancelled = true;
     };
   }, [selectedUser]);
+
+  // Live updates for the open thread
+  useRealtimeEvent((event) => {
+    if (!selectedUser) return;
+    if (event.type === "message.new") {
+      const msg = mapMessage(event.message as Record<string, unknown>);
+      if (msg.senderId !== selectedUser.id) return;
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      void markConversationRead(selectedUser.id);
+    } else if (event.type === "message.read" && event.by === selectedUser.id) {
+      setMessages((prev) => prev.map((m) => (m.senderId === selectedUser.id ? m : { ...m, read: true })));
+    } else if (event.type === "resync" || event.type === "poll") {
+      void fetchConversationThread(selectedUser.id).then(setMessages).catch(() => undefined);
+    }
+  });
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {

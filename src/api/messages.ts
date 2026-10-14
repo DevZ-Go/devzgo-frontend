@@ -27,7 +27,7 @@ function saveLocalMessages(messages: Record<string, Message[]>) {
   }
 }
 
-function mapMessage(m: Record<string, unknown>): Message {
+export function mapMessage(m: Record<string, unknown>): Message {
   return {
     id: String(m.id),
     senderId: (m.sender_id || m.senderId || "") as string,
