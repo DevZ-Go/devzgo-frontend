@@ -138,6 +138,14 @@ export interface ProjectCollaborator {
   avatarUrl?: string | null;
   role: string;
   createdAt: string;
+  isOwner?: boolean;
+  permissions?: CollabPermissions;
+}
+
+export interface CollabPermissions {
+  can_edit_details: boolean;
+  can_manage_files: boolean;
+  can_view_secrets: boolean;
 }
 
 export interface NotificationItem {

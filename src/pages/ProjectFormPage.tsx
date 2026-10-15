@@ -191,7 +191,7 @@ export function ProjectFormPage() {
       return;
     }
     if (!loadedProject) return;
-    if (loadedProject.is_owner === true) {
+    if (loadedProject.is_owner === true || loadedProject.access?.edit) {
       setForbidden(false);
       return;
     }
