@@ -133,7 +133,7 @@ export function ProfilePage() {
         }
 
         // Recent feed activities for this user
-        const allFeed = await fetchFeed("all");
+        const allFeed = await fetchFeed("all", undefined, profileData.userId);
         if (!cancelled) {
           const userActs = allFeed.filter(
             (a) =>

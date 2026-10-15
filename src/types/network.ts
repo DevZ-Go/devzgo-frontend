@@ -50,6 +50,7 @@ export interface ActivityComment {
   authorAvatar?: string | null;
   commentText: string;
   createdAt: string;
+  canDelete?: boolean;
 }
 
 export interface FeedActivity {
@@ -61,6 +62,9 @@ export interface FeedActivity {
   authorHeadline?: string | null;
   activityType:
     | "post"
+    | "milestone"
+    | "collab_call"
+    | "project_update"
     | "project_added"
     | "project_analyzed"
     | "profile_updated"
@@ -77,6 +81,7 @@ export interface FeedActivity {
   isLiked: boolean;
   commentsCount: number;
   comments: ActivityComment[];
+  canEdit?: boolean;
 }
 
 export interface ConnectionUserSummary {
