@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, assetUrlOrNull } from "./config";
 import type { CollaborationRequest, ProjectCollaborator } from "../types/network";
 import { INITIAL_PROJECT_COLLABORATORS, INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
@@ -53,11 +54,11 @@ function mapCollaborator(c: Record<string, unknown>): ProjectCollaborator {
     projectId: (c.project_id || c.projectId || "") as string,
     userId: (c.user_id || c.userId || String(u.id || "")) as string,
     username: (u.username || c.username || "developer") as string,
-    fullName: (u.full_name || u.fullName || c.fullName || u.username || "Developer") as string,
+    fullName: (u.full_name || u.fullName || c.full_name || c.fullName || u.username || c.username || "Developer") as string,
     headline: (u.headline || c.headline || null) as string | null,
-    avatarUrl: (u.avatar_url || u.avatarUrl || c.avatarUrl || null) as string | null,
+    avatarUrl: assetUrlOrNull(u.avatar_url || u.avatarUrl || c.avatar_url || c.avatarUrl),
     role: (c.role || "Collaborator") as string,
-    createdAt: (c.joined_at || c.createdAt || new Date().toISOString()) as string,
+    createdAt: (c.created_at || c.joined_at || c.createdAt || new Date().toISOString()) as string,
   };
 }
 
@@ -73,7 +74,7 @@ function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
       username: (u.username || "developer") as string,
       fullName: (u.full_name || u.fullName || u.username || "Developer") as string,
       headline: (u.headline || null) as string | null,
-      avatarUrl: (u.avatar_url || u.avatarUrl || null) as string | null,
+      avatarUrl: assetUrlOrNull(u.avatar_url || u.avatarUrl),
     },
     projectOwnerId: (r.project_owner_id || r.projectOwnerId || "") as string,
     role: (r.role || "Collaborator") as string,
@@ -85,12 +86,12 @@ function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
 
 export async function fetchProjectCollaborators(projectId: string): Promise<ProjectCollaborator[]> {
   try {
-    const res = await api.get(`/projects/${projectId}/collaborators`);
+    const res = await api.get(`/collaborations/projects/${projectId}/collaborators`);
     if (Array.isArray(res.data)) {
       return res.data.map(mapCollaborator);
     }
   } catch (err) {
-    console.warn("Backend unavailable, loading local collaborators:", err);
+    demoFallback(err);
   }
 
   const all = getLocalCollaborators();
@@ -101,12 +102,12 @@ export async function fetchProjectCollaborationRequests(
   projectId: string
 ): Promise<CollaborationRequest[]> {
   try {
-    const res = await api.get(`/projects/${projectId}/collaboration-requests`);
+    const res = await api.get(`/collaborations/projects/${projectId}/requests`);
     if (Array.isArray(res.data)) {
       return res.data.map(mapCollabRequest);
     }
   } catch (err) {
-    console.warn("Backend unavailable, loading local collaboration requests:", err);
+    demoFallback(err);
   }
 
   const reqs = getLocalRequests();
@@ -118,12 +119,12 @@ export async function requestCollaboration(
   payload: { role: string; message?: string }
 ): Promise<CollaborationRequest> {
   try {
-    const res = await api.post(`/projects/${projectId}/collaboration-requests`, payload);
+    const res = await api.post(`/collaborations/projects/${projectId}/requests`, payload);
     if (res.data) {
       return mapCollabRequest(res.data);
     }
   } catch (err) {
-    console.warn("Backend unavailable, creating collaboration request locally:", err);
+    demoFallback(err);
   }
 
   const reqs = getLocalRequests();
@@ -159,7 +160,7 @@ export async function acceptCollaborationRequest(
     await api.put(`/collaborations/requests/${requestId}/accept`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, accepting collaboration locally:", err);
+    demoFallback(err);
   }
 
   const reqs = getLocalRequests();
@@ -196,7 +197,7 @@ export async function declineCollaborationRequest(requestId: string): Promise<vo
     await api.put(`/collaborations/requests/${requestId}/decline`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, declining collaboration locally:", err);
+    demoFallback(err);
   }
 
   const reqs = getLocalRequests();

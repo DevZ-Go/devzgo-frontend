@@ -22,7 +22,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject, fetchMyProjects, fetchProjects } from "../api/projects";
-import { fetchUserProfile, updateMyProfile } from "../api/profiles";
+import { fetchMyProfile, fetchUserProfile, updateMyProfile } from "../api/profiles";
 import {
   fetchConnectionStatus,
   sendConnectionRequest,
@@ -122,8 +122,7 @@ export function ProfilePage() {
       setError(null);
 
       try {
-        const targetIdentifier = routeId || (user?.username ?? "janasi");
-        const profileData = await fetchUserProfile(targetIdentifier);
+        const profileData = isOwnProfile ? await fetchMyProfile() : await fetchUserProfile(routeId!);
         if (cancelled) return;
         setDevProfile(profileData);
 
@@ -198,8 +197,8 @@ export function ProfilePage() {
       });
       setDevProfile(updated);
       setEditModalOpen(false);
-    } catch {
-      // Ignore
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     } finally {
       setSavingProfile(false);
     }
@@ -207,15 +206,19 @@ export function ProfilePage() {
 
   async function handleConnectToggle() {
     if (!devProfile) return;
-    if (connectionState.status === "pending_received" && connectionState.connectionId) {
-      await acceptConnection(connectionState.connectionId);
-      setConnectionState({ status: "connected" });
-      setDevProfile((prev) =>
-        prev ? { ...prev, connectionsCount: prev.connectionsCount + 1 } : null
-      );
-    } else if (connectionState.status === "none") {
-      await sendConnectionRequest(devProfile.userId || devProfile.id);
-      setConnectionState({ status: "pending_sent" });
+    try {
+      if (connectionState.status === "pending_received" && connectionState.connectionId) {
+        await acceptConnection(connectionState.connectionId);
+        setConnectionState({ status: "connected" });
+        setDevProfile((prev) =>
+          prev ? { ...prev, connectionsCount: prev.connectionsCount + 1 } : null
+        );
+      } else if (connectionState.status === "none") {
+        await sendConnectionRequest(devProfile.userId || devProfile.id);
+        setConnectionState({ status: "pending_sent" });
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     }
   }
 
@@ -294,10 +297,6 @@ export function ProfilePage() {
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/80">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Verified Developer
-                  </span>
                   <span className="text-xs text-gray-400 font-mono">
                     @{devProfile?.username || "user"}
                   </span>

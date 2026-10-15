@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, assetUrlOrNull } from "./config";
 import type { FeedActivity, ActivityComment } from "../types/network";
 import { INITIAL_DEMO_ACTIVITIES } from "../data/networkDemoData";
 
@@ -33,12 +34,12 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
     userId: (a.user_id || a.userId || "") as string,
     authorName: (a.author_name || a.authorName || "Developer") as string,
     authorUsername: (a.author_username || a.authorUsername || "developer") as string,
-    authorAvatar: (a.author_avatar || a.authorAvatar || null) as string | null,
+    authorAvatar: assetUrlOrNull(a.author_avatar || a.authorAvatar),
     authorHeadline: (a.author_headline || a.authorHeadline || null) as string | null,
     activityType: ((a.activity_type || a.activityType || "post") as FeedActivity["activityType"]),
     title: (a.title || null) as string | null,
     content: (a.content || "") as string,
-    mediaUrl: (a.media_url || a.mediaUrl || null) as string | null,
+    mediaUrl: assetUrlOrNull(a.media_url || a.mediaUrl),
     isDemo: Boolean(a.is_demo ?? a.isDemo ?? false),
     createdAt: (a.created_at || a.createdAt || new Date().toISOString()) as string,
     likesCount:
@@ -61,7 +62,7 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
           authorId: (c.author_id || c.authorId || "") as string,
           authorName: (c.author_name || c.authorName || "Developer") as string,
           authorUsername: (c.author_username || c.authorUsername || "dev") as string,
-          authorAvatar: (c.author_avatar || c.authorAvatar || null) as string | null,
+          authorAvatar: assetUrlOrNull(c.author_avatar || c.authorAvatar),
           commentText: (c.comment_text || c.commentText || "") as string,
           createdAt: (c.created_at || c.createdAt || new Date().toISOString()) as string,
         }))
@@ -73,7 +74,7 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
           shortDescription:
             (proj.short_description || proj.shortDescription || null) as string | null,
           coverImageUrl:
-            (proj.cover_image_url || proj.coverImageUrl || null) as string | null,
+            assetUrlOrNull(proj.cover_image_url || proj.coverImageUrl),
           techStacks: (proj.tech_stacks || proj.techStacks || []) as string[],
           category: (proj.category || null) as string | null,
           githubUrl: (proj.github_url || proj.githubUrl || null) as string | null,
@@ -101,7 +102,7 @@ export async function fetchFeed(filter: string = "all", search?: string): Promis
       return res.data.activities.map(mapFeedActivity);
     }
   } catch (err) {
-    console.warn("Backend unavailable, using local interactive store:", err);
+    demoFallback(err);
   }
 
   // Fallback to local store with filter & search
@@ -144,7 +145,7 @@ export async function createPost(payload: {
       return mapFeedActivity(res.data);
     }
   } catch (err) {
-    console.warn("Backend unavailable, creating post locally:", err);
+    demoFallback(err);
   }
 
   const feed = getLocalFeed();
@@ -185,7 +186,7 @@ export async function toggleActivityLike(
       };
     }
   } catch (err) {
-    console.warn("Backend unavailable, toggling like locally:", err);
+    demoFallback(err);
   }
 
   const feed = getLocalFeed();
@@ -224,13 +225,13 @@ export async function addActivityComment(
         authorId: res.data.author_id || res.data.authorId || "",
         authorName: res.data.author_name || res.data.authorName || "Janasi Rajput",
         authorUsername: res.data.author_username || res.data.authorUsername || "janasi",
-        authorAvatar: res.data.author_avatar || res.data.authorAvatar || null,
+        authorAvatar: assetUrlOrNull(res.data.author_avatar || res.data.authorAvatar),
         commentText: res.data.comment_text || res.data.commentText || commentText,
         createdAt: res.data.created_at || res.data.createdAt || new Date().toISOString(),
       };
     }
   } catch (err) {
-    console.warn("Backend unavailable, adding comment locally:", err);
+    demoFallback(err);
   }
 
   const feed = getLocalFeed();
@@ -266,7 +267,7 @@ export async function deleteActivityComment(commentId: string): Promise<void> {
     await api.delete(`/network/comments/${commentId}`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, deleting comment locally:", err);
+    demoFallback(err);
   }
 
   const feed = getLocalFeed();

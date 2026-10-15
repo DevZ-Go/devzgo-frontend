@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, Mail, Lock } from "lucide-react";
 import { loginWithPassword } from "../api";
@@ -12,6 +12,7 @@ const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const from = (useLocation().state as { from?: { pathname?: string; search?: string } } | null)?.from;
   const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,7 @@ export function LoginPage() {
         setError("Signed in but could not verify your session. Try again.");
         return;
       }
-      navigate("/home", { replace: true });
+      navigate(from?.pathname ? from.pathname + (from.search ?? "") : "/home", { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
