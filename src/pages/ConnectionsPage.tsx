@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, Search } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { InvitationsInbox } from "../components/InvitationsInbox";
 import {
   acceptConnection,
   declineConnection,
@@ -75,6 +76,7 @@ export function ConnectionsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My network</h1>
           <Link to="/network" className="text-sm text-blue-600 hover:underline">Back to feed</Link>
         </div>
+        <InvitationsInbox />
         <div role="tablist" className="mb-4 flex gap-2">
           {TABS.map(([key, label]) => (
             <button key={key} role="tab" aria-selected={tab === key}

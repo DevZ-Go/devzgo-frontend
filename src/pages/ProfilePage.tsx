@@ -23,6 +23,7 @@ import { deleteProject, fetchMyProjects, fetchProjects } from "../api/projects";
 import { fetchMyProfile, fetchUserProfile, updateMyProfile } from "../api/profiles";
 import { fetchFeed } from "../api/network";
 import { ConnectButton } from "../components/ConnectButton";
+import { CollaboratingOn } from "../components/CollaboratingOn";
 
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -421,6 +422,8 @@ export function ProfilePage() {
             </div>
           </div>
         )}
+
+        {devProfile && <CollaboratingOn userId={devProfile.userId || devProfile.id} />}
 
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 mb-8 gap-4">
