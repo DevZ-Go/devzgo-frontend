@@ -747,20 +747,27 @@ export function NetworkPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                <Link to="/network/connections" className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition">
                   <p className="text-xs text-gray-500 font-medium">Connections</p>
                   <p className="text-2xl font-black text-gray-900 mt-1">
                     {connections?.accepted?.length || 0}
                   </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                </Link>
+                <Link to="/network/connections?tab=incoming" className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition">
                   <p className="text-xs text-gray-500 font-medium">Pending</p>
                   <p className="text-2xl font-black text-blue-600 mt-1">
                     {connections?.pendingIncoming?.length || 0}
                   </p>
-                </div>
+                </Link>
               </div>
 
+              <Link
+                to="/network/connections"
+                className="mb-2 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-800 hover:bg-gray-50 transition"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Manage connections
+              </Link>
               <Link
                 to="/messages"
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-2.5 text-xs font-semibold hover:bg-gray-800 transition"

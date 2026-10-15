@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL, USE_MOCK } from "../api/config";
-import { queryClient, refreshForEvent } from "../api/queryKeys";
+import { keysForEvent, queryClient, queryKeys, refreshForEvent } from "../api/queryKeys";
 
 export type RealtimeEvent = { type: string; [key: string]: unknown };
 
@@ -15,6 +15,8 @@ function emit(event: RealtimeEvent) {
   const everything = event.type === "poll" || event.type === "resync";
   if (everything || event.type.startsWith("message.")) window.dispatchEvent(new CustomEvent("devzgo:messages-updated"));
   if (everything || event.type === "notification.new") window.dispatchEvent(new CustomEvent("devzgo:notifications-updated"));
+  const keys = keysForEvent(event);
+  if (keys === "all" || keys.includes(queryKeys.connections)) window.dispatchEvent(new CustomEvent("devzgo:connections-updated"));
 }
 
 /** Keeps one WebSocket open while logged in; reconnects with backoff and polls every 15s while disconnected. */

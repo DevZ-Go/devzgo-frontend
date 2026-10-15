@@ -94,6 +94,8 @@ export interface Connection {
   status: "pending" | "accepted" | "declined" | "removed";
   createdAt: string;
   updatedAt?: string | null;
+  acceptedAt?: string | null;
+  mutualCount?: number;
   partner: ConnectionUserSummary;
 }
 

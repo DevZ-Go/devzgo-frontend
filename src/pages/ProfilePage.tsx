@@ -9,8 +9,6 @@ import {
   Calendar,
   Sparkles,
   Send,
-  UserPlus,
-  Check,
   Github,
   MapPin,
   Pencil,
@@ -23,12 +21,8 @@ import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject, fetchMyProjects, fetchProjects } from "../api/projects";
 import { fetchMyProfile, fetchUserProfile, updateMyProfile } from "../api/profiles";
-import {
-  fetchConnectionStatus,
-  sendConnectionRequest,
-  acceptConnection,
-} from "../api/connections";
 import { fetchFeed } from "../api/network";
+import { ConnectButton } from "../components/ConnectButton";
 
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -69,11 +63,6 @@ export function ProfilePage() {
   }, [routeId, user]);
 
   const [devProfile, setDevProfile] = useState<DeveloperProfile | null>(null);
-  const [connectionState, setConnectionState] = useState<{
-    status: "none" | "pending_sent" | "pending_received" | "connected";
-    connectionId?: string;
-  }>({ status: "none" });
-
   const [projects, setProjects] = useState<Project[]>([]);
   const [activities, setActivities] = useState<FeedActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,11 +114,6 @@ export function ProfilePage() {
         const profileData = isOwnProfile ? await fetchMyProfile() : await fetchUserProfile(routeId!);
         if (cancelled) return;
         setDevProfile(profileData);
-
-        if (!isOwnProfile) {
-          const cStatus = await fetchConnectionStatus(profileData.userId || profileData.id);
-          if (!cancelled) setConnectionState(cStatus);
-        }
 
         // Projects
         if (isOwnProfile) {
@@ -201,24 +185,6 @@ export function ProfilePage() {
       setError(getApiErrorMessage(err));
     } finally {
       setSavingProfile(false);
-    }
-  }
-
-  async function handleConnectToggle() {
-    if (!devProfile) return;
-    try {
-      if (connectionState.status === "pending_received" && connectionState.connectionId) {
-        await acceptConnection(connectionState.connectionId);
-        setConnectionState({ status: "connected" });
-        setDevProfile((prev) =>
-          prev ? { ...prev, connectionsCount: prev.connectionsCount + 1 } : null
-        );
-      } else if (connectionState.status === "none") {
-        await sendConnectionRequest(devProfile.userId || devProfile.id);
-        setConnectionState({ status: "pending_sent" });
-      }
-    } catch (err) {
-      setError(getApiErrorMessage(err));
     }
   }
 
@@ -378,34 +344,7 @@ export function ProfilePage() {
                     </>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        onClick={handleConnectToggle}
-                        disabled={connectionState.status === "pending_sent"}
-                        className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold transition ${
-                          connectionState.status === "connected"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : connectionState.status === "pending_sent"
-                            ? "bg-gray-100 text-gray-500 cursor-default"
-                            : connectionState.status === "pending_received"
-                            ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                            : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg"
-                        }`}
-                      >
-                        {connectionState.status === "connected" ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" /> Connected
-                          </>
-                        ) : connectionState.status === "pending_sent" ? (
-                          <>Pending Request</>
-                        ) : connectionState.status === "pending_received" ? (
-                          <>Accept Request</>
-                        ) : (
-                          <>
-                            <UserPlus className="w-3.5 h-3.5" /> Connect
-                          </>
-                        )}
-                      </button>
+                      {devProfile && <ConnectButton userId={devProfile.userId || devProfile.id} />}
 
                       <button
                         type="button"

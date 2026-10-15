@@ -17,6 +17,7 @@ import { CardsWorldPage } from "./pages/CardsWorldPage";
 import { DevelopersPage } from "./pages/DevelopersPage";
 import { WrapPage } from "./pages/WrapPage";
 import { NetworkPage } from "./pages/NetworkPage";
+import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { MessagesPage } from "./pages/MessagesPage";
 
 export const router = createBrowserRouter([
@@ -56,6 +57,7 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: "/network/connections", element: <ProtectedRoute><ConnectionsPage /></ProtectedRoute> },
       {
         path: "/messages",
         element: (
