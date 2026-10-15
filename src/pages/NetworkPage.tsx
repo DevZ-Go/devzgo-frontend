@@ -33,6 +33,7 @@ import {
 import type { FeedActivity, Connection, ConnectionUserSummary } from "../types/network";
 import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 import { useAuth } from "../auth/AuthContext";
+import { FeedProjectStats } from "../components/FeedProjectStats";
 
 function formatTimeAgo(isoString: string): string {
   try {
@@ -573,6 +574,7 @@ export function NetworkPage() {
                           </div>
                         </Link>
                       )}
+                      {activity.project && !activity.isDemo && <FeedProjectStats project={activity.project} />}
 
                       {/* Interactive Action Bar */}
                       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">

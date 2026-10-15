@@ -76,6 +76,9 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
           coverImageUrl:
             assetUrlOrNull(proj.cover_image_url || proj.coverImageUrl),
           techStacks: (proj.tech_stacks || proj.techStacks || []) as string[],
+          likesCount: Number(proj.likes_count ?? 0),
+          isLiked: Boolean(proj.is_liked),
+          commentsCount: Number(proj.comments_count ?? 0),
           category: (proj.category || null) as string | null,
           githubUrl: (proj.github_url || proj.githubUrl || null) as string | null,
           complexity: (proj.complexity || null) as string | null,

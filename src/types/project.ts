@@ -34,8 +34,8 @@ export interface ApiProject {
   likes?: number;
   likes_count?: number;
   is_liked?: boolean;
-  views?: number;
-  comments?: number;
+  comments_count?: number;
+  comments_enabled?: boolean;
   owner?: ApiProjectOwner;
   owner_username?: string;
   /** ISO timestamp from the backend (used to keep TV world positions stable) */
@@ -51,8 +51,7 @@ export interface Project {
   techStack: string[];
   likes: number;
   isLiked?: boolean;
-  views: number;
-  comments: number;
+  commentsCount: number;
   featured: boolean;
   author: {
     name: string;
