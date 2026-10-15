@@ -19,6 +19,7 @@ import "prismjs/components/prism-yaml";
 import "prismjs/components/prism-markdown";
 import { Navbar } from "../components/Navbar";
 import { CollaborationModal } from "../components/CollaborationModal";
+import { ProjectComments } from "../components/ProjectComments";
 import {
   fetchProjectCollaborators,
   fetchProjectCollaborationRequests,
@@ -684,6 +685,8 @@ export function ProjectDetailPage() {
                 </>
               )}
             </section>
+
+            {id && <ProjectComments projectId={id} enabled={project.comments_enabled !== false} signedIn={Boolean(token)} />}
           </article>
         )}
       </main>

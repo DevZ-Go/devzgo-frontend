@@ -227,6 +227,8 @@ export async function createProject(
 export interface UpdateProjectPayload extends CreateProjectPayload {
   cover_image_url?: string | null;
   demo_video_url?: string | null;
+  /** Omit to leave the owner's comments switch as it is. */
+  comments_enabled?: boolean;
 }
 
 export async function updateProject(
@@ -244,9 +246,34 @@ export async function updateProject(
     tech_stack_ids: payload.tech_stack_ids,
     cover_image_url: payload.cover_image_url ?? null,
     demo_video_url: payload.demo_video_url ?? null,
+    comments_enabled: payload.comments_enabled,
   };
   const { data } = await api.put<ApiProject>(`/projects/${projectId}`, body);
   return data;
+}
+
+export interface ProjectComment {
+  id: string;
+  body: string;
+  created_at: string;
+  author: { id: string; username: string; full_name: string; avatar_url: string | null };
+  can_delete: boolean;
+}
+
+/** Newest first; pass the previous page's `next_page` to load older comments. */
+export async function fetchProjectComments(projectId: string, page?: string | null) {
+  const { data } = await api.get<{ items: ProjectComment[]; next_page: string | null }>(
+    `/projects/${encodeURIComponent(projectId)}/comments`, { params: { page: page || undefined } });
+  return data;
+}
+
+export async function addProjectComment(projectId: string, body: string): Promise<ProjectComment> {
+  const { data } = await api.post<ProjectComment>(`/projects/${encodeURIComponent(projectId)}/comments`, { body });
+  return data;
+}
+
+export async function deleteProjectComment(projectId: string, commentId: string): Promise<void> {
+  await api.delete(`/projects/${encodeURIComponent(projectId)}/comments/${encodeURIComponent(commentId)}`);
 }
 
 export async function setProjectLiked(

@@ -6,6 +6,7 @@ export const queryKeys = {
   me: ["me"] as const,
   projects: ["projects"] as const,
   project: (id: string) => ["projects", id] as const,
+  projectLike: (id: string) => ["projects", id, "like"] as const,
   projectComments: (id: string) => ["projects", id, "comments"] as const,
   feed: ["feed"] as const,
   activity: (id: string) => ["feed", id] as const,

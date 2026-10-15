@@ -35,6 +35,10 @@ export interface ProjectPreview {
   complexity?: string | null;
   contributionInfo?: string | null;
   ownerUsername?: string | null;
+  /** The project's own likes and comments, separate from the post's. */
+  likesCount: number;
+  isLiked: boolean;
+  commentsCount: number;
 }
 
 export interface ActivityComment {
