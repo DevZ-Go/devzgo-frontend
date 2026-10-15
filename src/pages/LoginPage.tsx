@@ -12,7 +12,8 @@ const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const locationState = useLocation().state as { from?: { pathname?: string; search?: string }; notice?: string } | null;
+  const from = locationState?.from;
   const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -114,7 +115,16 @@ export function LoginPage() {
                   className="w-full rounded-2xl border-2 border-cream-200 bg-cream-50/50 pl-10 pr-4 py-3 text-gray-800 placeholder:text-gray-300 transition-all focus:border-lavender-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200/40 text-sm"
                 />
               </div>
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-xs font-semibold text-lavender-500 hover:text-lavender-600">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
+
+            {locationState?.notice && !error && (
+              <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{locationState.notice}</p>
+            )}
 
             {error && (
               <motion.div

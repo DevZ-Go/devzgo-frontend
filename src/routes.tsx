@@ -6,6 +6,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
 import { ThemeSelectPage } from "./pages/ThemeSelectPage";
@@ -39,6 +40,8 @@ export const router = createBrowserRouter([
         path: "/register",
         element: <RegisterPage />,
       },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
       {
         path: "/network",
         element: (

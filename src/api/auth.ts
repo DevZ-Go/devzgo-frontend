@@ -42,6 +42,16 @@ export async function registerUser(payload: RegisterPayload): Promise<unknown> {
   return data;
 }
 
+/** Always resolves with the same message whether or not the email has an account. */
+export async function requestPasswordReset(email: string): Promise<string> {
+  const { data } = await axios.post<{ message: string }>(`${API_BASE_URL}/auth/forgot-password`, { email });
+  return data.message;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await axios.post(`${API_BASE_URL}/auth/reset-password`, { token, new_password: newPassword });
+}
+
 /** Requires Bearer token (uses `api` client). */
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>("/auth/me");
