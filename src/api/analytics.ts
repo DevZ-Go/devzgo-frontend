@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback } from "./config";
 import type { DashboardAnalytics } from "../types/network";
 
 export async function fetchDashboardSummary(): Promise<DashboardAnalytics> {
@@ -8,7 +9,7 @@ export async function fetchDashboardSummary(): Promise<DashboardAnalytics> {
       return res.data;
     }
   } catch (err) {
-    console.warn("Backend unavailable, returning demo dashboard summary:", err);
+    demoFallback(err);
   }
 
   return {

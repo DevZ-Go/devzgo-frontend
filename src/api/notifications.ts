@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { demoFallback, USE_MOCK, assetUrlOrNull } from "./config";
 import type { NotificationItem } from "../types/network";
 import { INITIAL_DEMO_NOTIFICATIONS } from "../data/networkDemoData";
 
@@ -34,7 +35,7 @@ function mapNotification(n: Record<string, unknown>): NotificationItem {
     actorId: (n.actor_id || n.actorId || "") as string,
     actorName: (n.actor_name || a.full_name || a.fullName || a.username || "Developer") as string,
     actorUsername: (n.actor_username || a.username || "dev") as string,
-    actorAvatar: (n.actor_avatar || a.avatar_url || a.avatarUrl || null) as string | null,
+    actorAvatar: assetUrlOrNull(n.actor_avatar || a.avatar_url || a.avatarUrl),
     type: n.type as NotificationItem["type"],
     relatedId: (n.related_id || n.relatedId || null) as string | null,
     message: (n.message || "") as string,
@@ -50,7 +51,7 @@ export async function fetchNotifications(): Promise<NotificationItem[]> {
       return res.data.map(mapNotification);
     }
   } catch (err) {
-    console.warn("Backend unavailable, loading local notifications:", err);
+    demoFallback(err);
   }
 
   return getLocalNotifications();
@@ -61,7 +62,7 @@ export async function markNotificationRead(notificationId: string): Promise<void
     await api.put(`/notifications/${notificationId}/read`);
     return;
   } catch (err) {
-    console.warn("Backend unavailable, marking notification read locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalNotifications();
@@ -74,7 +75,7 @@ export async function markAllNotificationsRead(): Promise<void> {
     await api.put("/notifications/read-all");
     return;
   } catch (err) {
-    console.warn("Backend unavailable, marking all read locally:", err);
+    demoFallback(err);
   }
 
   const list = getLocalNotifications();
@@ -89,7 +90,7 @@ export async function fetchUnreadNotificationsCount(): Promise<number> {
       return res.data.unread_count;
     }
   } catch {
-    // fallback
+    if (!USE_MOCK) return 0;
   }
 
   const list = getLocalNotifications();

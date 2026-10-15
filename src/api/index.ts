@@ -53,6 +53,7 @@ export {
 } from "./notifications";
 export {
   fetchUserProfile,
+  fetchMyProfile,
   updateMyProfile,
   searchDevelopers,
 } from "./profiles";

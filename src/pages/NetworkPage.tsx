@@ -56,6 +56,12 @@ export function NetworkPage() {
   const [feed, setFeed] = useState<FeedActivity[]>([]);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   const [loading, setLoading] = useState(true);
 
   // Quick post state
@@ -88,14 +94,14 @@ export function NetworkPage() {
   const loadFeed = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchFeed(filter, searchQuery);
+      const data = await fetchFeed(filter, debouncedSearch);
       setFeed(data);
     } catch {
-      // Ignore
+      showToast("Could not load the feed");
     } finally {
       setLoading(false);
     }
-  }, [filter, searchQuery]);
+  }, [filter, debouncedSearch]);
 
   const loadSidebar = useCallback(async () => {
     try {
@@ -174,7 +180,7 @@ export function NetworkPage() {
         )
       );
     } catch {
-      // rollback on error
+      showToast("Could not update like");
       void loadFeed();
     }
   }
@@ -263,6 +269,7 @@ export function NetworkPage() {
       showToast("Connection request sent!");
       await loadSidebar();
     } catch {
+      setRequestedUsers((prev) => ({ ...prev, [targetUserId]: false }));
       showToast("Failed to send request");
     }
   }
@@ -359,7 +366,7 @@ export function NetworkPage() {
             <div className="rounded-3xl border border-gray-200/90 bg-white p-6 shadow-sm">
               <div className="flex gap-4">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center shrink-0 shadow-sm">
-                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "JR"}
+                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <textarea
@@ -702,16 +709,18 @@ export function NetworkPage() {
                                   </div>
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeleteComment(activity.id, comment.id)
-                                  }
-                                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-600 transition"
-                                  title="Delete comment"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                {user?.id != null && String(user.id) === comment.authorId && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeleteComment(activity.id, comment.id)
+                                    }
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-600 transition"
+                                    title="Delete comment"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             ))
                           )}

@@ -26,6 +26,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 768px)").matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
@@ -385,7 +393,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             Profile
           </Link>
 
-          <NotificationsDropdown />
+          {isDesktop && <NotificationsDropdown />}
 
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
             <Link
@@ -410,7 +418,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
         {/* Mobile hamburger */}
         <div className="md:hidden flex items-center gap-2">
-          <NotificationsDropdown />
+          {!isDesktop && <NotificationsDropdown />}
           <motion.button
             whileTap={{ scale: 0.9 }}
             type="button"
