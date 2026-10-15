@@ -148,7 +148,8 @@ export interface NotificationItem {
     | "collaboration_request"
     | "collaboration_accepted"
     | "comment"
-    | "like";
+    | "like"
+    | "project_like";
   relatedId?: string | null;
   message: string;
   read: boolean;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Pencil, Trash2, User, Users, Handshake, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2, User, Users, Handshake, CheckCircle2, Heart } from "lucide-react";
+import { useProjectLike } from "../hooks/useProjectLike";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-markup";
@@ -392,6 +393,14 @@ export function ProjectDetailPage() {
                       <span className="text-slate-400">· {project.visibility}</span>
                     )}
                   </div>
+                  {id && (
+                    <ProjectLikeButton
+                      projectId={id}
+                      count={project.likes_count ?? 0}
+                      liked={Boolean(project.is_liked)}
+                      canLike={Boolean(token)}
+                    />
+                  )}
                   {isOwner && id && (
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
@@ -731,5 +740,28 @@ export function ProjectDetailPage() {
         />
       )}
     </div>
+  );
+}
+
+function ProjectLikeButton({ projectId, count: initialCount, liked: initialLiked, canLike }: {
+  projectId: string;
+  count: number;
+  liked: boolean;
+  canLike: boolean;
+}) {
+  const { count, liked, busy, toggle } = useProjectLike(projectId, initialCount, initialLiked);
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      disabled={!canLike || busy}
+      title={canLike ? undefined : "Log in to like projects"}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-default ${
+        liked ? "border-rose-200 bg-rose-50 text-rose-600" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      <Heart className={`w-3.5 h-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
+      {count}
+    </button>
   );
 }
