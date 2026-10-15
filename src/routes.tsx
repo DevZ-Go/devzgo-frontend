@@ -8,6 +8,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { GitHubOnboardingPage } from "./pages/GitHubOnboardingPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
 import { ThemeSelectPage } from "./pages/ThemeSelectPage";
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },
+      { path: "/auth/github/onboarding", element: <GitHubOnboardingPage /> },
+      { path: "/settings", element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
       {
         path: "/network",
         element: (

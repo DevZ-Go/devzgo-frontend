@@ -3,14 +3,23 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Zap } from "lucide-react";
-import { registerUser } from "../api";
+import { loginWithPassword, registerUser } from "../api";
+import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton } from "../components/GitHubButton";
+import { UsernameField } from "../components/UsernameField";
+import { PasswordField } from "../components/PasswordField";
+import { passwordValid } from "../utils/passwordPolicy";
+
+const inputClass =
+  "w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20";
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { login, refreshUser } = useAuth();
   const [username, setUsername] = useState("");
+  const [usernameOk, setUsernameOk] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +32,9 @@ export function RegisterPage() {
 
     try {
       await registerUser({ username, email, password });
-      navigate("/login", { replace: true });
+      login((await loginWithPassword(email, password)).access_token);
+      await refreshUser();
+      navigate("/home", { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -60,16 +71,7 @@ export function RegisterPage() {
               >
                 Username
               </label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="username"
-                placeholder="johndoe"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
+              <UsernameField value={username} onChange={setUsername} onAvailable={setUsernameOk} className={inputClass} />
             </div>
 
             <div>
@@ -98,17 +100,7 @@ export function RegisterPage() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
+              <PasswordField id="password" value={password} onChange={setPassword} placeholder="••••••••" className={inputClass} />
             </div>
 
             {error && (
@@ -122,7 +114,7 @@ export function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !usernameOk || !passwordValid(password)}
               className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-60 disabled:pointer-events-none"
             >
               {loading ? "Creating account..." : "Create account"}
