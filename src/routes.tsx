@@ -18,6 +18,7 @@ import { DevelopersPage } from "./pages/DevelopersPage";
 import { WrapPage } from "./pages/WrapPage";
 import { NetworkPage } from "./pages/NetworkPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
+import { PostPage } from "./pages/PostPage";
 import { MessagesPage } from "./pages/MessagesPage";
 
 export const router = createBrowserRouter([
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "/network/connections", element: <ProtectedRoute><ConnectionsPage /></ProtectedRoute> },
+      { path: "/network/post/:id", element: <ProtectedRoute><PostPage /></ProtectedRoute> },
       {
         path: "/messages",
         element: (

@@ -56,17 +56,9 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
           ? a.comments.length
           : 0,
     comments: Array.isArray(a.comments)
-      ? (a.comments as Record<string, unknown>[]).map((c) => ({
-          id: String(c.id),
-          activityId: (c.activity_id || c.activityId || String(a.id)) as string,
-          authorId: (c.author_id || c.authorId || "") as string,
-          authorName: (c.author_name || c.authorName || "Developer") as string,
-          authorUsername: (c.author_username || c.authorUsername || "dev") as string,
-          authorAvatar: assetUrlOrNull(c.author_avatar || c.authorAvatar),
-          commentText: (c.comment_text || c.commentText || "") as string,
-          createdAt: (c.created_at || c.createdAt || new Date().toISOString()) as string,
-        }))
+      ? (a.comments as Record<string, unknown>[]).map((c) => mapComment(c, String(a.id)))
       : [],
+    canEdit: Boolean(a.can_edit),
     project: proj
       ? {
           id: String(proj.id),
@@ -91,19 +83,52 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
   };
 }
 
-export async function fetchFeed(filter: string = "all", search?: string): Promise<FeedActivity[]> {
+function mapComment(c: Record<string, unknown>, activityId: string): ActivityComment {
+  return {
+    id: String(c.id),
+    activityId: (c.activity_id || c.activityId || activityId) as string,
+    authorId: (c.author_id || c.authorId || "") as string,
+    authorName: (c.author_name || c.authorName || "Developer") as string,
+    authorUsername: (c.author_username || c.authorUsername || "dev") as string,
+    authorAvatar: assetUrlOrNull(c.author_avatar || c.authorAvatar),
+    commentText: (c.comment_text || c.commentText || "") as string,
+    createdAt: (c.created_at || c.createdAt || new Date().toISOString()) as string,
+    canDelete: Boolean(c.can_delete),
+  };
+}
+
+export type Page<T> = { items: T[]; nextPage: string | null };
+
+/** One page of the feed, newest first. */
+export async function fetchFeedPage(
+  filter: string,
+  search: string,
+  page: string | null,
+  userId?: string
+): Promise<Page<FeedActivity>> {
   try {
-    const params: Record<string, string> = { filter };
-    if (search && search.trim()) {
-      params.search = search.trim();
-    }
-    const res = await api.get("/network/feed", { params });
-    if (Array.isArray(res.data)) {
-      return res.data.map(mapFeedActivity);
-    }
-    if (res.data?.activities && Array.isArray(res.data.activities)) {
-      return res.data.activities.map(mapFeedActivity);
-    }
+    const params = { filter, search: search.trim() || undefined, page: page ?? undefined, user_id: userId };
+    const { data } = await api.get("/network/feed", { params });
+    return { items: (data.items as Record<string, unknown>[]).map(mapFeedActivity), nextPage: data.next_page ?? null };
+  } catch (err) {
+    demoFallback(err);
+  }
+  return { items: await fetchFeed(filter, search), nextPage: null };
+}
+
+export const fetchActivity = async (id: string) => mapFeedActivity((await api.get(`/network/activities/${id}`)).data);
+export const updatePost = (id: string, body: { title?: string | null; content?: string }) => api.patch(`/network/activities/${id}`, body);
+export const deletePost = (id: string) => api.delete(`/network/activities/${id}`);
+export async function fetchActivityComments(id: string, page: string | null): Promise<Page<ActivityComment>> {
+  const { data } = await api.get(`/network/activities/${id}/comments`, { params: { page: page ?? undefined } });
+  return { items: (data.items as Record<string, unknown>[]).map((c) => mapComment(c, id)), nextPage: data.next_page ?? null };
+}
+
+export async function fetchFeed(filter: string = "all", search?: string, userId?: string): Promise<FeedActivity[]> {
+  try {
+    const params = { filter, search: search?.trim() || undefined, user_id: userId };
+    const { data } = await api.get("/network/feed", { params });
+    return (data.items as Record<string, unknown>[]).map(mapFeedActivity);
   } catch (err) {
     demoFallback(err);
   }
@@ -222,16 +247,7 @@ export async function addActivityComment(
       comment_text: commentText,
     });
     if (res.data) {
-      return {
-        id: String(res.data.id),
-        activityId: res.data.activity_id || res.data.activityId || activityId,
-        authorId: res.data.author_id || res.data.authorId || "",
-        authorName: res.data.author_name || res.data.authorName || "Janasi Rajput",
-        authorUsername: res.data.author_username || res.data.authorUsername || "janasi",
-        authorAvatar: assetUrlOrNull(res.data.author_avatar || res.data.authorAvatar),
-        commentText: res.data.comment_text || res.data.commentText || commentText,
-        createdAt: res.data.created_at || res.data.createdAt || new Date().toISOString(),
-      };
+      return mapComment(res.data, activityId);
     }
   } catch (err) {
     demoFallback(err);
