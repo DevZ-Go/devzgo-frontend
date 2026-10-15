@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { API_BASE_URL, USE_MOCK } from "../api/config";
+import { queryClient, refreshForEvent } from "../api/queryKeys";
 
 export type RealtimeEvent = { type: string; [key: string]: unknown };
 
 const POLL_MS = 15_000;
 const PING_MS = 25_000;
 
-/** Fan an event out as window events; existing listeners (Navbar, notifications, messages) refetch on these. */
+/** Refresh the cached queries the event touches, and fan it out as window events for screens not on the query cache yet. */
 function emit(event: RealtimeEvent) {
+  refreshForEvent(queryClient, event);
   window.dispatchEvent(new CustomEvent<RealtimeEvent>("devzgo:realtime", { detail: event }));
   const everything = event.type === "poll" || event.type === "resync";
   if (everything || event.type.startsWith("message.")) window.dispatchEvent(new CustomEvent("devzgo:messages-updated"));
@@ -19,6 +21,10 @@ function emit(event: RealtimeEvent) {
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const { token } = useAuth();
   const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    if (!token) queryClient.clear(); // never show one account's cached data to the next
+  }, [token]);
 
   useEffect(() => {
     if (!token || USE_MOCK) return;

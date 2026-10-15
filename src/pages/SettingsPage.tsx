@@ -39,7 +39,7 @@ export function SettingsPage() {
     <Navbar />
     <div className="mx-auto max-w-lg px-4 pt-28 pb-16">
       <h1 className="text-2xl font-bold text-gray-900">Account settings</h1>
-      <p className="mt-1 text-sm text-gray-500">@{user?.username} · {user?.email}</p>
+      {user && <p className="mt-1 text-sm text-gray-500">@{user.username} · {user.email}</p>}
       <form onSubmit={submit} className="mt-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
         <h2 className="font-semibold text-gray-900">{hasPassword ? "Change password" : "Set a password"}</h2>
         {!hasPassword && <p className="text-sm text-gray-500">You sign in with GitHub. A password lets you sign in with your email too.</p>}
