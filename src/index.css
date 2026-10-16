@@ -137,12 +137,12 @@ code {
   color: #2d2b3a;
 }
 
-/* Whimsical font utility classes */
-.font-hand {
-  font-family: 'Caveat', 'Patrick Hand', cursive;
+/* Whimsical cursive font utility */
+.font-cursive {
+  font-family: 'Caveat', cursive;
 }
-.font-doodle {
-  font-family: 'Shantell Sans', 'Gaegu', 'Caveat', cursive, sans-serif;
+.font-hand {
+  font-family: 'Caveat', cursive;
 }
 
 /* Authentic hand-drawn wobbly doodle borders */

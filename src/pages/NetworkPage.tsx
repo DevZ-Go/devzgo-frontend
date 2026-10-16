@@ -153,7 +153,7 @@ export function NetworkPage() {
         activity_type: postType,
       });
       setPostContent("");
-      showToast("Spark pinned to the garden! 🌿");
+      showToast("Spark pinned to the network! 🌿");
       await loadFeed();
     } catch {
       showToast("Failed to share post");
@@ -281,105 +281,107 @@ export function NetworkPage() {
   const getActivityBadge = (type: string) => {
     switch (type) {
       case "project_added":
-        return { label: "🚀 NEW PROJECT", color: "bg-forest-100 text-forest-800 border-2 border-forest-600" };
+        return { label: "NEW PROJECT", color: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]" };
       case "project_analyzed":
-        return { label: "💡 CODE SPARK", color: "bg-amber-100 text-amber-900 border-2 border-amber-600" };
+        return { label: "CODE SPARK", color: "bg-[#FEF3C7] text-[#78350F] border border-[#D97706]" };
       case "profile_updated":
-        return { label: "🌿 PROFILE GLOW", color: "bg-emerald-100 text-emerald-800 border-2 border-emerald-600" };
+        return { label: "PROFILE GLOW", color: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]" };
       case "wrap_up_published":
-        return { label: "🍎 MONTHLY WRAP", color: "bg-crimson-100 text-crimson-800 border-2 border-crimson-600" };
+        return { label: "MONTHLY WRAP", color: "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]" };
       case "collaboration":
-        return { label: "🤝 COLLAB CALL", color: "bg-forest-100 text-forest-800 border-2 border-forest-600" };
+        return { label: "COLLAB CALL", color: "bg-[#DCFCE7] text-[#14532D] border border-[#15803D]" };
       default:
-        return { label: "✧ SHARED SPARK", color: "bg-cream-100 text-gray-800 border-2 border-gray-400" };
+        return { label: "SHARED SPARK", color: "bg-stone-100 text-stone-700 border border-stone-300" };
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7EE] text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#FAF7EE] text-[#1C1917] font-sans antialiased">
       <Navbar />
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-2xl bg-forest-900 text-white px-5 py-3 text-sm font-doodle font-bold shadow-2xl flex items-center gap-2.5 border-2 border-forest-500 animate-in fade-in slide-in-from-bottom-2">
-          <Sparkles className="w-5 h-5 text-amber-300" />
-          <span className="text-base">{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-white text-[#14532D] px-4 py-2.5 text-sm font-semibold font-sans shadow-xl flex items-center gap-2 border-2 border-[#15803D] animate-in fade-in slide-in-from-bottom-2">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      <main className="max-w-[1360px] mx-auto px-4 sm:px-8 pt-24 pb-20">
-        {/* Whimsical Hero Header with BIG Doodle Typography */}
+      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        {/* Whimsical Header Hero: Cursive Headings & Clean Straight Body */}
         <div className="mb-8 pt-2">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
             <div>
-              {/* Cute Kicker with Floral Doodle */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-forest-700 text-white font-doodle text-base font-bold uppercase tracking-wider mb-3 shadow-xs">
-                <CuteFlower className="w-5 h-5" />
-                <span>The Community Constellation & Garden</span>
+              {/* Clean Kicker */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCFCE7] text-[#14532D] border border-[#15803D] font-sans text-xs font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
+                <CuteFlower className="w-4 h-4" />
+                <span>Developer Network & Constellation</span>
               </div>
 
-              {/* Big, Expressive Doodle Title */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#1c1917] tracking-tight leading-none">
+              {/* Main Title: Whimsical Cursive Accent ONLY */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#1C1917] tracking-tight leading-tight">
                 Developer{" "}
-                <span className="font-doodle text-5xl sm:text-6xl md:text-7xl text-crimson-600 font-extrabold">
+                <span className="font-cursive text-5xl sm:text-6xl lg:text-7xl text-crimson-600 font-bold ml-1">
                   Network
                 </span>
               </h1>
-              <p className="font-hand text-2xl sm:text-3xl text-forest-700 font-bold mt-2 leading-relaxed">
-                “a living sketchbook where student builders share sparks, late-night commits, and grow together” 🌿
+              <p className="font-sans text-sm sm:text-base text-stone-600 mt-1 max-w-xl leading-relaxed">
+                A cozy community feed where student builders share milestones, sparks, and code.{" "}
+                <span className="font-cursive text-xl text-forest-700 font-bold ml-0.5">
+                  “grow and connect together” 🌿
+                </span>
               </p>
             </div>
 
             {/* View Mode Toggle & Search Box */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              {/* Chunky Doodle View Switcher in Rich Red & Green */}
-              <div className="inline-flex p-1.5 rounded-2xl bg-white border-2 border-[#166534] shadow-2xs">
+              <div className="inline-flex p-1 rounded-xl bg-white border border-stone-200 shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("feed")}
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-doodle text-sm sm:text-base font-bold transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg font-sans text-xs sm:text-sm font-semibold transition ${
                     viewMode === "feed"
-                      ? "bg-forest-700 text-white shadow-xs"
-                      : "text-gray-700 hover:text-black hover:bg-cream-100"
+                      ? "bg-[#DCFCE7] text-[#14532D] border border-[#15803D] shadow-xs"
+                      : "text-stone-600 hover:text-black hover:bg-stone-50"
                   }`}
                 >
-                  <LayoutGrid className="w-4 h-4 text-amber-300" />
+                  <LayoutGrid className="w-4 h-4 text-[#15803D]" />
                   Scrapbook Feed
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("constellation")}
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-doodle text-sm sm:text-base font-bold transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg font-sans text-xs sm:text-sm font-semibold transition ${
                     viewMode === "constellation"
-                      ? "bg-crimson-600 text-white shadow-xs"
-                      : "text-gray-700 hover:text-black hover:bg-cream-100"
+                      ? "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626] shadow-xs"
+                      : "text-stone-600 hover:text-black hover:bg-stone-50"
                   }`}
                 >
-                  <Compass className="w-4 h-4" />
+                  <Compass className="w-4 h-4 text-[#DC2626]" />
                   Constellation Web ✦
                 </button>
               </div>
 
-              {/* Clean & Spacious Search Input */}
-              <div className="relative flex-1 sm:w-68">
-                <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-forest-700" />
+              {/* Clean Straight Search Input */}
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-forest-700" />
                 <input
                   type="text"
                   placeholder="Search creators, tech, sparks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2 rounded-xl bg-white border-2 border-forest-600/70 font-doodle text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-forest-700 transition shadow-2xs"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white border border-stone-200 font-sans text-xs sm:text-sm text-[#1C1917] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-forest-600 transition shadow-2xs"
                 />
               </div>
             </div>
           </div>
 
           {/* Hand-Drawn Curly Banner Doodle */}
-          <div className="mt-4 mb-3 opacity-80">
+          <div className="mt-4 mb-2 opacity-80">
             <CurlyDoodleBanner className="w-full text-forest-700" />
           </div>
 
-          {/* Filter Pills with Doodle Border */}
+          {/* Filter Pills with Clean Straight Typography */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {[
               { id: "all", label: "🌿 All Activity" },
@@ -392,10 +394,10 @@ export function NetworkPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setFilter(tab.id)}
-                className={`px-4 py-1.5 rounded-full font-doodle text-sm sm:text-base font-bold transition ${
+                className={`px-3.5 py-1.5 rounded-full font-sans text-xs sm:text-sm font-semibold transition ${
                   filter === tab.id
-                    ? "bg-forest-700 text-white shadow-xs border-2 border-forest-800"
-                    : "bg-white text-gray-700 hover:text-black hover:bg-cream-100 border-2 border-forest-600/40"
+                    ? "bg-[#DCFCE7] text-[#14532D] border border-[#15803D] shadow-xs"
+                    : "bg-white text-stone-600 hover:text-black hover:bg-stone-50 border border-stone-200"
                 }`}
               >
                 {tab.label}
@@ -416,7 +418,7 @@ export function NetworkPage() {
           </div>
         ) : null}
 
-        {/* Hanging Cards Gallery at the top of the Feed (Inspired by Image 1) */}
+        {/* Hanging Cards Gallery at the top of the Feed */}
         {viewMode === "feed" && (
           <HangingCardsHeader
             creators={suggested}
@@ -425,47 +427,47 @@ export function NetworkPage() {
         )}
 
         {/* 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
           {/* Main Social Feed Column */}
           <div className="space-y-6">
-            {/* Quick Post Composer: Rich Green & Red Washi Style */}
-            <div className="relative rounded-3xl border-3 border-forest-600/50 bg-white p-5 sm:p-6 shadow-soft">
-              {/* Rich Red Washi Tape Sticker */}
-              <div className="washi-tape-red absolute -top-3 left-8 w-24 h-4.5 rounded-xs rotate-[-1deg] flex items-center justify-center text-[10px] text-white font-bold tracking-widest">
+            {/* Quick Post Composer: Clean & Straight */}
+            <div className="relative rounded-2xl border-2 border-forest-600/40 bg-white p-5 sm:p-6 shadow-xs">
+              {/* Red Washi Tape Sticker */}
+              <div className="washi-tape-red absolute -top-2.5 left-6 w-24 h-4 rounded-xs rotate-[-1deg] flex items-center justify-center text-[10px] text-[#1C1917] font-bold font-sans tracking-wider border border-[#1C1917]/20">
                 SKETCHPAD
               </div>
 
-              <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center shrink-0 shadow-xs text-xl border-2 border-[#1c1917]/20">
+              <div className="flex gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-[#DCFCE7] text-[#14532D] font-sans font-bold flex items-center justify-center shrink-0 shadow-xs text-base border border-[#15803D]">
                   {user?.username ? user.username.slice(0, 2).toUpperCase() : "🌱"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="bg-[#FAF7EE] p-3.5 rounded-2xl border-2 border-forest-600/30 shadow-inner">
+                  <div className="bg-[#FAF7EE] p-3 rounded-xl border border-forest-600/20">
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={postContent}
                       onChange={(e) => setPostContent(e.target.value)}
-                      placeholder="Sketch or write a spark, milestone, question, or late-night idea... 🍎"
-                      className="w-full font-doodle text-base sm:text-lg text-gray-900 placeholder-gray-400 bg-transparent resize-none focus:outline-none leading-relaxed"
+                      placeholder="Share a project milestone, question, or technology update..."
+                      className="w-full font-sans text-sm text-[#1C1917] placeholder-stone-400 bg-transparent resize-none focus:outline-none leading-relaxed"
                     />
                   </div>
 
-                  <div className="mt-3 pt-3 border-t-2 border-forest-100 flex flex-wrap items-center justify-between gap-3">
+                  <div className="mt-3 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-doodle text-sm text-forest-700 font-bold mr-1">type:</span>
+                      <span className="font-sans text-xs text-stone-500 font-semibold mr-1">Type:</span>
                       {[
-                        { id: "post", label: "💬 Quick Spark" },
-                        { id: "project_added", label: "🚀 Milestone" },
-                        { id: "collaboration", label: "🤝 Collab" },
+                        { id: "post", label: "Quick Spark" },
+                        { id: "project_added", label: "Milestone" },
+                        { id: "collaboration", label: "Collab Call" },
                       ].map((t) => (
                         <button
                           key={t.id}
                           type="button"
                           onClick={() => setPostType(t.id)}
-                          className={`font-doodle text-sm px-3 py-1 rounded-full transition font-bold ${
+                          className={`font-sans text-xs px-2.5 py-1 rounded-lg transition font-medium ${
                             postType === t.id
-                              ? "bg-forest-100 text-forest-800 border-2 border-forest-600"
-                              : "text-gray-600 hover:bg-cream-100 border border-transparent"
+                              ? "bg-[#DCFCE7] text-[#14532D] font-semibold border border-[#15803D]"
+                              : "text-stone-600 hover:bg-stone-100 border border-transparent"
                           }`}
                         >
                           {t.label}
@@ -477,12 +479,12 @@ export function NetworkPage() {
                       type="button"
                       disabled={!postContent.trim() || posting}
                       onClick={handleCreatePost}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-doodle text-base font-bold shadow-xs hover:shadow transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#FEE2E2] hover:bg-[#FECACA] text-[#991B1B] border border-[#DC2626] font-sans text-xs font-semibold shadow-2xs transition disabled:opacity-50"
                     >
                       {posting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <Send className="w-4 h-4" />
+                        <Send className="w-3.5 h-3.5" />
                       )}
                       Drop Spark ✦
                     </button>
@@ -493,44 +495,42 @@ export function NetworkPage() {
 
             {/* Feed Items List */}
             {loading ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-3 bg-white/70 rounded-3xl border-3 border-dashed border-forest-300">
-                <Loader2 className="w-8 h-8 text-forest-700 animate-spin" />
-                <p className="font-doodle text-2xl text-forest-800 font-bold">Gathering sparks from the garden branches…</p>
+              <div className="py-16 flex flex-col items-center justify-center gap-2.5 bg-white/70 rounded-2xl border-2 border-dashed border-forest-300">
+                <Loader2 className="w-7 h-7 text-forest-700 animate-spin" />
+                <p className="font-cursive text-2xl text-forest-800 font-bold">Gathering sparks from the garden branches…</p>
               </div>
             ) : feed.length === 0 ? (
-              <div className="rounded-3xl border-3 border-dashed border-forest-300 bg-white/80 py-16 text-center text-gray-500">
-                <Users className="w-12 h-12 mx-auto text-forest-400 mb-3" />
-                <p className="font-doodle text-2xl font-bold text-gray-800 mb-1">No sparks found here yet</p>
-                <p className="font-hand text-xl text-forest-700">
-                  Be the first to hang a spark on the branches!
+              <div className="rounded-2xl border-2 border-dashed border-forest-300 bg-white/80 py-14 text-center text-stone-500">
+                <Users className="w-10 h-10 mx-auto text-forest-400 mb-2" />
+                <p className="font-cursive text-2xl font-bold text-[#1C1917] mb-1">No sparks found here yet</p>
+                <p className="font-sans text-xs text-stone-600">
+                  Be the first to share an update on the network!
                 </p>
               </div>
             ) : (
               feed.map((activity, idx) => {
                 const badge = getActivityBadge(activity.activityType);
                 const isCommentsOpen = Boolean(openComments[activity.id]);
-
-                // Alternate rich red and rich green washi tapes
                 const isGreen = idx % 2 === 0;
 
                 return (
                   <article
                     key={activity.id}
                     id={activity.id}
-                    className="relative rounded-3xl border-3 border-[#1c1917]/20 bg-white shadow-soft-lg overflow-hidden hover:shadow-soft-xl transition-all duration-300"
+                    className="relative rounded-2xl border-2 border-[#1c1917]/20 bg-white shadow-xs overflow-hidden hover:shadow-sm transition-all duration-200"
                   >
                     {/* Washi tape on top right */}
                     <div
                       className={`${
                         isGreen ? "washi-tape-green" : "washi-tape-red"
-                      } absolute -top-3 right-8 w-18 h-4 rounded-xs rotate-[1.5deg] z-10 flex items-center justify-center text-[10px] text-white font-bold tracking-widest`}
+                      } absolute -top-2.5 right-6 w-18 h-3.5 rounded-xs rotate-[1.5deg] z-10 flex items-center justify-center text-[10px] text-[#1C1917] font-bold font-sans tracking-wider border border-[#1C1917]/20`}
                     >
                       {isGreen ? "GARDEN" : "SPARK"}
                     </div>
 
-                    <div className="p-6 sm:p-7">
+                    <div className="p-5 sm:p-6">
                       {/* Author Header */}
-                      <div className="flex items-start justify-between gap-4 mb-3.5">
+                      <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 min-w-0">
                           <Link
                             to={`/profile/${activity.userId || activity.authorUsername}`}
@@ -540,10 +540,10 @@ export function NetworkPage() {
                               <img
                                 src={activity.authorAvatar}
                                 alt={activity.authorName}
-                                className="w-12 h-12 rounded-2xl object-cover ring-2 ring-forest-600/50 group-hover:ring-crimson-500 transition"
+                                className="w-11 h-11 rounded-xl object-cover ring-2 ring-forest-600/40 group-hover:ring-crimson-500 transition"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-lg shadow-xs">
+                              <div className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#14532D] font-cursive font-bold flex items-center justify-center text-lg shadow-xs border border-forest-600">
                                 {activity.authorName?.slice(0, 2).toUpperCase() || "DV"}
                               </div>
                             )}
@@ -551,28 +551,29 @@ export function NetworkPage() {
 
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
+                              {/* Whimsical Cursive ONLY for author heading */}
                               <Link
                                 to={`/profile/${activity.userId || activity.authorUsername}`}
-                                className="font-doodle text-xl sm:text-2xl font-bold text-gray-900 hover:text-crimson-600 transition"
+                                className="font-cursive text-2xl font-bold text-[#1C1917] hover:text-crimson-600 transition"
                               >
                                 {activity.authorName}
                               </Link>
-                              <span className="font-sans text-xs text-gray-500 font-semibold">
+                              <span className="font-sans text-xs text-stone-500 font-medium">
                                 @{activity.authorUsername}
                               </span>
                               <span
-                                className={`font-doodle text-xs font-bold px-2.5 py-0.5 rounded-full ${badge.color}`}
+                                className={`font-sans text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${badge.color}`}
                               >
                                 {badge.label}
                               </span>
                             </div>
                             {activity.authorHeadline && (
-                              <p className="font-sans text-xs text-gray-600 mt-0.5 truncate">
+                              <p className="font-sans text-xs text-stone-600 mt-0.5 truncate font-normal">
                                 {activity.authorHeadline}
                               </p>
                             )}
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 font-sans">
-                              <Clock className="w-3.5 h-3.5" />
+                            <div className="flex items-center gap-1.5 text-[11px] text-stone-400 mt-0.5 font-sans">
+                              <Clock className="w-3 h-3" />
                               <span>{formatTimeAgo(activity.createdAt)}</span>
                             </div>
                           </div>
@@ -582,30 +583,30 @@ export function NetworkPage() {
                         <button
                           type="button"
                           onClick={() => handleShare(activity.id)}
-                          className="p-2 rounded-xl text-gray-500 hover:text-black hover:bg-cream-100 transition"
+                          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition"
                           title="Share / Copy Link"
                         >
                           <Share2 className="w-4 h-4" />
                         </button>
                       </div>
 
-                      {/* Post Title with BIG expressive typography */}
+                      {/* Post Title: Whimsical Cursive ONLY */}
                       {activity.title && (
-                        <h3 className="font-doodle text-2xl sm:text-3xl font-extrabold text-[#1c1917] mb-2 leading-tight">
+                        <h3 className="font-cursive text-2xl sm:text-3xl font-bold text-[#1C1917] mb-2 leading-tight">
                           {activity.title}
                         </h3>
                       )}
 
-                      {/* Post Content */}
+                      {/* Post Content: Clean Straight Body Text */}
                       {activity.content && (
-                        <p className="font-sans text-sm text-gray-800 whitespace-pre-wrap leading-relaxed mb-4">
+                        <p className="font-sans text-sm text-stone-800 whitespace-pre-wrap leading-relaxed mb-3.5">
                           {activity.content}
                         </p>
                       )}
 
                       {/* Media Image Attachment */}
                       {activity.mediaUrl && !activity.project && (
-                        <div className="rounded-2xl overflow-hidden border-2 border-[#1c1917]/20 mb-4 bg-gray-50 max-h-[360px]">
+                        <div className="rounded-xl overflow-hidden border border-stone-200 mb-3.5 bg-gray-50 max-h-[340px]">
                           <img
                             src={activity.mediaUrl}
                             alt="Activity attachment"
@@ -618,44 +619,44 @@ export function NetworkPage() {
                       {activity.project && (
                         <Link
                           to={`/project/${activity.project.id}`}
-                          className="group block my-4 rounded-2xl border-3 border-forest-600/60 bg-[#FDFBF7] text-gray-900 overflow-hidden hover:border-crimson-600 transition shadow-xs"
+                          className="group block my-3 rounded-xl border border-forest-600/40 bg-[#FDFBF7] text-[#1C1917] overflow-hidden hover:border-crimson-600 transition shadow-2xs"
                         >
                           {activity.project.coverImageUrl && (
-                            <div className="aspect-[2.5/1] w-full overflow-hidden bg-gray-100">
+                            <div className="aspect-[2.6/1] w-full overflow-hidden bg-gray-100">
                               <img
                                 src={activity.project.coverImageUrl}
                                 alt={activity.project.title}
-                                className="w-full h-full object-cover group-hover:scale-103 transition duration-500"
+                                className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
                               />
                             </div>
                           )}
-                          <div className="p-4 sm:p-5">
-                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <div className="p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 {(activity.project.techStacks || []).map((t) => (
                                   <span
                                     key={t}
-                                    className="px-2.5 py-0.5 rounded-full font-doodle text-xs font-bold bg-forest-100 text-forest-800 border border-forest-400"
+                                    className="px-2 py-0.5 rounded-md font-sans text-[10px] font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]"
                                   >
                                     {t}
                                   </span>
                                 ))}
                                 {activity.project.complexity && (
-                                  <span className="font-doodle text-xs uppercase font-bold px-2.5 py-0.5 rounded-full bg-crimson-100 text-crimson-800 border border-crimson-400">
+                                  <span className="font-sans text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]">
                                     {activity.project.complexity}
                                   </span>
                                 )}
                               </div>
-                              <span className="font-doodle text-sm text-forest-700 font-bold group-hover:translate-x-1 transition flex items-center gap-1">
-                                Open spark <ArrowRight className="w-4 h-4" />
+                              <span className="font-sans text-xs text-forest-700 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
+                                Open spark <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             </div>
 
-                            <h4 className="font-doodle text-2xl font-bold text-gray-900 group-hover:text-forest-700 transition">
+                            <h4 className="font-cursive text-xl sm:text-2xl font-bold text-[#1C1917] group-hover:text-forest-700 transition">
                               {activity.project.title}
                             </h4>
                             {activity.project.shortDescription && (
-                              <p className="font-sans text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                              <p className="font-sans text-xs text-stone-600 mt-1 line-clamp-2 leading-relaxed">
                                 {activity.project.shortDescription}
                               </p>
                             )}
@@ -663,21 +664,21 @@ export function NetworkPage() {
                         </Link>
                       )}
 
-                      {/* Action Bar */}
-                      <div className="mt-4 pt-3.5 border-t-2 border-forest-100 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      {/* Action Bar: Straight, Clean, Neatly Positioned */}
+                      <div className="mt-3.5 pt-3 border-t border-stone-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
                           {/* Heart Button */}
                           <button
                             type="button"
                             onClick={() => handleLikeToggle(activity.id)}
-                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-doodle text-base font-bold transition ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
                               activity.isLiked
-                                ? "bg-crimson-100 text-crimson-700 border-2 border-crimson-400"
-                                : "text-gray-700 hover:bg-cream-100 border border-gray-200"
+                                ? "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]"
+                                : "text-stone-700 hover:bg-stone-50 border border-stone-200"
                             }`}
                           >
                             <Heart
-                              className={`w-4 h-4 ${
+                              className={`w-3.5 h-3.5 ${
                                 activity.isLiked ? "fill-crimson-600 text-crimson-600" : ""
                               }`}
                             />
@@ -693,18 +694,18 @@ export function NetworkPage() {
                                 [activity.id]: !prev[activity.id],
                               }))
                             }
-                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-doodle text-base font-bold transition ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
                               isCommentsOpen
-                                ? "bg-forest-100 text-forest-800 border-2 border-forest-600"
-                                : "text-gray-700 hover:bg-cream-100 border border-gray-200"
+                                ? "bg-[#DCFCE7] text-[#14532D] border border-[#15803D]"
+                                : "text-stone-700 hover:bg-stone-50 border border-stone-200"
                             }`}
                           >
-                            <MessageSquare className="w-4 h-4" />
+                            <MessageSquare className="w-3.5 h-3.5" />
                             <span>{activity.commentsCount} notes</span>
                           </button>
                         </div>
 
-                        {/* Direct Say Hi Button in Rich Forest Green */}
+                        {/* Direct Say Hi Button */}
                         <button
                           type="button"
                           onClick={() =>
@@ -712,9 +713,9 @@ export function NetworkPage() {
                               `/messages?user=${activity.userId || activity.authorUsername}`
                             )
                           }
-                          className="inline-flex items-center gap-1.5 font-doodle text-base font-bold text-white px-4 py-1.5 rounded-xl bg-forest-700 hover:bg-forest-800 shadow-xs transition"
+                          className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#14532D] px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] border border-[#15803D] shadow-2xs transition"
                         >
-                          <Send className="w-3.5 h-3.5" />
+                          <Send className="w-3 h-3" />
                           <span>Say Hi 💌</span>
                         </button>
                       </div>
@@ -722,14 +723,14 @@ export function NetworkPage() {
 
                     {/* Comments Accordion Section */}
                     {isCommentsOpen && (
-                      <div className="bg-[#FAF7EE] border-t-2 border-forest-100 px-6 sm:px-7 py-4">
+                      <div className="bg-[#FAF7EE] border-t border-stone-100 px-5 sm:px-6 py-4">
                         <form
                           onSubmit={(e) => handleAddComment(activity.id, e)}
-                          className="flex items-center gap-2.5 mb-3.5"
+                          className="flex items-center gap-2.5 mb-3"
                         >
                           <input
                             type="text"
-                            placeholder="Write a sweet note on this spark..."
+                            placeholder="Write a constructive note on this spark..."
                             value={commentInputs[activity.id] || ""}
                             onChange={(e) =>
                               setCommentInputs((prev) => ({
@@ -737,7 +738,7 @@ export function NetworkPage() {
                                 [activity.id]: e.target.value,
                               }))
                             }
-                            className="flex-1 rounded-xl border-2 border-forest-400 bg-white px-3.5 py-2 font-doodle text-sm text-gray-900 shadow-2xs focus:border-forest-700 focus:outline-none"
+                            className="flex-1 rounded-lg border border-stone-300 bg-white px-3 py-1.5 font-sans text-xs text-[#1C1917] shadow-2xs focus:border-forest-600 focus:outline-none"
                           />
                           <button
                             type="submit"
@@ -745,50 +746,50 @@ export function NetworkPage() {
                               !commentInputs[activity.id]?.trim() ||
                               commentSubmitting[activity.id]
                             }
-                            className="px-4 py-2 rounded-xl bg-forest-700 text-white font-doodle text-sm font-bold hover:bg-forest-800 transition disabled:opacity-50 flex items-center gap-1"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1"
                           >
                             {commentSubmitting[activity.id] ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
-                              "Reply ✦"
+                              "Reply"
                             )}
                           </button>
                         </form>
 
-                        <div className="space-y-2.5 max-h-[260px] overflow-y-auto">
+                        <div className="space-y-2.5 max-h-[240px] overflow-y-auto">
                           {(activity.comments || []).length === 0 ? (
-                            <p className="font-hand text-xl text-forest-800 font-bold py-1">
+                            <p className="font-cursive text-xl text-forest-800 font-semibold py-1">
                               No notes yet. Leave a sweet word of encouragement ~
                             </p>
                           ) : (
                             (activity.comments || []).map((comment) => (
                               <div
                                 key={comment.id}
-                                className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border-2 border-forest-200 shadow-2xs"
+                                className="group flex items-start justify-between gap-3 p-2.5 rounded-xl bg-white border border-stone-200 shadow-2xs"
                               >
                                 <div className="flex items-start gap-2.5 min-w-0">
                                   {comment.authorAvatar ? (
                                     <img
                                       src={comment.authorAvatar}
                                       alt={comment.authorName}
-                                      className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
+                                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-full bg-forest-700 text-white font-doodle font-bold flex items-center justify-center shrink-0 mt-0.5 text-xs">
+                                    <div className="w-7 h-7 rounded-full bg-[#DCFCE7] text-[#14532D] font-sans font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px] border border-forest-600">
                                       {comment.authorName.slice(0, 2).toUpperCase()}
                                     </div>
                                   )}
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-doodle text-base font-bold text-gray-900">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-cursive text-lg font-bold text-[#1C1917]">
                                         {comment.authorName}
                                       </span>
-                                      <span className="text-xs text-gray-400 font-sans">
+                                      <span className="text-[11px] text-stone-400 font-sans">
                                         @{comment.authorUsername} ·{" "}
                                         {formatTimeAgo(comment.createdAt)}
                                       </span>
                                     </div>
-                                    <p className="font-sans text-xs text-gray-700 mt-0.5 leading-relaxed">
+                                    <p className="font-sans text-xs text-stone-700 mt-0.5 leading-relaxed">
                                       {comment.commentText}
                                     </p>
                                   </div>
@@ -803,7 +804,7 @@ export function NetworkPage() {
                                     className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-crimson-600 transition shrink-0"
                                     title="Delete comment"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                               </div>
@@ -818,30 +819,30 @@ export function NetworkPage() {
             )}
           </div>
 
-          {/* Right Sidebar: The Cozy Corner in Rich Red and Green */}
+          {/* Right Sidebar: Clean Straight Proportions */}
           <aside className="space-y-6">
             {/* Your Network Stats Card */}
-            <div className="rounded-3xl border-3 border-forest-600/40 bg-white p-5 sm:p-6 shadow-soft">
-              <div className="flex items-center justify-between mb-4">
+            <div className="rounded-2xl border-2 border-forest-600/30 bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-3.5">
                 <div>
-                  <h3 className="font-doodle text-2xl font-bold text-gray-900">Your Constellation</h3>
-                  <p className="font-hand text-lg text-forest-700 font-bold">garden connections & sparks</p>
+                  <h3 className="font-cursive text-2xl font-bold text-[#1C1917]">Your Constellation</h3>
+                  <p className="font-sans text-xs text-stone-500">Connections & sparks</p>
                 </div>
-                <span className="p-2.5 rounded-2xl bg-forest-100 text-forest-800 border-2 border-forest-400">
-                  <Users className="w-5 h-5" />
+                <span className="p-2 rounded-xl bg-[#DCFCE7] text-[#14532D] border border-[#15803D]">
+                  <Users className="w-4 h-4" />
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-forest-400">
-                  <p className="font-doodle text-sm text-forest-800 font-bold">Connections</p>
-                  <p className="font-doodle text-3xl font-extrabold text-forest-900 mt-0.5">
+                <div className="p-3 rounded-xl bg-[#F0FDF4] border border-forest-300">
+                  <p className="font-sans text-xs text-[#14532D] font-medium">Connections</p>
+                  <p className="font-sans text-2xl font-extrabold text-[#14532D] mt-0.5">
                     {connections?.accepted?.length || 0}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-[#FEF2F2] border-2 border-crimson-400">
-                  <p className="font-doodle text-sm text-crimson-800 font-bold">Pending</p>
-                  <p className="font-doodle text-3xl font-extrabold text-crimson-700 mt-0.5">
+                <div className="p-3 rounded-xl bg-[#FEF2F2] border border-crimson-300">
+                  <p className="font-sans text-xs text-[#991B1B] font-medium">Pending</p>
+                  <p className="font-sans text-2xl font-extrabold text-[#991B1B] mt-0.5">
                     {connections?.pendingIncoming?.length || 0}
                   </p>
                 </div>
@@ -849,17 +850,17 @@ export function NetworkPage() {
 
               <Link
                 to="/messages"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-forest-800 text-white px-4 py-2.5 font-doodle text-base font-bold hover:bg-forest-900 transition shadow-xs"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] px-4 py-2 font-sans text-xs font-semibold transition shadow-2xs"
               >
-                <MessageSquare className="w-4 h-4 text-amber-300" />
-                Open Messages 💬
+                <MessageSquare className="w-3.5 h-3.5 text-[#14532D]" />
+                Open Messages
               </Link>
             </div>
 
             {/* Pending Requests Box */}
             {(connections?.pendingIncoming?.length || 0) > 0 && (
-              <div className="rounded-3xl border-3 border-crimson-400 bg-crimson-50/70 p-5 shadow-soft">
-                <div className="flex items-center gap-2 text-crimson-900 font-doodle text-base font-bold uppercase tracking-wider mb-3.5">
+              <div className="rounded-2xl border border-crimson-300 bg-crimson-50/60 p-5 shadow-xs">
+                <div className="flex items-center gap-2 text-crimson-900 font-sans text-xs font-bold uppercase tracking-wider mb-3">
                   <Sparkles className="w-4 h-4 text-crimson-600" />
                   Connection Requests ({(connections?.pendingIncoming?.length || 0)})
                 </div>
@@ -868,29 +869,29 @@ export function NetworkPage() {
                   {(connections?.pendingIncoming || []).map((conn) => (
                     <div
                       key={conn.id}
-                      className="p-3 rounded-2xl bg-white border-2 border-crimson-300 shadow-2xs"
+                      className="p-3 rounded-xl bg-white border border-crimson-200 shadow-2xs"
                     >
                       <div className="flex items-center gap-2.5 mb-2.5">
                         {conn.partner?.avatarUrl ? (
                           <img
                             src={conn.partner.avatarUrl}
                             alt={conn.partner.fullName || conn.partner.username}
-                            className="w-10 h-10 rounded-xl object-cover ring-2 ring-crimson-300"
+                            className="w-9 h-9 rounded-lg object-cover ring-1 ring-crimson-200"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-sm">
+                          <div className="w-9 h-9 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-sans font-bold flex items-center justify-center text-xs border border-crimson-300">
                             {(conn.partner?.username || "dev").slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${conn.partner?.id || conn.partner?.username}`}
-                            className="font-doodle text-lg font-bold text-gray-900 hover:text-crimson-700 truncate block"
+                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-crimson-700 truncate block leading-tight"
                           >
                             {conn.partner.fullName || conn.partner.username}
                           </Link>
                           {conn.partner.headline && (
-                            <p className="font-sans text-xs text-gray-600 truncate">
+                            <p className="font-sans text-[11px] text-stone-500 truncate">
                               {conn.partner.headline}
                             </p>
                           )}
@@ -901,14 +902,14 @@ export function NetworkPage() {
                         <button
                           type="button"
                           onClick={() => handleAcceptConnection(conn.id)}
-                          className="flex-1 py-1.5 rounded-xl bg-forest-700 text-white font-doodle text-sm font-bold hover:bg-forest-800 transition"
+                          className="flex-1 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold transition"
                         >
-                          Accept 🌿
+                          Accept
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeclineConnection(conn.id)}
-                          className="px-3 py-1.5 rounded-xl border-2 border-gray-300 text-gray-600 font-doodle text-sm font-bold hover:bg-cream-100 transition"
+                          className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600 font-sans text-xs font-medium hover:bg-stone-50 transition"
                         >
                           Decline
                         </button>
@@ -919,22 +920,22 @@ export function NetworkPage() {
               </div>
             )}
 
-            {/* Suggested Creators Box in Polaroid Tiles */}
-            <div className="rounded-3xl border-3 border-forest-600/40 bg-white p-5 sm:p-6 shadow-soft">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-doodle text-2xl font-bold text-gray-900">
+            {/* Suggested Creators Box */}
+            <div className="rounded-2xl border-2 border-forest-600/30 bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-3.5">
+                <h3 className="font-cursive text-2xl font-bold text-[#1C1917]">
                   Suggested Creators
                 </h3>
-                <span className="font-hand text-lg text-crimson-700 font-bold">explore ✦</span>
+                <span className="font-sans text-xs text-forest-700 font-semibold">explore ✦</span>
               </div>
 
-              <div className="space-y-3.5">
+              <div className="space-y-3">
                 {suggested.map((dev) => {
                   const hasRequested = requestedUsers[dev.id];
                   return (
                     <div
                       key={dev.id}
-                      className="flex items-center justify-between gap-3"
+                      className="flex items-center justify-between gap-2.5"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Link to={`/profile/${dev.id || dev.username}`}>
@@ -942,10 +943,10 @@ export function NetworkPage() {
                             <img
                               src={dev.avatarUrl}
                               alt={dev.fullName || dev.username}
-                              className="w-10 h-10 rounded-xl object-cover ring-2 ring-forest-400"
+                              className="w-9 h-9 rounded-lg object-cover ring-1 ring-forest-300"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-sm">
+                            <div className="w-9 h-9 rounded-lg bg-[#DCFCE7] text-[#14532D] font-sans font-bold flex items-center justify-center text-xs border border-forest-300">
                               {dev.username.slice(0, 2).toUpperCase()}
                             </div>
                           )}
@@ -953,12 +954,12 @@ export function NetworkPage() {
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${dev.id || dev.username}`}
-                            className="font-doodle text-lg font-bold text-gray-900 hover:text-forest-700 truncate block"
+                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-forest-700 truncate block leading-tight"
                           >
                             {dev.fullName || dev.username}
                           </Link>
                           {dev.headline && (
-                            <p className="font-sans text-xs text-gray-600 truncate">
+                            <p className="font-sans text-[11px] text-stone-500 truncate">
                               {dev.headline}
                             </p>
                           )}
@@ -969,17 +970,17 @@ export function NetworkPage() {
                         type="button"
                         disabled={hasRequested}
                         onClick={() => handleSendConnect(dev.id)}
-                        className={`p-2 rounded-xl text-xs font-bold transition shrink-0 ${
+                        className={`p-2 rounded-lg text-xs font-semibold transition shrink-0 ${
                           hasRequested
-                            ? "bg-gray-100 text-gray-400 border border-gray-300"
-                            : "bg-forest-100 text-forest-800 hover:bg-forest-200 border-2 border-forest-600"
+                            ? "bg-gray-100 text-gray-400 border border-gray-200"
+                            : "bg-[#DCFCE7] text-[#14532D] hover:bg-[#BBF7D0] border border-[#15803D]"
                         }`}
                         title="Connect with developer"
                       >
                         {hasRequested ? (
-                          <Check className="w-4 h-4 text-emerald-600" />
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
                         ) : (
-                          <UserPlus className="w-4 h-4" />
+                          <UserPlus className="w-3.5 h-3.5" />
                         )}
                       </button>
                     </div>

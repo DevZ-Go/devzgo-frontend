@@ -7,8 +7,8 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        hand: ['"Caveat"', '"Patrick Hand"', 'cursive'],
-        doodle: ['"Shantell Sans"', '"Gaegu"', 'cursive', 'sans-serif'],
+        cursive: ['"Caveat"', 'cursive'],
+        hand: ['"Caveat"', 'cursive'],
       },
       colors: {
         // Rich Red and Green
