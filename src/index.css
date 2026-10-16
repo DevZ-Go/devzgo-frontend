@@ -31,6 +31,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dark {
+  --text: #cbd5e1;
+  --text-h: #f8fafc;
+  --bg: #090d16;
+  --border: #1e293b;
+  --code-bg: #0f172a;
+  --accent: #a78bfa;
+  --accent-bg: rgba(167, 139, 250, 0.12);
+  --accent-border: rgba(167, 139, 250, 0.3);
+  --social-bg: rgba(30, 41, 59, 0.6);
+  --shadow:
+    rgba(0, 0, 0, 0.35) 0 4px 20px -3px, rgba(0, 0, 0, 0.2) 0 2px 8px -1px;
+  color-scheme: dark;
+}
+
 #root {
   width: 100%;
   min-height: 100svh;
@@ -39,7 +54,9 @@
 
 body {
   margin: 0;
-  background: #FFFDF7;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 h1,
