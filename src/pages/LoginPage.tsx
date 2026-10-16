@@ -1,21 +1,24 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, Mail, Lock } from "lucide-react";
 import { loginWithPassword } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
+import { GitHubButton, githubErrorMessage } from "../components/GitHubButton";
 
 const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const locationState = useLocation().state as { from?: { pathname?: string; search?: string }; notice?: string } | null;
+  const from = locationState?.from;
   const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(githubErrorMessage(useSearchParams()[0].get("error")));
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -33,7 +36,7 @@ export function LoginPage() {
         setError("Signed in but could not verify your session. Try again.");
         return;
       }
-      navigate("/home", { replace: true });
+      navigate(from?.pathname ? from.pathname + (from.search ?? "") : "/home", { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -113,7 +116,16 @@ export function LoginPage() {
                   className="w-full rounded-2xl border-2 border-cream-200 bg-cream-50/50 pl-10 pr-4 py-3 text-gray-800 placeholder:text-gray-300 transition-all focus:border-lavender-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200/40 text-sm"
                 />
               </div>
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-xs font-semibold text-lavender-500 hover:text-lavender-600">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
+
+            {locationState?.notice && !error && (
+              <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{locationState.notice}</p>
+            )}
 
             {error && (
               <motion.div
@@ -136,6 +148,12 @@ export function LoginPage() {
               {loading ? "Signing in…" : "Sign in ✨"}
             </motion.button>
           </form>
+          <div className="px-8 pb-8 -mt-3">
+            <div className="mb-4 flex items-center gap-3 text-xs text-gray-300">
+              <span className="h-px flex-1 bg-cream-200" />or<span className="h-px flex-1 bg-cream-200" />
+            </div>
+            <GitHubButton />
+          </div>
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-400">

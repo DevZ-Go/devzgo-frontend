@@ -41,6 +41,24 @@ export function ThemeSelectPage() {
               Playful and cartoonish. Focus on one project at a time with a dynamic stack of project cards.
             </p>
           </Link>
+
+          {/* Developer search */}
+          <Link
+            to="/explore/developers"
+            className="group md:col-span-2 rounded-3xl bg-stone-900 border border-stone-800 px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 hover:bg-stone-800 transition-colors shadow-lg text-left"
+          >
+            <div>
+              <h2 className="text-xl font-semibold text-white tracking-tight group-hover:text-[#fced96] transition-colors">
+                Find Developers
+              </h2>
+              <p className="text-stone-400 text-sm">
+                Looking for people instead of projects? Search by name, skill or title and connect.
+              </p>
+            </div>
+            <span className="text-[#fced96] text-sm font-semibold tracking-widest uppercase shrink-0">
+              Search &rarr;
+            </span>
+          </Link>
         </div>
 
         <Link

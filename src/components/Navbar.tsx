@@ -1,9 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Compass, FolderPlus, User, LogOut, Menu, X, Sparkles, Search } from "lucide-react";
+import {
+  Compass,
+  FolderPlus,
+  User,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  Search,
+  MessageSquare,
+  Users,
+} from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationsDropdown } from "./NotificationsDropdown";
+import { fetchUnreadMessagesCount } from "../api/messages";
 
 interface NavbarProps {
   variant?: "default" | "editorial";
@@ -14,13 +27,50 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 768px)").matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkMessages() {
+      try {
+        const count = await fetchUnreadMessagesCount();
+        if (!cancelled) setUnreadMessages(count);
+      } catch {
+        // Ignore
+      }
+    }
+    checkMessages();
+
+    const handleUpdate = () => {
+      checkMessages();
+    };
+    window.addEventListener("devzgo:messages-updated", handleUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("devzgo:messages-updated", handleUpdate);
+    };
+  }, []);
 
   function handleLogout() {
     logout();
     navigate("/login", { replace: true });
   }
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/home" && (location.pathname === "/home" || location.pathname === "/")) {
+      return true;
+    }
+    return location.pathname.startsWith(path);
+  };
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -97,6 +147,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <span>'26 Wrap</span>
             </Link>
 
+            <NotificationsDropdown />
+
             <Link
               to="/explore"
               className="p-1.5 hover:text-white hover:bg-white/15 rounded-full transition-all"
@@ -149,6 +201,20 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               </div>
 
               <div className="pt-2 space-y-2">
+                <Link
+                  to="/network"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Network
+                </Link>
+                <Link
+                  to="/messages"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Messages {unreadMessages > 0 && `(${unreadMessages})`}
+                </Link>
                 <Link
                   to="/explore"
                   onClick={() => setMobileOpen(false)}
@@ -229,14 +295,30 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               {String(user?.email ?? user?.username)}
             </span>
           )}
-          <Link to="/profile" className={linkClass("/profile")}>
-            <User className="w-4 h-4" />
-            Profile
+          <Link to="/network" className={linkClass("/network")}>
+            <Users className="w-4 h-4" />
+            Network
           </Link>
           <Link to="/explore" className={linkClass("/explore")}>
             <Compass className="w-4 h-4" />
             Explore
           </Link>
+          <Link to="/messages" className={linkClass("/messages")}>
+            <MessageSquare className="w-4 h-4" />
+            <span>Messages</span>
+            {unreadMessages > 0 && (
+              <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                {unreadMessages}
+              </span>
+            )}
+          </Link>
+          <Link to="/profile" className={linkClass("/profile")}>
+            <User className="w-4 h-4" />
+            Profile
+          </Link>
+
+          {isDesktop && <NotificationsDropdown />}
+
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
             <Link
               to="/add-project"
@@ -264,16 +346,19 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </motion.button>
         </div>
 
-        {/* Mobile hamburger */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          type="button"
-          onClick={() => setMobileOpen((v) => !v)}
-          className="md:hidden p-2 text-gray-600 dark:text-stone-300 hover:bg-cream-200 dark:hover:bg-stone-800 rounded-xl transition-colors"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </motion.button>
+        {/* Mobile controls */}
+        <div className="md:hidden flex items-center gap-2">
+          {!isDesktop && <NotificationsDropdown />}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="p-2 text-gray-600 dark:text-stone-300 hover:bg-cream-200 dark:hover:bg-stone-800 rounded-xl transition-colors"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </motion.button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -298,11 +383,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 </p>
               )}
               <Link
-                to="/profile"
+                to="/network"
                 onClick={() => setMobileOpen(false)}
-                className={linkClass("/profile") + " w-full"}
+                className={linkClass("/network") + " w-full"}
               >
-                <User className="w-4 h-4" /> Profile
+                <Users className="w-4 h-4" /> Network
               </Link>
               <Link
                 to="/explore"
@@ -310,6 +395,25 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 className={linkClass("/explore") + " w-full"}
               >
                 <Compass className="w-4 h-4" /> Explore
+              </Link>
+              <Link
+                to="/messages"
+                onClick={() => setMobileOpen(false)}
+                className={linkClass("/messages") + " w-full"}
+              >
+                <MessageSquare className="w-4 h-4" /> Messages
+                {unreadMessages > 0 && (
+                  <span className="ml-auto flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                    {unreadMessages}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className={linkClass("/profile") + " w-full"}
+              >
+                <User className="w-4 h-4" /> Profile
               </Link>
               <Link
                 to="/add-project"
@@ -320,7 +424,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               </Link>
               <button
                 type="button"
-                onClick={() => { handleLogout(); setMobileOpen(false); }}
+                onClick={() => {
+                  handleLogout();
+                  setMobileOpen(false);
+                }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-coral-500 hover:bg-coral-50 dark:hover:bg-coral-950/30 rounded-xl transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Log out

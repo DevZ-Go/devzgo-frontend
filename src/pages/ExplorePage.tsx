@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchProjects } from "../api";
-import { getApiErrorMessage } from "../utils/apiError";
-import type { ApiProject } from "../types/project";
+import { ExploreFilters } from "../components/ExploreFilters";
+import { useExploreProjects } from "../hooks/useExploreProjects";
 import { CameraController } from "../components/tvworld/CameraController";
 import type { Cam, ViewRect } from "../components/tvworld/CameraController";
 import { PixelTV } from "../components/tvworld/PixelTV";
@@ -71,62 +70,32 @@ export function ExplorePage() {
   const introDoneRef = useRef(false);
   const openingRef = useRef(false);
 
-  const [apiProjects, setApiProjects] = useState<ApiProject[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>("all");
+  const {
+    filters,
+    setFilters,
+    clearFilters,
+    hasFilters,
+    isNarrowed,
+    projects: apiProjects,
+    appliedKey,
+    error,
+    reload,
+    techStacks,
+  } = useExploreProjects();
   const [view, setView] = useState<ViewRect | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [booting, setBooting] = useState(true);
   const [diving, setDiving] = useState(false);
 
-  /* ───────────── data (same source as the old grid) ───────────── */
-
-  const load = useCallback(async () => {
-    try {
-      const list = await fetchProjects();
-      setApiProjects(list);
-      setError(null);
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-      setApiProjects([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchProjects()
-      .then((list) => {
-        if (cancelled) return;
-        setApiProjects(list);
-        setError(null);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(getApiErrorMessage(err));
-        setApiProjects([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  /* ───────────── data: GET /projects with the active filters ───────────── */
 
   const layout = useMemo(
     () => layoutProjects((apiProjects ?? []).map((p, i) => toTvProject(p, i))),
     [apiProjects]
   );
 
-  const techOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of layout.placed) t.project.techStack.forEach((n) => set.add(n));
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [layout.placed]);
-
-  // Filtering hides TVs but never re-positions the rest.
-  const shown = useMemo(() => {
-    if (filter === "all") return layout.placed;
-    const f = filter.toLowerCase();
-    return layout.placed.filter((t) => t.project.techStack.some((n) => n.toLowerCase() === f));
-  }, [layout.placed, filter]);
+  // The server already filtered, so every placed TV is shown. New filters repack the spiral.
+  const shown = layout.placed;
 
   const visible = useMemo(() => {
     if (!view) return shown.slice(0, 12);
@@ -277,19 +246,22 @@ export function ExplorePage() {
     [layout.placed, navigate]
   );
 
-  // Changing the filter flies the camera to the surviving TVs.
-  const lastFilterRef = useRef(filter);
+  // Results for a new filter set fly the camera to the surviving TVs.
+  const lastAppliedKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (lastFilterRef.current === filter) return;
-    lastFilterRef.current = filter;
+    if (appliedKey === null) return;
+    const previous = lastAppliedKeyRef.current;
+    lastAppliedKeyRef.current = appliedKey;
+    if (previous === null || previous === appliedKey) return;
     const ctrl = ctrlRef.current;
     if (!ctrl) return;
     if (savedCamRef.current) {
       ctrl.locked = false;
       savedCamRef.current = null;
     }
+    setFocusedId(null);
     ctrl.flyTo(overviewPose(shown, ctrl.size().w), { rate: 3.5, settleMs: 1800 });
-  }, [filter, shown]);
+  }, [appliedKey, shown]);
 
   /* ───────────── keyboard (focus mode + extras) ───────────── */
 
@@ -329,7 +301,8 @@ export function ExplorePage() {
   /* ───────────── render ───────────── */
 
   const loading = apiProjects === null;
-  const empty = !loading && !error && layout.placed.length === 0;
+  const noResults = !loading && !error && layout.placed.length === 0;
+  const empty = noResults && !isNarrowed;
   const total = layout.placed.length;
   const idx = focused ? shown.findIndex((t) => t.project.id === focused.project.id) + 1 : 0;
 
@@ -359,9 +332,7 @@ export function ExplorePage() {
         <b>PROJECT ARCHIVE</b>
         {loading
           ? "TUNING..."
-          : filter === "all"
-            ? `${total} PROJECT${total === 1 ? "" : "S"}`
-            : `${shown.length} / ${total} PROJECTS`}
+          : `${total} ${isNarrowed ? "MATCHING " : ""}PROJECT${total === 1 ? "" : "S"}`}
       </div>
 
       <div className="tvw-hud tvw-hud--bl">
@@ -378,21 +349,19 @@ export function ExplorePage() {
       </div>
 
       <div className="tvw-hud tvw-hud--tr" data-ui>
-        {techOptions.length > 0 && (
-          <select
-            className="tvw-select"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            aria-label="Filter by tech stack"
-          >
-            <option value="all">ALL TECH</option>
-            {techOptions.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        )}
+        <ExploreFilters
+          filters={filters}
+          onChange={setFilters}
+          techStacks={techStacks}
+          hasFilters={hasFilters}
+          onClear={clearFilters}
+          classes={{
+            root: "tvw-filters",
+            input: "tvw-input",
+            select: "tvw-select",
+            button: "tvw-btn",
+          }}
+        />
         <Link to="/home" className="tvw-btn">
           &larr; EXIT
         </Link>
@@ -420,7 +389,7 @@ export function ExplorePage() {
         <div className="tvw-center" data-ui>
           <span>SIGNAL LOST</span>
           <span style={{ color: "#4b4f57", letterSpacing: "0.12em" }}>{error}</span>
-          <button type="button" className="tvw-btn" onClick={() => void load()}>
+          <button type="button" className="tvw-btn" onClick={reload}>
             RETRY
           </button>
         </div>
@@ -434,10 +403,10 @@ export function ExplorePage() {
           </Link>
         </div>
       )}
-      {!loading && !error && !empty && shown.length === 0 && (
+      {noResults && isNarrowed && (
         <div className="tvw-center" data-ui>
-          <span>NOTHING TUNED IN FOR THIS TECH</span>
-          <button type="button" className="tvw-btn" onClick={() => setFilter("all")}>
+          <span>NOTHING TUNED IN FOR THESE FILTERS</span>
+          <button type="button" className="tvw-btn" onClick={clearFilters}>
             SHOW ALL
           </button>
         </div>
