@@ -7,6 +7,8 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        hand: ['"Caveat"', 'cursive'],
+        doodle: ['"Gaegu"', 'cursive', 'sans-serif'],
       },
       colors: {
         // Warm pastel palette
