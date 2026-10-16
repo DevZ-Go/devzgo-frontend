@@ -39,13 +39,36 @@ function normalizeTechStackResponse(data: unknown): TechStackItem[] {
   });
 }
 
+// export async function fetchProjects(
+//   params?: Record<string, string | number | boolean | undefined>
+// ): Promise<ApiProject[]> {
+//   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
+//     "/projects",
+//     params && Object.keys(params).length ? { params } : undefined
+//   );
+//   return Array.isArray(data) ? data : data.projects ?? [];
+// }
+
+export type ProjectSort = "newest" | "oldest" | "updated" | "title_asc" | "title_desc";
+
+export interface ProjectFilters {
+  [key: string]: string | number | boolean | undefined;
+  search?: string;
+  category?: string;
+  tech_stack_id?: number;
+  /** Comma-separated tech stack ids; a project must include every one. */
+  tech_stack_ids?: string;
+  sort_by?: ProjectSort;
+}
+
 export async function fetchProjects(
-  params?: Record<string, string | number | boolean | undefined>
+  params?: ProjectFilters
 ): Promise<ApiProject[]> {
   const { data } = await api.get<ApiProject[] | { projects?: ApiProject[] }>(
     "/projects",
     params && Object.keys(params).length ? { params } : undefined
   );
+
   return Array.isArray(data) ? data : data.projects ?? [];
 }
 
@@ -223,6 +246,15 @@ export async function updateProject(
     demo_video_url: payload.demo_video_url ?? null,
   };
   const { data } = await api.put<ApiProject>(`/projects/${projectId}`, body);
+  return data;
+}
+
+export async function setProjectLiked(
+  projectId: string,
+  liked: boolean
+): Promise<{ likes_count: number; is_liked: boolean }> {
+  const url = `/projects/${encodeURIComponent(projectId)}/like`;
+  const { data } = liked ? await api.post(url) : await api.delete(url);
   return data;
 }
 

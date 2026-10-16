@@ -1,68 +1,61 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { fetchProjects } from "../api";
-import { getApiErrorMessage } from "../utils/apiError";
-import type { ApiProject } from "../types/project";
+import { ExploreFilters } from "../components/ExploreFilters";
+import { useExploreProjects } from "../hooks/useExploreProjects";
 import { toTvProject } from "../components/tvworld/worldLayout";
+import type { TvProject } from "../components/tvworld/types";
+import { useProjectLike } from "../hooks/useProjectLike";
+import { useAuth } from "../auth/AuthContext";
 
-// A simple deterministic hash to decide if "liked by coders" (red) or "employers" (green)
-function getLikeStatus(id: string, likes: number) {
-  if (likes >= 10000) return { color: "bg-purple-500", text: "10K+ LIKES" };
-  if (likes >= 5000) return { color: "bg-blue-500", text: "5K+ LIKES" };
-  
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const isCoders = Math.abs(hash) % 2 === 0;
-  if (isCoders) return { color: "bg-red-500", text: "LIKED BY CODERS" };
-  return { color: "bg-green-500", text: "LIKED BY EMPLOYERS" };
+function CardLikeButton({ project }: { project: TvProject }) {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { count, liked, busy, toggle } = useProjectLike(project.id, project.likes, project.isLiked);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!token) navigate("/login");
+        else void toggle();
+      }}
+      className={`w-full py-3 rounded-2xl font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
+        liked ? "bg-red-500 text-white" : "bg-stone-200 text-stone-700"
+      }`}
+    >
+      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
+      {liked ? "LIKED" : "LIKE"} · {count.toLocaleString()}
+    </button>
+  );
 }
 
 export function CardsWorldPage() {
   const navigate = useNavigate();
-  const [apiProjects, setApiProjects] = useState<ApiProject[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const {
+    filters,
+    setFilters,
+    clearFilters,
+    hasFilters,
+    projects: apiProjects,
+    appliedKey,
+    error,
+    reload,
+    techStacks,
+  } = useExploreProjects();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const load = useCallback(async () => {
-    try {
-      const list = await fetchProjects();
-      setApiProjects(list);
-      setError(null);
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-      setApiProjects([]);
-    }
-  }, []);
+  // Cards follow the API order, so sort_by is visible in the stack.
+  const projects = useMemo(
+    () => (apiProjects ?? []).map((p, i) => toTvProject(p, i)),
+    [apiProjects]
+  );
 
+  // New results start at the first card.
   useEffect(() => {
-    load();
-  }, [load]);
-
-  const projects = useMemo(() => {
-    if (!apiProjects) return [];
-    // We reuse the toTvProject mapping just to normalize data easily
-    let list = apiProjects.map((p, i) => toTvProject(p, i));
-    if (search.trim() !== "") {
-      const q = search.toLowerCase();
-      list = list.filter(t => 
-        t.title.toLowerCase().includes(q) ||
-        t.techStack.some(ts => ts.toLowerCase().includes(q)) ||
-        t.category?.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [apiProjects, search]);
-
-  // Make sure index is valid when filtering
-  useEffect(() => {
-    if (projects.length > 0 && currentIndex >= projects.length) {
-      setCurrentIndex(0);
-    }
-  }, [projects, currentIndex]);
+    setCurrentIndex(0);
+  }, [appliedKey]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -95,7 +88,7 @@ export function CardsWorldPage() {
       <div className="min-h-screen bg-stone-900 text-white flex items-center justify-center font-sans">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error}</p>
-          <button onClick={load} className="px-4 py-2 bg-stone-800 rounded">Retry</button>
+          <button onClick={reload} className="px-4 py-2 bg-stone-800 rounded">Retry</button>
         </div>
       </div>
     );
@@ -117,16 +110,22 @@ export function CardsWorldPage() {
           &larr; BACK
         </Link>
 
-        {/* Search Bar / Filters */}
-        <div className="flex-1 max-w-md mx-6">
-          <input
-            type="text"
-            placeholder="Filter by type, tech, or name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/10 border-2 border-white/20 rounded-full px-6 py-2.5 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all text-center"
-          />
-        </div>
+        <ExploreFilters
+          filters={filters}
+          onChange={setFilters}
+          techStacks={techStacks}
+          hasFilters={hasFilters}
+          onClear={clearFilters}
+          classes={{
+            root: "flex-1 mx-6 flex flex-wrap items-center justify-center gap-2",
+            input:
+              "w-full sm:w-64 bg-white/10 border-2 border-white/20 rounded-full px-5 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all",
+            select:
+              "bg-stone-900 border-2 border-white/20 rounded-full px-4 py-2 text-sm font-bold text-white/80 focus:outline-none focus:border-white/50",
+            button:
+              "rounded-full px-4 py-2 text-sm font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors",
+          }}
+        />
 
         <button onClick={handleShare} className="text-white/60 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest flex items-center gap-2">
           SHARE
@@ -147,8 +146,6 @@ export function CardsWorldPage() {
                 const isRight = index === currentIndex + 1;
 
                 if (!isCenter && !isLeft && !isRight) return null;
-
-                const likeData = getLikeStatus(t.id, t.likes);
 
                 // Media: Try video first, fallback to image
                 const mediaUrl = t.videoUrl || t.coverUrl;
@@ -226,10 +223,7 @@ export function CardsWorldPage() {
                       {/* Action Bar (Bottom) */}
                       {isCenter && (
                         <div className="p-4 bg-white border-t-4 border-stone-200 shrink-0 space-y-3">
-                          <button className={`w-full py-3 rounded-2xl text-white font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${likeData.color}`}>
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
-                            {likeData.text}
-                          </button>
+                          <CardLikeButton project={t} />
                           <div className="flex gap-2">
                             <button
                               onClick={() => navigate(`/project/${t.id}`)}

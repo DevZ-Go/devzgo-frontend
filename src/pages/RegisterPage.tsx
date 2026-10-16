@@ -6,6 +6,7 @@ import { Zap } from "lucide-react";
 import { registerUser } from "../api";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
+import { GitHubButton } from "../components/GitHubButton";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -103,6 +104,7 @@ export function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -126,6 +128,12 @@ export function RegisterPage() {
               {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
+          <div className="px-8 pb-8 -mt-3">
+            <div className="mb-4 flex items-center gap-3 text-xs text-gray-300">
+              <span className="h-px flex-1 bg-cream-200" />or<span className="h-px flex-1 bg-cream-200" />
+            </div>
+            <GitHubButton />
+          </div>
         </div>
 
         <p className="mt-8 text-center text-gray-600">
