@@ -36,7 +36,7 @@ import type { FeedActivity, Connection, ConnectionUserSummary } from "../types/n
 import { useAuth } from "../auth/AuthContext";
 import { HangingCardsHeader } from "../components/network/HangingCardsHeader";
 import { ConstellationGraph } from "../components/network/ConstellationGraph";
-import { CuteFlower, WavyDoodleLine } from "../components/network/DoodleDecorations";
+import { CuteFlower, CurlyDoodleBanner } from "../components/network/DoodleDecorations";
 
 function formatTimeAgo(isoString: string): string {
   try {
@@ -153,7 +153,7 @@ export function NetworkPage() {
         activity_type: postType,
       });
       setPostContent("");
-      showToast("Post shared to network! ✨");
+      showToast("Spark pinned to the garden! 🌿");
       await loadFeed();
     } catch {
       showToast("Failed to share post");
@@ -249,7 +249,7 @@ export function NetworkPage() {
   async function handleAcceptConnection(connId: string) {
     try {
       await acceptConnection(connId);
-      showToast("Connection accepted! 🎉");
+      showToast("Connection accepted! 🌿");
       await loadSidebar();
     } catch {
       showToast("Failed to accept connection");
@@ -281,105 +281,108 @@ export function NetworkPage() {
   const getActivityBadge = (type: string) => {
     switch (type) {
       case "project_added":
-        return { label: "New Project", color: "bg-amber-50 text-amber-800 border-amber-200" };
+        return { label: "🚀 NEW PROJECT", color: "bg-forest-100 text-forest-800 border-2 border-forest-600" };
       case "project_analyzed":
-        return { label: "Code Spark", color: "bg-purple-50 text-purple-700 border-purple-200" };
+        return { label: "💡 CODE SPARK", color: "bg-amber-100 text-amber-900 border-2 border-amber-600" };
       case "profile_updated":
-        return { label: "Profile Glow", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+        return { label: "🌿 PROFILE GLOW", color: "bg-emerald-100 text-emerald-800 border-2 border-emerald-600" };
       case "wrap_up_published":
-        return { label: "Monthly Wrap ✦", color: "bg-pink-50 text-pink-700 border-pink-200" };
+        return { label: "🍎 MONTHLY WRAP", color: "bg-crimson-100 text-crimson-800 border-2 border-crimson-600" };
       case "collaboration":
-        return { label: "Collab Call", color: "bg-indigo-50 text-indigo-700 border-indigo-200" };
+        return { label: "🤝 COLLAB CALL", color: "bg-forest-100 text-forest-800 border-2 border-forest-600" };
       default:
-        return { label: "Shared Spark", color: "bg-cream-100 text-gray-700 border-amber-200/80" };
+        return { label: "✧ SHARED SPARK", color: "bg-cream-100 text-gray-800 border-2 border-gray-400" };
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#FAF7EE] text-gray-900 font-sans">
       <Navbar />
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-2xl bg-gray-900/95 text-white px-5 py-3 text-sm font-medium shadow-2xl flex items-center gap-2.5 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 border border-gray-700/50">
-          <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 rounded-2xl bg-forest-900 text-white px-5 py-3 text-sm font-doodle font-bold shadow-2xl flex items-center gap-2.5 border-2 border-forest-500 animate-in fade-in slide-in-from-bottom-2">
+          <Sparkles className="w-5 h-5 text-amber-300" />
+          <span className="text-base">{toastMessage}</span>
         </div>
       )}
 
       <main className="max-w-[1360px] mx-auto px-4 sm:px-8 pt-24 pb-20">
-        {/* Whimsical Header Hero Section */}
+        {/* Whimsical Hero Header with BIG Doodle Typography */}
         <div className="mb-8 pt-2">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
-              {/* Cute badge with flower */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 text-purple-800 border border-purple-200/80 text-xs font-semibold uppercase tracking-wider mb-2.5 shadow-2xs">
-                <CuteFlower className="w-4 h-4 text-purple-500" />
-                <span>The Community Constellation</span>
+              {/* Cute Kicker with Floral Doodle */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-forest-700 text-white font-doodle text-base font-bold uppercase tracking-wider mb-3 shadow-xs">
+                <CuteFlower className="w-5 h-5" />
+                <span>The Community Constellation & Garden</span>
               </div>
 
-              {/* Main Whimsical Title */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                Developer <span className="font-hand text-4xl sm:text-5xl md:text-6xl text-purple-700 font-semibold">Network</span>
+              {/* Big, Expressive Doodle Title */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#1c1917] tracking-tight leading-none">
+                Developer{" "}
+                <span className="font-doodle text-5xl sm:text-6xl md:text-7xl text-crimson-600 font-extrabold">
+                  Network
+                </span>
               </h1>
-              <p className="text-gray-600 text-sm sm:text-base mt-1.5 max-w-xl leading-relaxed">
-                Connect with student builders, share project sparks, and find collaborators in our cozy developer garden.
+              <p className="font-hand text-2xl sm:text-3xl text-forest-700 font-bold mt-2 leading-relaxed">
+                “a living sketchbook where student builders share sparks, late-night commits, and grow together” 🌿
               </p>
             </div>
 
             {/* View Mode Toggle & Search Box */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              {/* Trendy Mode Toggle Switcher */}
-              <div className="inline-flex p-1 rounded-2xl bg-cream-100 border border-amber-200/90 shadow-2xs">
+              {/* Chunky Doodle View Switcher in Rich Red & Green */}
+              <div className="inline-flex p-1.5 rounded-2xl bg-white border-2 border-[#166534] shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("feed")}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-doodle text-sm sm:text-base font-bold transition ${
                     viewMode === "feed"
-                      ? "bg-white text-gray-900 shadow-xs border border-amber-200/70"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                      ? "bg-forest-700 text-white shadow-xs"
+                      : "text-gray-700 hover:text-black hover:bg-cream-100"
                   }`}
                 >
-                  <LayoutGrid className="w-3.5 h-3.5 text-purple-600" />
+                  <LayoutGrid className="w-4 h-4 text-amber-300" />
                   Scrapbook Feed
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("constellation")}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-doodle text-sm sm:text-base font-bold transition ${
                     viewMode === "constellation"
-                      ? "bg-purple-600 text-white shadow-xs"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                      ? "bg-crimson-600 text-white shadow-xs"
+                      : "text-gray-700 hover:text-black hover:bg-cream-100"
                   }`}
                 >
-                  <Compass className="w-3.5 h-3.5" />
+                  <Compass className="w-4 h-4" />
                   Constellation Web ✦
                 </button>
               </div>
 
-              {/* Clean Search Input */}
-              <div className="relative flex-1 sm:w-64 md:w-72">
-                <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-400" />
+              {/* Clean & Spacious Search Input */}
+              <div className="relative flex-1 sm:w-68">
+                <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-forest-700" />
                 <input
                   type="text"
                   placeholder="Search creators, tech, sparks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-amber-200/90 text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400/20 focus:border-purple-500 transition shadow-2xs"
+                  className="w-full pl-10 pr-3.5 py-2 rounded-xl bg-white border-2 border-forest-600/70 font-doodle text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-forest-700 transition shadow-2xs"
                 />
               </div>
             </div>
           </div>
 
-          {/* Whimsical Wavy Accent Line */}
-          <div className="mt-4 mb-2 opacity-60">
-            <WavyDoodleLine className="w-full text-amber-200/90" />
+          {/* Hand-Drawn Curly Banner Doodle */}
+          <div className="mt-4 mb-3 opacity-80">
+            <CurlyDoodleBanner className="w-full text-forest-700" />
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2 pt-2">
+          {/* Filter Pills with Doodle Border */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {[
-              { id: "all", label: "✨ All Activity" },
+              { id: "all", label: "🌿 All Activity" },
               { id: "projects", label: "🚀 Projects & Milestones" },
               { id: "developers", label: "👩‍💻 Creators" },
               { id: "collaboration", label: "🤝 Collab Calls" },
@@ -389,10 +392,10 @@ export function NetworkPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setFilter(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+                className={`px-4 py-1.5 rounded-full font-doodle text-sm sm:text-base font-bold transition ${
                   filter === tab.id
-                    ? "bg-purple-600 text-white shadow-xs"
-                    : "bg-white text-gray-600 hover:text-gray-900 hover:bg-cream-100 border border-amber-200/80"
+                    ? "bg-forest-700 text-white shadow-xs border-2 border-forest-800"
+                    : "bg-white text-gray-700 hover:text-black hover:bg-cream-100 border-2 border-forest-600/40"
                 }`}
               >
                 {tab.label}
@@ -401,7 +404,7 @@ export function NetworkPage() {
           </div>
         </div>
 
-        {/* Constellation View Mode (Inspired by reference images 3 & 4) */}
+        {/* Constellation View Mode */}
         {viewMode === "constellation" ? (
           <div>
             <ConstellationGraph
@@ -413,7 +416,7 @@ export function NetworkPage() {
           </div>
         ) : null}
 
-        {/* Hanging Cards Gallery at the top of the Feed (Inspired by reference image 1) */}
+        {/* Hanging Cards Gallery at the top of the Feed (Inspired by Image 1) */}
         {viewMode === "feed" && (
           <HangingCardsHeader
             creators={suggested}
@@ -422,31 +425,34 @@ export function NetworkPage() {
         )}
 
         {/* 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
           {/* Main Social Feed Column */}
           <div className="space-y-6">
-            {/* Quick Post Composer: Cutesy & Clean */}
-            <div className="relative rounded-3xl border border-amber-200/80 bg-white p-5 sm:p-6 shadow-soft">
-              {/* Cute washi tape sticker accent */}
-              <div className="washi-tape-mint absolute -top-2 left-8 w-16 h-3.5 rounded-xs rotate-[-1deg]" />
+            {/* Quick Post Composer: Rich Green & Red Washi Style */}
+            <div className="relative rounded-3xl border-3 border-forest-600/50 bg-white p-5 sm:p-6 shadow-soft">
+              {/* Rich Red Washi Tape Sticker */}
+              <div className="washi-tape-red absolute -top-3 left-8 w-24 h-4.5 rounded-xs rotate-[-1deg] flex items-center justify-center text-[10px] text-white font-bold tracking-widest">
+                SKETCHPAD
+              </div>
 
-              <div className="flex gap-3.5 sm:gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 to-amber-400 text-white font-bold flex items-center justify-center shrink-0 shadow-xs text-sm">
-                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "✨"}
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center shrink-0 shadow-xs text-xl border-2 border-[#1c1917]/20">
+                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "🌱"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <textarea
-                    rows={2}
-                    value={postContent}
-                    onChange={(e) => setPostContent(e.target.value)}
-                    placeholder="Share a little spark, milestone, question, or late-night idea..."
-                    className="w-full text-xs sm:text-sm text-gray-900 placeholder-gray-400 bg-transparent resize-none focus:outline-none leading-relaxed"
-                  />
+                  <div className="bg-[#FAF7EE] p-3.5 rounded-2xl border-2 border-forest-600/30 shadow-inner">
+                    <textarea
+                      rows={3}
+                      value={postContent}
+                      onChange={(e) => setPostContent(e.target.value)}
+                      placeholder="Sketch or write a spark, milestone, question, or late-night idea... 🍎"
+                      className="w-full font-doodle text-base sm:text-lg text-gray-900 placeholder-gray-400 bg-transparent resize-none focus:outline-none leading-relaxed"
+                    />
+                  </div>
 
-                  <div className="mt-3 pt-3 border-t border-amber-100/80 flex flex-wrap items-center justify-between gap-3">
-                    {/* Activity Type Selection */}
+                  <div className="mt-3 pt-3 border-t-2 border-forest-100 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-gray-400 mr-1 font-medium">Spark type:</span>
+                      <span className="font-doodle text-sm text-forest-700 font-bold mr-1">type:</span>
                       {[
                         { id: "post", label: "💬 Quick Spark" },
                         { id: "project_added", label: "🚀 Milestone" },
@@ -456,10 +462,10 @@ export function NetworkPage() {
                           key={t.id}
                           type="button"
                           onClick={() => setPostType(t.id)}
-                          className={`text-xs px-2.5 py-1 rounded-xl transition font-medium ${
+                          className={`font-doodle text-sm px-3 py-1 rounded-full transition font-bold ${
                             postType === t.id
-                              ? "bg-purple-100 text-purple-700 font-semibold border border-purple-200/80"
-                              : "text-gray-500 hover:bg-cream-100"
+                              ? "bg-forest-100 text-forest-800 border-2 border-forest-600"
+                              : "text-gray-600 hover:bg-cream-100 border border-transparent"
                           }`}
                         >
                           {t.label}
@@ -467,19 +473,18 @@ export function NetworkPage() {
                       ))}
                     </div>
 
-                    {/* Sensible Post Button */}
                     <button
                       type="button"
                       disabled={!postContent.trim() || posting}
                       onClick={handleCreatePost}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-xs font-semibold text-white shadow-xs hover:shadow transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-crimson-600 hover:bg-crimson-700 text-white font-doodle text-base font-bold shadow-xs hover:shadow transition disabled:opacity-50"
                     >
                       {posting ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Send className="w-3.5 h-3.5" />
+                        <Send className="w-4 h-4" />
                       )}
-                      Drop Spark
+                      Drop Spark ✦
                     </button>
                   </div>
                 </div>
@@ -488,16 +493,16 @@ export function NetworkPage() {
 
             {/* Feed Items List */}
             {loading ? (
-              <div className="py-20 flex flex-col items-center justify-center gap-3 text-gray-500 bg-white/60 rounded-3xl border border-dashed border-amber-200">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
-                <p className="font-hand text-lg text-gray-600">Gathering sparks from the garden…</p>
+              <div className="py-20 flex flex-col items-center justify-center gap-3 bg-white/70 rounded-3xl border-3 border-dashed border-forest-300">
+                <Loader2 className="w-8 h-8 text-forest-700 animate-spin" />
+                <p className="font-doodle text-2xl text-forest-800 font-bold">Gathering sparks from the garden branches…</p>
               </div>
             ) : feed.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-amber-200 bg-white/70 py-16 text-center text-gray-500">
-                <Users className="w-10 h-10 mx-auto text-amber-300 mb-3" />
-                <p className="font-bold text-gray-700 mb-1 text-sm">No sparks found here yet</p>
-                <p className="font-hand text-base text-gray-500">
-                  Try adjusting your filter or be the first to post a spark!
+              <div className="rounded-3xl border-3 border-dashed border-forest-300 bg-white/80 py-16 text-center text-gray-500">
+                <Users className="w-12 h-12 mx-auto text-forest-400 mb-3" />
+                <p className="font-doodle text-2xl font-bold text-gray-800 mb-1">No sparks found here yet</p>
+                <p className="font-hand text-xl text-forest-700">
+                  Be the first to hang a spark on the branches!
                 </p>
               </div>
             ) : (
@@ -505,27 +510,24 @@ export function NetworkPage() {
                 const badge = getActivityBadge(activity.activityType);
                 const isCommentsOpen = Boolean(openComments[activity.id]);
 
-                // Cycle cute tape styles
-                const tapeStyles = [
-                  "washi-tape-peach",
-                  "washi-tape-lavender",
-                  "washi-tape-mint",
-                  "washi-tape-coral",
-                ];
-                const tapeStyle = tapeStyles[idx % tapeStyles.length];
+                // Alternate rich red and rich green washi tapes
+                const isGreen = idx % 2 === 0;
 
                 return (
                   <article
                     key={activity.id}
                     id={activity.id}
-                    className="relative rounded-3xl border border-amber-200/70 bg-white shadow-soft overflow-hidden hover:shadow-soft-lg transition-all duration-300"
+                    className="relative rounded-3xl border-3 border-[#1c1917]/20 bg-white shadow-soft-lg overflow-hidden hover:shadow-soft-xl transition-all duration-300"
                   >
-                    {/* Cute corner washi tape */}
+                    {/* Washi tape on top right */}
                     <div
-                      className={`${tapeStyle} absolute -top-2 right-8 w-14 h-3.5 rounded-xs rotate-[1.5deg] z-10`}
-                    />
+                      className={`${
+                        isGreen ? "washi-tape-green" : "washi-tape-red"
+                      } absolute -top-3 right-8 w-18 h-4 rounded-xs rotate-[1.5deg] z-10 flex items-center justify-center text-[10px] text-white font-bold tracking-widest`}
+                    >
+                      {isGreen ? "GARDEN" : "SPARK"}
+                    </div>
 
-                    {/* Activity Body */}
                     <div className="p-6 sm:p-7">
                       {/* Author Header */}
                       <div className="flex items-start justify-between gap-4 mb-3.5">
@@ -538,10 +540,10 @@ export function NetworkPage() {
                               <img
                                 src={activity.authorAvatar}
                                 alt={activity.authorName}
-                                className="w-11 h-11 rounded-2xl object-cover ring-2 ring-amber-100 group-hover:ring-purple-400 transition"
+                                className="w-12 h-12 rounded-2xl object-cover ring-2 ring-forest-600/50 group-hover:ring-crimson-500 transition"
                               />
                             ) : (
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-500 to-amber-400 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-lg shadow-xs">
                                 {activity.authorName?.slice(0, 2).toUpperCase() || "DV"}
                               </div>
                             )}
@@ -551,26 +553,26 @@ export function NetworkPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <Link
                                 to={`/profile/${activity.userId || activity.authorUsername}`}
-                                className="font-bold text-gray-900 hover:text-purple-700 transition text-sm"
+                                className="font-doodle text-xl sm:text-2xl font-bold text-gray-900 hover:text-crimson-600 transition"
                               >
                                 {activity.authorName}
                               </Link>
-                              <span className="text-xs text-gray-400 font-medium">
+                              <span className="font-sans text-xs text-gray-500 font-semibold">
                                 @{activity.authorUsername}
                               </span>
                               <span
-                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.color}`}
+                                className={`font-doodle text-xs font-bold px-2.5 py-0.5 rounded-full ${badge.color}`}
                               >
                                 {badge.label}
                               </span>
                             </div>
                             {activity.authorHeadline && (
-                              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                              <p className="font-sans text-xs text-gray-600 mt-0.5 truncate">
                                 {activity.authorHeadline}
                               </p>
                             )}
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
-                              <Clock className="w-3 h-3 text-gray-400" />
+                            <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 font-sans">
+                              <Clock className="w-3.5 h-3.5" />
                               <span>{formatTimeAgo(activity.createdAt)}</span>
                             </div>
                           </div>
@@ -580,30 +582,30 @@ export function NetworkPage() {
                         <button
                           type="button"
                           onClick={() => handleShare(activity.id)}
-                          className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-cream-100 transition"
+                          className="p-2 rounded-xl text-gray-500 hover:text-black hover:bg-cream-100 transition"
                           title="Share / Copy Link"
                         >
                           <Share2 className="w-4 h-4" />
                         </button>
                       </div>
 
-                      {/* Post Title */}
+                      {/* Post Title with BIG expressive typography */}
                       {activity.title && (
-                        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 leading-snug">
+                        <h3 className="font-doodle text-2xl sm:text-3xl font-extrabold text-[#1c1917] mb-2 leading-tight">
                           {activity.title}
                         </h3>
                       )}
 
                       {/* Post Content */}
                       {activity.content && (
-                        <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">
+                        <p className="font-sans text-sm text-gray-800 whitespace-pre-wrap leading-relaxed mb-4">
                           {activity.content}
                         </p>
                       )}
 
                       {/* Media Image Attachment */}
                       {activity.mediaUrl && !activity.project && (
-                        <div className="rounded-2xl overflow-hidden border border-amber-100 mb-4 bg-gray-50 max-h-[340px]">
+                        <div className="rounded-2xl overflow-hidden border-2 border-[#1c1917]/20 mb-4 bg-gray-50 max-h-[360px]">
                           <img
                             src={activity.mediaUrl}
                             alt="Activity attachment"
@@ -616,10 +618,10 @@ export function NetworkPage() {
                       {activity.project && (
                         <Link
                           to={`/project/${activity.project.id}`}
-                          className="group block my-4 rounded-2xl border border-amber-200/90 bg-cream-50 text-gray-900 overflow-hidden hover:border-purple-400 transition shadow-xs"
+                          className="group block my-4 rounded-2xl border-3 border-forest-600/60 bg-[#FDFBF7] text-gray-900 overflow-hidden hover:border-crimson-600 transition shadow-xs"
                         >
                           {activity.project.coverImageUrl && (
-                            <div className="aspect-[2.4/1] w-full overflow-hidden bg-gray-100">
+                            <div className="aspect-[2.5/1] w-full overflow-hidden bg-gray-100">
                               <img
                                 src={activity.project.coverImageUrl}
                                 alt={activity.project.title}
@@ -633,27 +635,27 @@ export function NetworkPage() {
                                 {(activity.project.techStacks || []).map((t) => (
                                   <span
                                     key={t}
-                                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white text-purple-700 border border-purple-200"
+                                    className="px-2.5 py-0.5 rounded-full font-doodle text-xs font-bold bg-forest-100 text-forest-800 border border-forest-400"
                                   >
                                     {t}
                                   </span>
                                 ))}
                                 {activity.project.complexity && (
-                                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                  <span className="font-doodle text-xs uppercase font-bold px-2.5 py-0.5 rounded-full bg-crimson-100 text-crimson-800 border border-crimson-400">
                                     {activity.project.complexity}
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs text-purple-600 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
-                                Open spark <ArrowRight className="w-3.5 h-3.5" />
+                              <span className="font-doodle text-sm text-forest-700 font-bold group-hover:translate-x-1 transition flex items-center gap-1">
+                                Open spark <ArrowRight className="w-4 h-4" />
                               </span>
                             </div>
 
-                            <h4 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-purple-700 transition">
+                            <h4 className="font-doodle text-2xl font-bold text-gray-900 group-hover:text-forest-700 transition">
                               {activity.project.title}
                             </h4>
                             {activity.project.shortDescription && (
-                              <p className="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
+                              <p className="font-sans text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed">
                                 {activity.project.shortDescription}
                               </p>
                             )}
@@ -661,22 +663,22 @@ export function NetworkPage() {
                         </Link>
                       )}
 
-                      {/* Clean & Sensible Action Bar: No overlapping, generous spacing */}
-                      <div className="mt-4 pt-3.5 border-t border-amber-100/80 flex items-center justify-between">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          {/* Cute Heart Like Button */}
+                      {/* Action Bar */}
+                      <div className="mt-4 pt-3.5 border-t-2 border-forest-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {/* Heart Button */}
                           <button
                             type="button"
                             onClick={() => handleLikeToggle(activity.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-doodle text-base font-bold transition ${
                               activity.isLiked
-                                ? "bg-rose-50 text-rose-600 border border-rose-200"
-                                : "text-gray-600 hover:bg-cream-100 hover:text-gray-900"
+                                ? "bg-crimson-100 text-crimson-700 border-2 border-crimson-400"
+                                : "text-gray-700 hover:bg-cream-100 border border-gray-200"
                             }`}
                           >
                             <Heart
                               className={`w-4 h-4 ${
-                                activity.isLiked ? "fill-rose-500 text-rose-500" : ""
+                                activity.isLiked ? "fill-crimson-600 text-crimson-600" : ""
                               }`}
                             />
                             <span>{activity.likesCount}</span>
@@ -691,18 +693,18 @@ export function NetworkPage() {
                                 [activity.id]: !prev[activity.id],
                               }))
                             }
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-doodle text-base font-bold transition ${
                               isCommentsOpen
-                                ? "bg-purple-50 text-purple-700 border border-purple-200/70"
-                                : "text-gray-600 hover:bg-cream-100 hover:text-gray-900"
+                                ? "bg-forest-100 text-forest-800 border-2 border-forest-600"
+                                : "text-gray-700 hover:bg-cream-100 border border-gray-200"
                             }`}
                           >
                             <MessageSquare className="w-4 h-4" />
-                            <span>{activity.commentsCount}</span>
+                            <span>{activity.commentsCount} notes</span>
                           </button>
                         </div>
 
-                        {/* Direct Collaboration Message Button */}
+                        {/* Direct Say Hi Button in Rich Forest Green */}
                         <button
                           type="button"
                           onClick={() =>
@@ -710,25 +712,24 @@ export function NetworkPage() {
                               `/messages?user=${activity.userId || activity.authorUsername}`
                             )
                           }
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 hover:text-purple-800 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 transition"
+                          className="inline-flex items-center gap-1.5 font-doodle text-base font-bold text-white px-4 py-1.5 rounded-xl bg-forest-700 hover:bg-forest-800 shadow-xs transition"
                         >
                           <Send className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Say Hi</span>
+                          <span>Say Hi 💌</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Comments Accordion Section */}
                     {isCommentsOpen && (
-                      <div className="bg-cream-50/80 border-t border-amber-100 px-6 sm:px-7 py-4">
-                        {/* New Comment Input */}
+                      <div className="bg-[#FAF7EE] border-t-2 border-forest-100 px-6 sm:px-7 py-4">
                         <form
                           onSubmit={(e) => handleAddComment(activity.id, e)}
                           className="flex items-center gap-2.5 mb-3.5"
                         >
                           <input
                             type="text"
-                            placeholder="Write a sweet constructive note..."
+                            placeholder="Write a sweet note on this spark..."
                             value={commentInputs[activity.id] || ""}
                             onChange={(e) =>
                               setCommentInputs((prev) => ({
@@ -736,7 +737,7 @@ export function NetworkPage() {
                                 [activity.id]: e.target.value,
                               }))
                             }
-                            className="flex-1 rounded-xl border border-amber-200 bg-white px-3.5 py-2 text-xs text-gray-900 shadow-2xs focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                            className="flex-1 rounded-xl border-2 border-forest-400 bg-white px-3.5 py-2 font-doodle text-sm text-gray-900 shadow-2xs focus:border-forest-700 focus:outline-none"
                           />
                           <button
                             type="submit"
@@ -744,51 +745,50 @@ export function NetworkPage() {
                               !commentInputs[activity.id]?.trim() ||
                               commentSubmitting[activity.id]
                             }
-                            className="px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition disabled:opacity-50 flex items-center gap-1"
+                            className="px-4 py-2 rounded-xl bg-forest-700 text-white font-doodle text-sm font-bold hover:bg-forest-800 transition disabled:opacity-50 flex items-center gap-1"
                           >
                             {commentSubmitting[activity.id] ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
-                              "Reply"
+                              "Reply ✦"
                             )}
                           </button>
                         </form>
 
-                        {/* Comments Stream */}
                         <div className="space-y-2.5 max-h-[260px] overflow-y-auto">
                           {(activity.comments || []).length === 0 ? (
-                            <p className="font-hand text-base text-gray-500 italic py-1">
-                              No comments yet. Leave a little note of encouragement ~
+                            <p className="font-hand text-xl text-forest-800 font-bold py-1">
+                              No notes yet. Leave a sweet word of encouragement ~
                             </p>
                           ) : (
                             (activity.comments || []).map((comment) => (
                               <div
                                 key={comment.id}
-                                className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-amber-100 shadow-2xs"
+                                className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border-2 border-forest-200 shadow-2xs"
                               >
                                 <div className="flex items-start gap-2.5 min-w-0">
                                   {comment.authorAvatar ? (
                                     <img
                                       src={comment.authorAvatar}
                                       alt={comment.authorName}
-                                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
+                                      className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
                                     />
                                   ) : (
-                                    <div className="w-7 h-7 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-8 h-8 rounded-full bg-forest-700 text-white font-doodle font-bold flex items-center justify-center shrink-0 mt-0.5 text-xs">
                                       {comment.authorName.slice(0, 2).toUpperCase()}
                                     </div>
                                   )}
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="text-xs font-bold text-gray-900">
+                                      <span className="font-doodle text-base font-bold text-gray-900">
                                         {comment.authorName}
                                       </span>
-                                      <span className="text-[10px] text-gray-400">
+                                      <span className="text-xs text-gray-400 font-sans">
                                         @{comment.authorUsername} ·{" "}
                                         {formatTimeAgo(comment.createdAt)}
                                       </span>
                                     </div>
-                                    <p className="text-xs text-gray-700 mt-0.5 leading-relaxed">
+                                    <p className="font-sans text-xs text-gray-700 mt-0.5 leading-relaxed">
                                       {comment.commentText}
                                     </p>
                                   </div>
@@ -800,10 +800,10 @@ export function NetworkPage() {
                                     onClick={() =>
                                       handleDeleteComment(activity.id, comment.id)
                                     }
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-600 transition shrink-0"
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-crimson-600 transition shrink-0"
                                     title="Delete comment"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 )}
                               </div>
@@ -818,30 +818,30 @@ export function NetworkPage() {
             )}
           </div>
 
-          {/* Right Sidebar: The Cozy Corner */}
+          {/* Right Sidebar: The Cozy Corner in Rich Red and Green */}
           <aside className="space-y-6">
-            {/* Your Network Stats Card: Cute & Clean */}
-            <div className="rounded-3xl border border-amber-200/80 bg-white p-5 sm:p-6 shadow-soft">
+            {/* Your Network Stats Card */}
+            <div className="rounded-3xl border-3 border-forest-600/40 bg-white p-5 sm:p-6 shadow-soft">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Your Constellation</h3>
-                  <p className="font-hand text-sm text-gray-500">connections & sparks</p>
+                  <h3 className="font-doodle text-2xl font-bold text-gray-900">Your Constellation</h3>
+                  <p className="font-hand text-lg text-forest-700 font-bold">garden connections & sparks</p>
                 </div>
-                <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
-                  <Users className="w-4 h-4" />
+                <span className="p-2.5 rounded-2xl bg-forest-100 text-forest-800 border-2 border-forest-400">
+                  <Users className="w-5 h-5" />
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3.5 rounded-2xl bg-cream-50 border border-amber-100">
-                  <p className="text-[11px] text-gray-500 font-medium">Connections</p>
-                  <p className="text-2xl font-black text-gray-900 mt-0.5">
+                <div className="p-3.5 rounded-2xl bg-[#F0FDF4] border-2 border-forest-400">
+                  <p className="font-doodle text-sm text-forest-800 font-bold">Connections</p>
+                  <p className="font-doodle text-3xl font-extrabold text-forest-900 mt-0.5">
                     {connections?.accepted?.length || 0}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-100">
-                  <p className="text-[11px] text-purple-700 font-medium">Pending</p>
-                  <p className="text-2xl font-black text-purple-700 mt-0.5">
+                <div className="p-3.5 rounded-2xl bg-[#FEF2F2] border-2 border-crimson-400">
+                  <p className="font-doodle text-sm text-crimson-800 font-bold">Pending</p>
+                  <p className="font-doodle text-3xl font-extrabold text-crimson-700 mt-0.5">
                     {connections?.pendingIncoming?.length || 0}
                   </p>
                 </div>
@@ -849,18 +849,18 @@ export function NetworkPage() {
 
               <Link
                 to="/messages"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-2.5 text-xs font-semibold hover:bg-gray-800 transition shadow-xs"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-forest-800 text-white px-4 py-2.5 font-doodle text-base font-bold hover:bg-forest-900 transition shadow-xs"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
-                Open Messages
+                <MessageSquare className="w-4 h-4 text-amber-300" />
+                Open Messages 💬
               </Link>
             </div>
 
             {/* Pending Requests Box */}
             {(connections?.pendingIncoming?.length || 0) > 0 && (
-              <div className="rounded-3xl border border-amber-300 bg-amber-50/60 p-5 shadow-soft">
-                <div className="flex items-center gap-2 text-amber-900 text-xs font-bold uppercase tracking-wider mb-3.5">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+              <div className="rounded-3xl border-3 border-crimson-400 bg-crimson-50/70 p-5 shadow-soft">
+                <div className="flex items-center gap-2 text-crimson-900 font-doodle text-base font-bold uppercase tracking-wider mb-3.5">
+                  <Sparkles className="w-4 h-4 text-crimson-600" />
                   Connection Requests ({(connections?.pendingIncoming?.length || 0)})
                 </div>
 
@@ -868,29 +868,29 @@ export function NetworkPage() {
                   {(connections?.pendingIncoming || []).map((conn) => (
                     <div
                       key={conn.id}
-                      className="p-3 rounded-2xl bg-white border border-amber-200/80 shadow-2xs"
+                      className="p-3 rounded-2xl bg-white border-2 border-crimson-300 shadow-2xs"
                     >
                       <div className="flex items-center gap-2.5 mb-2.5">
                         {conn.partner?.avatarUrl ? (
                           <img
                             src={conn.partner.avatarUrl}
                             alt={conn.partner.fullName || conn.partner.username}
-                            className="w-9 h-9 rounded-xl object-cover"
+                            className="w-10 h-10 rounded-xl object-cover ring-2 ring-crimson-300"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center text-xs">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-sm">
                             {(conn.partner?.username || "dev").slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${conn.partner?.id || conn.partner?.username}`}
-                            className="text-xs font-bold text-gray-900 hover:text-purple-700 truncate block"
+                            className="font-doodle text-lg font-bold text-gray-900 hover:text-crimson-700 truncate block"
                           >
                             {conn.partner.fullName || conn.partner.username}
                           </Link>
                           {conn.partner.headline && (
-                            <p className="text-[11px] text-gray-500 truncate">
+                            <p className="font-sans text-xs text-gray-600 truncate">
                               {conn.partner.headline}
                             </p>
                           )}
@@ -901,14 +901,14 @@ export function NetworkPage() {
                         <button
                           type="button"
                           onClick={() => handleAcceptConnection(conn.id)}
-                          className="flex-1 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition"
+                          className="flex-1 py-1.5 rounded-xl bg-forest-700 text-white font-doodle text-sm font-bold hover:bg-forest-800 transition"
                         >
-                          Accept
+                          Accept 🌿
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeclineConnection(conn.id)}
-                          className="px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition"
+                          className="px-3 py-1.5 rounded-xl border-2 border-gray-300 text-gray-600 font-doodle text-sm font-bold hover:bg-cream-100 transition"
                         >
                           Decline
                         </button>
@@ -919,13 +919,13 @@ export function NetworkPage() {
               </div>
             )}
 
-            {/* Suggested Creators Box: Cutesy polaroid tiles */}
-            <div className="rounded-3xl border border-amber-200/80 bg-white p-5 sm:p-6 shadow-soft">
+            {/* Suggested Creators Box in Polaroid Tiles */}
+            <div className="rounded-3xl border-3 border-forest-600/40 bg-white p-5 sm:p-6 shadow-soft">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 text-sm">
+                <h3 className="font-doodle text-2xl font-bold text-gray-900">
                   Suggested Creators
                 </h3>
-                <span className="font-hand text-sm text-purple-600 font-semibold">explore ✦</span>
+                <span className="font-hand text-lg text-crimson-700 font-bold">explore ✦</span>
               </div>
 
               <div className="space-y-3.5">
@@ -942,10 +942,10 @@ export function NetworkPage() {
                             <img
                               src={dev.avatarUrl}
                               alt={dev.fullName || dev.username}
-                              className="w-9 h-9 rounded-xl object-cover ring-1 ring-amber-100"
+                              className="w-10 h-10 rounded-xl object-cover ring-2 ring-forest-400"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500 to-amber-400 text-white font-bold flex items-center justify-center text-xs">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-forest-600 to-crimson-600 text-white font-doodle font-bold flex items-center justify-center text-sm">
                               {dev.username.slice(0, 2).toUpperCase()}
                             </div>
                           )}
@@ -953,12 +953,12 @@ export function NetworkPage() {
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${dev.id || dev.username}`}
-                            className="text-xs font-bold text-gray-900 hover:text-purple-700 truncate block"
+                            className="font-doodle text-lg font-bold text-gray-900 hover:text-forest-700 truncate block"
                           >
                             {dev.fullName || dev.username}
                           </Link>
                           {dev.headline && (
-                            <p className="text-[11px] text-gray-500 truncate">
+                            <p className="font-sans text-xs text-gray-600 truncate">
                               {dev.headline}
                             </p>
                           )}
@@ -969,17 +969,17 @@ export function NetworkPage() {
                         type="button"
                         disabled={hasRequested}
                         onClick={() => handleSendConnect(dev.id)}
-                        className={`p-2 rounded-xl text-xs font-semibold transition shrink-0 ${
+                        className={`p-2 rounded-xl text-xs font-bold transition shrink-0 ${
                           hasRequested
-                            ? "bg-gray-100 text-gray-400"
-                            : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                            ? "bg-gray-100 text-gray-400 border border-gray-300"
+                            : "bg-forest-100 text-forest-800 hover:bg-forest-200 border-2 border-forest-600"
                         }`}
                         title="Connect with developer"
                       >
                         {hasRequested ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <Check className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <UserPlus className="w-3.5 h-3.5" />
+                          <UserPlus className="w-4 h-4" />
                         )}
                       </button>
                     </div>
