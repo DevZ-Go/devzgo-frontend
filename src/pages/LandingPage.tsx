@@ -7,9 +7,8 @@ import { ExploreLink } from "../components/tvworld/ExploreLink";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import type { ApiProject } from "../types/project";
-import pastureHero from "../assets/editorial/pasture_hero.jpg";
+import dreamBigApples from "../assets/editorial/dream_big_apples.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
-import cowsMeadow from "../assets/editorial/cows_meadow.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
 // High-quality fallback student projects in case the API is offline or returns empty
@@ -118,14 +117,14 @@ export function LandingPage() {
             />
           ) : (
             <img
-              src={pastureHero}
-              alt="Pasture Raised cattle grazing on green hills"
-              className="w-full h-full object-cover object-[center_35%]"
+              src={dreamBigApples}
+              alt="dream BIG apple artwork"
+              className="w-full h-full object-cover object-[center_40%]"
             />
           )}
 
           {/* Gentle vignette overlay for crisp typography */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/45 pointer-events-none" />
         </div>
 
         {/* Center Content: Headline & "EXPLORE" Pill Button */}
@@ -134,9 +133,9 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="font-serif text-4xl sm:text-6xl md:text-7xl font-normal text-[#f5eedc] drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)] tracking-tight leading-[1.08]"
+            className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-[#f5eedc] drop-shadow-[0_2px_15px_rgba(0,0,0,0.7)] tracking-tight leading-[1.08]"
           >
-            Where Coders code. Like, <span className="italic">Really.</span>
+            dream <span className="italic font-medium">BIG</span>
           </motion.h1>
 
           <motion.div
@@ -278,27 +277,25 @@ export function LandingPage() {
             {/* Left Column: Soft Pastel Blue Story Card */}
             <div className="rounded-3xl bg-[#cde1f2] p-8 sm:p-12 md:p-14 flex flex-col justify-center text-center shadow-xs">
               <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 mb-6 block">
-                THE CLEANEST MEAT IN AMERICA
+                DREAM BIG · BUILD BOLD
               </span>
               <p className="font-serif text-xl sm:text-2xl md:text-[1.7rem] text-stone-800 leading-relaxed font-normal max-w-lg mx-auto">
-                Our style of farming is about restoring connection to good,
-                healthy food. It's thinking long term about what's good for the
-                health of people, animals and land. And it's making the real
-                changes necessary to get there. It's growing enjoyment and
-                appreciation of food raised right, and knowledge of what goes
-                into truly good food.
+                Our community is about turning ideas into reality. It's thinking
+                long-term about what inspires developers, creators, and students.
+                And it's crafting the tools and experiences that make a real
+                difference—celebrating creativity and the craft of dreaming big.
               </p>
             </div>
 
-            {/* Right Column: Cattle Landscape Photo Box with Corner Gingham Tape */}
+            {/* Right Column: Photo Box with Corner Gingham Tape */}
             <div className="relative rounded-3xl bg-stone-200/60 border border-stone-300/40 overflow-hidden min-h-[380px] flex items-center justify-center shadow-xs group">
               {/* Decorative Corner Washi/Gingham Tape */}
               <CornerTape />
 
-              {/* Documentary Cattle Herd Landscape Image */}
+              {/* Dream Big Apples Artwork */}
               <img
-                src={cowsMeadow}
-                alt="Herd of cows grazing in peaceful rolling green pastures"
+                src={dreamBigApples}
+                alt="dream BIG apple artwork"
                 className="w-full h-full object-cover min-h-[380px] group-hover:scale-105 transition-transform duration-500"
               />
             </div>

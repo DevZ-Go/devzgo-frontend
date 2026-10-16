@@ -136,3 +136,49 @@ code {
   background: rgba(139, 92, 246, 0.15);
   color: #2d2b3a;
 }
+
+/* Whimsical font utility classes */
+.font-hand {
+  font-family: 'Caveat', cursive;
+}
+.font-doodle {
+  font-family: 'Gaegu', cursive, sans-serif;
+}
+
+/* Cute washi tape strips for polaroids */
+.washi-tape-mint {
+  background: rgba(182, 245, 220, 0.75);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-peach {
+  background: rgba(255, 221, 181, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-lavender {
+  background: rgba(226, 215, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-coral {
+  background: rgba(255, 212, 204, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+
+/* Hanging card gentle sway */
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+
+.animate-gentle-sway {
+  transform-origin: top center;
+  animation: gentle-sway 6s ease-in-out infinite;
+}
+
