@@ -106,13 +106,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <nav className="max-w-[1400px] mx-auto px-6 md:px-12 py-3.5 flex items-center justify-between relative">
-          {/* Top Left: Links (Shop & About Us / Explore & Submit) */}
+          {/* Top Left: Links (Explore & About Us / Submit) */}
           <div className="flex items-center gap-6 text-sm font-medium">
             <Link
               to="/explore"
               className="text-white/90 hover:text-white drop-shadow-sm tracking-wide transition-colors font-sans hover:underline underline-offset-4 text-xs sm:text-sm"
             >
-              Shop
+              Explore
             </Link>
             <Link
               to="/add-project"
@@ -220,7 +220,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   onClick={() => setMobileOpen(false)}
                   className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
                 >
-                  Shop / Explore Projects
+                  Explore Projects
                 </Link>
                 <Link
                   to="/add-project"

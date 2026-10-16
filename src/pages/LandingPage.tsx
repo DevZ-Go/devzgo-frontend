@@ -145,9 +145,9 @@ export function LandingPage() {
             className="mt-8 flex items-center gap-3"
           >
             <ExploreLink
-              className="inline-block px-9 py-2.5 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs font-semibold uppercase tracking-widest transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-block px-8 py-3 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
             >
-              EXPLORE
+              EXPLORE PROJECTS
             </ExploreLink>
 
             {/* Optional subtle background switcher button */}
