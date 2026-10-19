@@ -249,7 +249,7 @@ export function ProfilePage() {
   }, [devProfile?.skills]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900">
+    <div className="min-h-screen bg-[#f8f6f0] dark:bg-[#0c0d10] text-stone-900">
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-28 pb-20">
@@ -281,28 +281,28 @@ export function ProfilePage() {
 
         {/* Profile Header Card */}
         <header className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_minmax(0,1fr)] items-start">
-          <div className="rounded-3xl border border-gray-200/90 bg-white p-8 sm:p-10 shadow-sm">
+          <div className="rounded-3xl border border-stone-200/90 bg-white/90 p-8 sm:p-10 shadow-sm relative overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-start gap-6">
               {devProfile?.avatarUrl ? (
                 <img
                   src={devProfile.avatarUrl}
                   alt={displayName}
-                  className="w-24 h-24 rounded-3xl object-cover ring-2 ring-gray-100 shadow-md shrink-0"
+                  className="w-24 h-24 rounded-3xl object-cover ring-2 ring-stone-200 shadow-md shrink-0"
                 />
               ) : (
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-600 to-purple-600 text-3xl font-bold tracking-tight text-white shadow-md shadow-blue-500/25">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-maroon-800 via-maroon-700 to-autumn-rust text-3xl font-serif font-normal tracking-tight text-amber-100 shadow-md shadow-maroon-900/30">
                   {initials(displayName, displayEmail ?? undefined)}
                 </div>
               )}
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xs text-gray-400 font-mono">
+                  <span className="text-xs text-stone-400 font-mono">
                     @{devProfile?.username || "user"}
                   </span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-1">
+                <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight mb-1">
                   {displayName}
                 </h1>
 
@@ -365,15 +365,15 @@ export function ProfilePage() {
                       </button>
                       <Link
                         to="/add-project"
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-maroon-800/20 hover:shadow-lg transition"
                       >
                         New project
                       </Link>
                       <Link
                         to="/wrap"
-                        className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-xs font-semibold text-white hover:bg-gray-800 transition"
+                        className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
                       >
-                        <Sparkles className="w-3.5 h-3.5" /> View your Wrapped
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" /> View your Wrapped
                       </Link>
                     </>
                   ) : (
@@ -386,10 +386,10 @@ export function ProfilePage() {
                           connectionState.status === "connected"
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : connectionState.status === "pending_sent"
-                            ? "bg-gray-100 text-gray-500 cursor-default"
+                            ? "bg-stone-100 text-stone-500 cursor-default"
                             : connectionState.status === "pending_received"
                             ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                            : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg"
+                            : "bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white shadow-md shadow-maroon-800/20 hover:shadow-lg"
                         }`}
                       >
                         {connectionState.status === "connected" ? (
@@ -414,9 +414,9 @@ export function ProfilePage() {
                             `/messages?user=${devProfile?.userId || devProfile?.id || routeId}`
                           )
                         }
-                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-xs font-semibold text-gray-800 hover:bg-gray-50 transition"
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
                       >
-                        <Send className="w-3.5 h-3.5 text-blue-600" />
+                        <Send className="w-3.5 h-3.5 text-maroon-700" />
                         Message
                       </button>
                     </>
@@ -484,14 +484,14 @@ export function ProfilePage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 mb-8 gap-4">
+        <div className="flex border-b border-stone-200 mb-8 gap-6 font-serif">
           <button
             type="button"
             onClick={() => setActiveTab("projects")}
-            className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
               activeTab === "projects"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-800"
+                ? "border-maroon-700 text-maroon-800 font-medium"
+                : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             Portfolio Projects ({projects.length})
@@ -499,10 +499,10 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={() => setActiveTab("activity")}
-            className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
               activeTab === "activity"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-800"
+                ? "border-maroon-700 text-maroon-800 font-medium"
+                : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
             Recent Activity ({activities.length})

@@ -477,14 +477,14 @@ export function ProjectFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-50">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
       <main className="relative z-10 max-w-2xl mx-auto px-6 sm:px-8 pt-28 pb-20">
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight">
             {isEdit ? "Edit project" : "New project"}
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-stone-600 font-sans">
             {isEdit
               ? "Update details or replace media and workspace."
               : "Tell us about your work. Media and files are optional."}
@@ -987,7 +987,7 @@ export function ProjectFormPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex items-center justify-center gap-2 min-h-[48px] px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:pointer-events-none transition"
+                    className="inline-flex items-center justify-center gap-2 min-h-[48px] px-8 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/25 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-50 disabled:pointer-events-none transition"
                   >
                     {loading ? (
                       <>

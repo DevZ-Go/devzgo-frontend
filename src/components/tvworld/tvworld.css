@@ -467,13 +467,13 @@
   text-align: center;
 }
 .tvw-btn--primary {
-  color: #050506;
-  background: #e7e9ec;
-  border-color: #e7e9ec;
+  color: #fff;
+  background: #721c2a;
+  border-color: #8b263e;
 }
 .tvw-btn--primary:hover {
-  color: #000;
-  background: #fff;
+  color: #fff;
+  background: #8b263e;
 }
 .tvw-select {
   font-family: var(--tvw-font);
@@ -574,13 +574,13 @@
 }
 .tvw-panel h2 {
   margin: 0;
-  font-family: var(--tvw-font);
-  font-size: 21px;
-  line-height: 1.3;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--tvw-ink);
-  text-transform: uppercase;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-transform: none;
   word-break: break-word;
 }
 .tvw-panel p {

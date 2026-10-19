@@ -36,6 +36,28 @@ export default {
           800: '#991B1B',
           900: '#7F1D1D',
         },
+        // Autumnal Maroon Palette
+        maroon: {
+          50: '#FDF2F4',
+          100: '#FCE7EB',
+          200: '#F8D0D7',
+          300: '#F2AAB6',
+          400: '#E67184',
+          500: '#CF3E58',
+          600: '#B32842',
+          700: '#8B263E',
+          800: '#721C2A',
+          900: '#5E1522',
+          950: '#3D0A14',
+        },
+        autumn: {
+          amber: '#B45309',
+          rust: '#9A3412',
+          gold: '#D97706',
+          maroon: '#721C2A',
+          wine: '#8B263E',
+          cream: '#F8F6F0',
+        },
         // Warm pastel palette
         cream: {
           50: '#FFFDF7',

@@ -200,23 +200,23 @@ export function MessagesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-gray-900">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-24 pb-12">
-        <div className="rounded-3xl border border-gray-200/90 bg-white shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-140px)] min-h-[600px]">
+        <div className="rounded-3xl border border-stone-200/90 bg-white shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-140px)] min-h-[600px]">
           {/* Left Column: Conversations List */}
           <div
-            className={`border-r border-gray-100 flex flex-col h-full bg-white ${
+            className={`border-r border-stone-100 flex flex-col h-full bg-white ${
               selectedUser ? "hidden md:flex" : "flex"
             }`}
           >
             {/* Conversations Header */}
-            <div className="p-5 border-b border-gray-100">
+            <div className="p-5 border-b border-stone-100">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-gray-900">Messages</h2>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                  <h2 className="font-serif text-2xl font-normal text-stone-900">Messages</h2>
+                  <span className="rounded-full bg-maroon-100 px-2 py-0.5 text-xs font-semibold text-maroon-800 font-sans">
                     {conversations.length}
                   </span>
                 </div>
@@ -402,22 +402,22 @@ export function MessagesPage() {
                           <div
                             className={`max-w-[75%] sm:max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-xs ${
                               isMe
-                                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-none"
-                                : "bg-white text-gray-900 border border-gray-100 rounded-bl-none"
+                                ? "bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-br-none"
+                                : "bg-white text-stone-900 border border-stone-200/80 rounded-bl-none"
                             }`}
                           >
                             <p className="whitespace-pre-wrap">{msg.content}</p>
                             <div
                               className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${
-                                isMe ? "text-blue-100" : "text-gray-400"
+                                isMe ? "text-amber-100/80" : "text-stone-400"
                               }`}
                             >
                               <span>{formatMessageTime(msg.createdAt)}</span>
                               {isMe && (
                                 msg.read ? (
-                                  <CheckCheck className="w-3.5 h-3.5 text-white" />
+                                  <CheckCheck className="w-3.5 h-3.5 text-amber-200" />
                                 ) : (
-                                  <Check className="w-3.5 h-3.5 text-blue-200" />
+                                  <Check className="w-3.5 h-3.5 text-amber-200/70" />
                                 )
                               )}
                             </div>
@@ -435,7 +435,7 @@ export function MessagesPage() {
                 {/* Input Dock */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-4 bg-white border-t border-gray-100 flex items-center gap-3"
+                  className="p-4 bg-white border-t border-stone-100 flex items-center gap-3"
                 >
                   <input
                     type="text"
@@ -444,12 +444,12 @@ export function MessagesPage() {
                     }…`}
                     value={inputContent}
                     onChange={(e) => setInputContent(e.target.value)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                    className="flex-1 rounded-xl border border-stone-200 bg-stone-50/70 px-4 py-2.5 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-maroon-300/30 focus:border-maroon-400 transition"
                   />
                   <button
                     type="submit"
                     disabled={!inputContent.trim() || sending}
-                    className="p-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md shadow-blue-500/20 hover:shadow-lg transition disabled:opacity-50"
+                    className="p-2.5 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber hover:shadow-lg transition disabled:opacity-50"
                   >
                     {sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

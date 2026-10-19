@@ -12,34 +12,34 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
     <div className="min-h-screen bg-cream-50 relative overflow-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-cream-50/85 backdrop-blur-xl border-b border-amber-100/60">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f8f6f0]/90 backdrop-blur-xl border-b border-amber-200/40">
         <div className="max-w-[1200px] mx-auto px-6 py-3 flex items-center justify-between">
           <Link
             to="/home"
-            className="flex items-center gap-2 group"
+            className="flex items-center gap-2.5 group"
           >
             <motion.div
               whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.1 }}
               transition={{ duration: 0.5 }}
-              className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-lavender-400 to-coral-400 text-white"
+              className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-maroon-800 via-maroon-700 to-autumn-rust text-amber-200 shadow-sm shadow-maroon-900/30"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-amber-200" />
             </motion.div>
-            <span className="text-lg font-bold text-gray-800 tracking-tight group-hover:text-lavender-600 transition-colors">
+            <span className="font-serif text-xl font-normal text-stone-900 tracking-tight group-hover:text-maroon-700 transition-colors">
               DevZ-Go
             </span>
           </Link>
           <div className="flex items-center gap-4">
             <Link
               to="/login"
-              className="text-gray-500 hover:text-gray-800 font-medium text-sm transition-colors"
+              className="text-stone-600 hover:text-stone-900 font-medium text-sm transition-colors"
             >
               Sign in
             </Link>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link
                 to="/register"
-                className="px-4 py-2.5 bg-gradient-to-r from-lavender-500 to-coral-400 text-white rounded-2xl text-sm font-semibold shadow-md shadow-lavender-500/20 hover:shadow-lg transition-all"
+                className="px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg transition-all"
               >
                 Get started
               </Link>
@@ -50,9 +50,9 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
 
       {/* Floating decorative icons */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-        <div className="absolute -top-24 -right-24 w-[400px] h-[400px] bg-lavender-100/30 rounded-full blur-[80px]" />
-        <div className="absolute -bottom-24 -left-24 w-[350px] h-[350px] bg-coral-100/25 rounded-full blur-[80px]" />
-        <div className="absolute top-1/3 right-1/4 w-[200px] h-[200px] bg-mint-100/20 rounded-full blur-[60px]" />
+        <div className="absolute -top-24 -right-24 w-[400px] h-[400px] bg-maroon-100/25 rounded-full blur-[80px]" />
+        <div className="absolute -bottom-24 -left-24 w-[350px] h-[350px] bg-amber-100/30 rounded-full blur-[80px]" />
+        <div className="absolute top-1/3 right-1/4 w-[200px] h-[200px] bg-stone-200/40 rounded-full blur-[60px]" />
 
         {/* Small whimsical floating icons */}
         <motion.div
@@ -60,21 +60,21 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           animate={{ y: [-6, 6, -6], rotate: [-5, 5, -5] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Star className="w-5 h-5 text-peach-300/60" />
+          <Star className="w-5 h-5 text-amber-400/60" />
         </motion.div>
         <motion.div
           className="absolute top-[15%] right-[12%]"
           animate={{ y: [4, -8, 4], rotate: [3, -3, 3] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Heart className="w-4 h-4 text-coral-300/50" />
+          <Heart className="w-4 h-4 text-maroon-400/50" />
         </motion.div>
         <motion.div
           className="absolute bottom-[25%] left-[8%]"
           animate={{ y: [-4, 6, -4] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Code2 className="w-5 h-5 text-lavender-300/50" />
+          <Code2 className="w-5 h-5 text-stone-400/50" />
         </motion.div>
       </div>
 
@@ -87,8 +87,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl md:text-4xl font-extrabold leading-tight mb-3 tracking-tight">
-              <span className="text-gray-800">
+            <h1 className="font-serif text-3xl md:text-5xl font-normal text-stone-900 leading-tight mb-3 tracking-tight">
+              <span>
                 {title}
               </span>
               {" "}
@@ -100,7 +100,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                 👋
               </motion.span>
             </h1>
-            <p className="text-base text-gray-400">{subtitle}</p>
+            <p className="text-base text-stone-500 font-sans">{subtitle}</p>
           </motion.div>
           {children}
         </div>

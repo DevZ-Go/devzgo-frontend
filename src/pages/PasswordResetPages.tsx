@@ -25,13 +25,13 @@ function Card({ onSubmit, children, busy, label, notice, error }: {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-2xl bg-gradient-to-r from-lavender-500 to-coral-400 py-3.5 text-sm font-bold text-white shadow-lg disabled:opacity-60"
+          className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-sm font-bold text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 transition-all"
         >
           {busy ? "Please wait…" : label}
         </button>
       </form>
-      <p className="mt-6 text-center text-sm text-gray-400">
-        <Link to="/login" className="font-semibold text-lavender-500 hover:text-lavender-600">Back to sign in</Link>
+      <p className="mt-6 text-center text-sm text-stone-500">
+        <Link to="/login" className="font-semibold text-maroon-700 hover:text-maroon-900">Back to sign in</Link>
       </p>
     </div>
   );

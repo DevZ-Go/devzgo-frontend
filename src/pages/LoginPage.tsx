@@ -113,11 +113,11 @@ export function LoginPage() {
                   required
                   autoComplete="current-password"
                   placeholder="••••••••"
-                  className="w-full rounded-2xl border-2 border-cream-200 bg-cream-50/50 pl-10 pr-4 py-3 text-gray-800 placeholder:text-gray-300 transition-all focus:border-lavender-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200/40 text-sm"
+                  className="w-full rounded-2xl border-2 border-stone-200 bg-stone-50/50 pl-10 pr-4 py-3 text-stone-800 placeholder:text-stone-300 transition-all focus:border-maroon-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-maroon-200/40 text-sm"
                 />
               </div>
               <div className="mt-2 text-right">
-                <Link to="/forgot-password" className="text-xs font-semibold text-lavender-500 hover:text-lavender-600">
+                <Link to="/forgot-password" className="text-xs font-semibold text-maroon-700 hover:text-maroon-900">
                   Forgot password?
                 </Link>
               </div>
@@ -132,7 +132,7 @@ export function LoginPage() {
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 role="alert"
-                className="rounded-2xl border border-coral-200/60 bg-coral-50 px-4 py-3 text-sm text-coral-600"
+                className="rounded-2xl border border-red-200/60 bg-red-50 px-4 py-3 text-sm text-red-700"
               >
                 {error}
               </motion.div>
@@ -143,24 +143,24 @@ export function LoginPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-gradient-to-r from-lavender-500 to-coral-400 py-3.5 text-sm font-bold text-white shadow-lg shadow-lavender-500/20 transition-all hover:shadow-xl hover:shadow-lavender-500/30 disabled:opacity-60 disabled:pointer-events-none"
+              className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-sm font-bold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 disabled:pointer-events-none"
             >
               {loading ? "Signing in…" : "Sign in ✨"}
             </motion.button>
           </form>
           <div className="px-8 pb-8 -mt-3">
-            <div className="mb-4 flex items-center gap-3 text-xs text-gray-300">
-              <span className="h-px flex-1 bg-cream-200" />or<span className="h-px flex-1 bg-cream-200" />
+            <div className="mb-4 flex items-center gap-3 text-xs text-stone-400">
+              <span className="h-px flex-1 bg-stone-200" />or<span className="h-px flex-1 bg-stone-200" />
             </div>
             <GitHubButton />
           </div>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-400">
+        <p className="mt-6 text-center text-sm text-stone-500">
           Don&apos;t have an account?{" "}
           <Link
             to="/register"
-            className="font-semibold text-lavender-500 hover:text-lavender-600 transition-colors"
+            className="font-semibold text-maroon-700 hover:text-maroon-900 transition-colors"
           >
             Create one
           </Link>

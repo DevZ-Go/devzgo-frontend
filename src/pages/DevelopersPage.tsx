@@ -42,27 +42,27 @@ export function DevelopersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-8 pt-28 pb-16">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 text-blue-600 mb-2 font-semibold uppercase tracking-wider text-xs">
+            <div className="inline-flex items-center gap-2 text-maroon-700 mb-2 font-semibold uppercase tracking-wider text-xs">
               <Users className="w-4 h-4" />
               Talent Discovery
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight">
               Find Developers
             </h1>
-            <p className="text-gray-600 max-w-2xl mt-1">
+            <p className="text-stone-600 max-w-2xl mt-1 font-sans">
               Search student developers by name, skill or title, then connect or send a message.
             </p>
           </div>
 
           <Link
             to="/explore"
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 shrink-0"
+            className="text-sm font-medium text-stone-600 hover:text-maroon-800 transition-colors shrink-0"
           >
             ← Back to Explore
           </Link>

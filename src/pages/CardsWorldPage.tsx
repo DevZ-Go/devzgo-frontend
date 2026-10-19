@@ -22,7 +22,7 @@ function CardLikeButton({ project }: { project: TvProject }) {
         else void toggle();
       }}
       className={`w-full py-3 rounded-2xl font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
-        liked ? "bg-red-500 text-white" : "bg-stone-200 text-stone-700"
+        liked ? "bg-maroon-700 text-white" : "bg-stone-200 text-stone-700"
       }`}
     >
       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
@@ -207,7 +207,7 @@ export function CardsWorldPage() {
                         
                         {/* Project Title overlaying media bottom */}
                         <div className="absolute bottom-4 left-4 right-4 text-white">
-                          <h2 className="text-2xl font-black leading-tight mb-1" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                          <h2 className="font-serif text-2xl font-normal leading-tight mb-1" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
                             {t.title}
                           </h2>
                           <div className="flex flex-wrap gap-1">
@@ -231,7 +231,7 @@ export function CardsWorldPage() {
                             >
                               SEE DETAILS
                             </button>
-                            <button className="flex-1 py-2.5 rounded-xl bg-indigo-100 border-2 border-indigo-300 text-indigo-700 font-bold hover:bg-indigo-200 transition-colors">
+                            <button className="flex-1 py-2.5 rounded-xl bg-maroon-100 border-2 border-maroon-300 text-maroon-800 font-bold hover:bg-maroon-200 transition-colors">
                               CONNECT +
                             </button>
                           </div>
