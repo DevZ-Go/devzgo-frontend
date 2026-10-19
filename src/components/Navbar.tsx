@@ -264,26 +264,26 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const linkClass = (path: string) =>
     `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
       isActive(path)
-        ? "bg-lavender-100 dark:bg-lavender-900/40 text-lavender-600 dark:text-lavender-300"
-        : "text-gray-600 dark:text-stone-300 hover:text-gray-900 dark:hover:text-white hover:bg-cream-200/60 dark:hover:bg-stone-800/60"
+        ? "bg-maroon-100 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 font-semibold"
+        : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60"
     }`;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-cream-50/85 dark:bg-stone-900/90 backdrop-blur-xl border-b border-amber-100/60 dark:border-stone-800 transition-colors duration-300">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f8f6f0]/90 dark:bg-stone-900/90 backdrop-blur-xl border-b border-amber-200/40 dark:border-stone-800 transition-colors duration-300">
       <div className="max-w-[1200px] mx-auto px-6 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link
           to="/home"
-          className="flex items-center gap-2 group"
+          className="flex items-center gap-2.5 group"
         >
           <motion.div
             whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.1 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-lavender-400 to-coral-400 text-white"
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-maroon-800 via-maroon-700 to-autumn-rust text-amber-200 shadow-sm shadow-maroon-900/30"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-amber-200" />
           </motion.div>
-          <span className="text-lg font-bold text-gray-800 dark:text-stone-100 tracking-tight group-hover:text-lavender-600 dark:group-hover:text-lavender-400 transition-colors">
+          <span className="font-serif text-xl font-normal text-stone-900 dark:text-stone-100 tracking-tight group-hover:text-maroon-700 dark:group-hover:text-maroon-300 transition-colors">
             DevZ-Go
           </span>
         </Link>
@@ -291,7 +291,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1.5">
           {(user?.email ?? user?.username) && (
-            <span className="text-xs text-gray-400 dark:text-stone-400 mr-2 max-w-[160px] truncate">
+            <span className="text-xs text-stone-400 dark:text-stone-400 mr-2 max-w-[160px] truncate">
               {String(user?.email ?? user?.username)}
             </span>
           )}
@@ -307,7 +307,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             <MessageSquare className="w-4 h-4" />
             <span>Messages</span>
             {unreadMessages > 0 && (
-              <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+              <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-maroon-700 text-[10px] font-bold text-white">
                 {unreadMessages}
               </span>
             )}
@@ -322,7 +322,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
             <Link
               to="/add-project"
-              className="flex items-center gap-2 ml-2 px-4 py-2.5 bg-gradient-to-r from-lavender-500 to-coral-400 text-white rounded-2xl text-sm font-semibold shadow-md shadow-lavender-500/20 hover:shadow-lg hover:shadow-lavender-500/30 transition-all"
+              className="flex items-center gap-2 ml-2 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
             >
               <FolderPlus className="w-4 h-4" />
               Add Project
@@ -418,7 +418,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <Link
                 to="/add-project"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-lavender-500 to-coral-400 text-white rounded-2xl text-sm font-semibold"
+                className="flex items-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
               >
                 <FolderPlus className="w-4 h-4" /> Add Project
               </Link>
@@ -428,7 +428,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   handleLogout();
                   setMobileOpen(false);
                 }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-coral-500 hover:bg-coral-50 dark:hover:bg-coral-950/30 rounded-xl transition-colors"
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-maroon-700 dark:text-maroon-300 hover:bg-maroon-50 dark:hover:bg-maroon-950/30 rounded-xl transition-colors"
               >
                 <LogOut className="w-4 h-4" /> Log out
               </button>
