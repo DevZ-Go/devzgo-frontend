@@ -8,7 +8,6 @@ import {
   Users,
   Check,
   CheckCheck,
-  Sparkles,
 } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import {
@@ -133,7 +132,7 @@ export function NotificationsDropdown() {
       case "collaboration_accepted":
         return <Users className="w-3.5 h-3.5 text-amber-500" />;
       default:
-        return <Sparkles className="w-3.5 h-3.5 text-blue-500" />;
+        return <Bell className="w-3.5 h-3.5 text-blue-500" />;
     }
   };
 

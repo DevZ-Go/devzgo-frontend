@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sparkles, Volume2, VolumeX, ArrowDown } from "lucide-react";
+import { X, CalendarDays, Volume2, VolumeX, ArrowDown } from "lucide-react";
 import { WrapChapter } from "../components/wrap/WrapChapter";
 import { PixelSprite } from "../components/wrap/PixelSprite";
 import { POTION, INVADER, CHERRIES, HEART, GHOST } from "../components/wrap/sprites";
@@ -93,7 +93,7 @@ export function WrapPage() {
     <div className="relative w-full h-screen overflow-hidden bg-stone-950 font-sans selection:bg-amber-400 selection:text-black">
       <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between gap-3 pointer-events-none">
         <div className={`pointer-events-auto flex items-center gap-2 px-3.5 py-1.5 text-white text-xs font-mono ${pill}`}>
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <CalendarDays className="w-3.5 h-3.5 text-amber-400" />
           <span className="font-bold tracking-wider">DEVZ-GO</span>
           <span className="text-stone-500">|</span>
           <span className="text-stone-400 font-medium">WRAP</span>
@@ -184,7 +184,7 @@ export function WrapPage() {
                 {c.sprite}
               </WrapChapter>
             ))}
-            <WrapChapter index="★" title={w!.persona?.label ?? "That's your month"} text={w!.persona ? `Why: ${w!.persona.rule}.` : ""}
+            <WrapChapter index={String(slides.length + 1).padStart(2, "0")} title={w!.persona?.label ?? "That's your month"} text={w!.persona ? `Why: ${w!.persona.rule}.` : ""}
               accentColor={color(slides.length + 1)} isLast onReplay={() => jump(0)}>
               <div className="flex flex-col items-center gap-3">
                 <PixelSprite sprite={GHOST} size={18} />

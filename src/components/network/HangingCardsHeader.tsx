@@ -121,7 +121,7 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
 
         <div className="hidden sm:block text-right">
           <span className="font-sans text-xs font-semibold text-[#14532D] bg-[#DCFCE7] px-3 py-1.5 rounded-xl border border-[#15803D] shadow-2xs inline-block">
-            tap snapshot to explore ✦
+            tap a snapshot to explore
           </span>
         </div>
       </div>

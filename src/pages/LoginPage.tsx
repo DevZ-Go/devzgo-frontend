@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
-import { Sparkles, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { loginWithPassword } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
@@ -61,12 +61,7 @@ export function LoginPage() {
               whileHover={{ scale: 1.03 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-lavender-50 rounded-full border border-lavender-200/50 mb-6 cursor-default"
             >
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-4 h-4 text-lavender-500" />
-              </motion.div>
+              <Lock className="w-4 h-4 text-lavender-500" />
               <span className="text-sm font-medium text-lavender-600">
                 Sign in to your account
               </span>
@@ -145,7 +140,7 @@ export function LoginPage() {
               disabled={loading}
               className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-sm font-bold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 disabled:pointer-events-none"
             >
-              {loading ? "Signing in…" : "Sign in ✨"}
+              {loading ? "Signing in…" : "Sign in"}
             </motion.button>
           </form>
           <div className="px-8 pb-8 -mt-3">
