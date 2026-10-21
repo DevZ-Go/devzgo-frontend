@@ -35,6 +35,10 @@ export interface ProjectPreview {
   complexity?: string | null;
   contributionInfo?: string | null;
   ownerUsername?: string | null;
+  /** The project's own likes and comments, separate from the post's. */
+  likesCount: number;
+  isLiked: boolean;
+  commentsCount: number;
 }
 
 export interface ActivityComment {
@@ -46,6 +50,7 @@ export interface ActivityComment {
   authorAvatar?: string | null;
   commentText: string;
   createdAt: string;
+  canDelete?: boolean;
 }
 
 export interface FeedActivity {
@@ -57,6 +62,9 @@ export interface FeedActivity {
   authorHeadline?: string | null;
   activityType:
     | "post"
+    | "milestone"
+    | "collab_call"
+    | "project_update"
     | "project_added"
     | "project_analyzed"
     | "profile_updated"
@@ -73,6 +81,7 @@ export interface FeedActivity {
   isLiked: boolean;
   commentsCount: number;
   comments: ActivityComment[];
+  canEdit?: boolean;
 }
 
 export interface ConnectionUserSummary {
@@ -90,6 +99,8 @@ export interface Connection {
   status: "pending" | "accepted" | "declined" | "removed";
   createdAt: string;
   updatedAt?: string | null;
+  acceptedAt?: string | null;
+  mutualCount?: number;
   partner: ConnectionUserSummary;
 }
 
@@ -132,6 +143,14 @@ export interface ProjectCollaborator {
   avatarUrl?: string | null;
   role: string;
   createdAt: string;
+  isOwner?: boolean;
+  permissions?: CollabPermissions;
+}
+
+export interface CollabPermissions {
+  can_edit_details: boolean;
+  can_manage_files: boolean;
+  can_view_secrets: boolean;
 }
 
 export interface NotificationItem {

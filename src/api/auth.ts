@@ -52,6 +52,26 @@ export async function resetPassword(token: string, newPassword: string): Promise
   await axios.post(`${API_BASE_URL}/auth/reset-password`, { token, new_password: newPassword });
 }
 
+export async function checkUsername(username: string, signal?: AbortSignal) {
+  const { data } = await axios.get<{ username: string; available: boolean; reason: string | null }>(
+    `${API_BASE_URL}/auth/username-available`, { params: { username }, signal });
+  return data;
+}
+
+/** Creates the account for a first-time GitHub sign-in and returns its login token. */
+export async function completeGitHubSignup(onboardingToken: string, username: string): Promise<string> {
+  const { data } = await axios.post<LoginTokenResponse>(`${API_BASE_URL}/auth/github/complete`,
+    { onboarding_token: onboardingToken, username });
+  return data.access_token;
+}
+
+/** Omit currentPassword to set a first password on a GitHub-only account. Returns a fresh token. */
+export async function changePassword(newPassword: string, currentPassword?: string): Promise<string> {
+  const { data } = await api.post<LoginTokenResponse>("/auth/change-password",
+    { new_password: newPassword, current_password: currentPassword || undefined });
+  return data.access_token;
+}
+
 /** Requires Bearer token (uses `api` client). */
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>("/auth/me");

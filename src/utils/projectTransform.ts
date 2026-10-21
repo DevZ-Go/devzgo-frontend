@@ -49,8 +49,7 @@ export function transformApiProject(api: ApiProject, index: number): Project {
     techStack,
     likes: api.likes_count ?? api.likes ?? 0,
     isLiked: Boolean(api.is_liked),
-    views: api.views ?? 0,
-    comments: api.comments ?? 0,
+    commentsCount: api.comments_count ?? 0,
     featured: index < 4,
     visibility: typeof api.visibility === "string" ? api.visibility : undefined,
     author: {
