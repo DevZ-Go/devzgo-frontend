@@ -46,10 +46,10 @@ export function GitHubOnboardingPage() {
         <UsernameField value={username} onChange={setUsername} onAvailable={setAvailable} className={inputClass} />
         {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         <button type="submit" disabled={busy || !token || !available}
-          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3.5 font-semibold text-white shadow-lg disabled:opacity-60">
+          className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 font-semibold text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60">
           {busy ? "Creating account…" : "Create account"}
         </button>
-        <p className="text-center text-sm text-gray-500"><Link to="/login" className="font-semibold text-blue-600">Back to sign in</Link></p>
+        <p className="text-center text-sm text-gray-500"><Link to="/login" className="font-semibold text-forest-700">Back to sign in</Link></p>
       </form>
     </AuthLayout>
   );

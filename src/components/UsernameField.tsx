@@ -41,7 +41,7 @@ export function UsernameField({ value, onChange, onAvailable, className }: {
     <div>
       <input id="username" aria-label="Username" type="text" required maxLength={30} value={value} onChange={(e) => onChange(e.target.value)}
         autoComplete="username" placeholder="johndoe" className={className} />
-      {status && <p className={`mt-1.5 text-xs ${status.ok ? "text-emerald-600" : "text-gray-500"}`}>{status.text}</p>}
+      {status && <p className={`mt-1.5 text-xs ${status.ok ? "text-forest-700" : "text-stone-500"}`}>{status.text}</p>}
     </div>
   );
 }
