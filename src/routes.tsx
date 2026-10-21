@@ -8,6 +8,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { GitHubOnboardingPage } from "./pages/GitHubOnboardingPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
 import { ThemeSelectPage } from "./pages/ThemeSelectPage";
@@ -15,6 +17,8 @@ import { CardsWorldPage } from "./pages/CardsWorldPage";
 import { DevelopersPage } from "./pages/DevelopersPage";
 import { WrapPage } from "./pages/WrapPage";
 import { NetworkPage } from "./pages/NetworkPage";
+import { ConnectionsPage } from "./pages/ConnectionsPage";
+import { PostPage } from "./pages/PostPage";
 import { MessagesPage } from "./pages/MessagesPage";
 
 export const router = createBrowserRouter([
@@ -44,6 +48,8 @@ export const router = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },
+      { path: "/auth/github/onboarding", element: <GitHubOnboardingPage /> },
+      { path: "/settings", element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
       {
         path: "/network",
         element: (
@@ -52,6 +58,8 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: "/network/connections", element: <ProtectedRoute><ConnectionsPage /></ProtectedRoute> },
+      { path: "/network/post/:id", element: <ProtectedRoute><PostPage /></ProtectedRoute> },
       {
         path: "/messages",
         element: (

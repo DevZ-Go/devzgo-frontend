@@ -222,7 +222,7 @@ export function LandingPage() {
     },
     {
       q: "What is the Monthly Wrap retrospective?",
-      a: "Just like Spotify Wrapped, DevZ-Go's Monthly Wrap (/wrap) analyzes your coding milestones, commit momentum, top tech stacks, and community highlights in an interactive pixel-art story chapter experience.",
+      a: "Like Spotify Wrapped, but for your month on DevZ-Go (/wrap): projects you started, likes and comments they received, posts, new connections and collaborations, and your top tech stack, shown as pixel-art story chapters.",
     },
   ];
 
@@ -791,7 +791,7 @@ export function LandingPage() {
                   2026 Monthly Wrap
                 </h3>
                 <p className="text-xs text-stone-300 leading-relaxed font-sans">
-                  Turn your git commit history into an interactive retrospective story. Relive your coding seasons, streak milestones, and top frameworks.
+                  A story-style recap of your month on DevZ-Go: projects started, likes and comments received, new connections and collaborations, and your top tech stack.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-white/10 flex items-center gap-1.5 text-[11px] text-amber-400 font-mono">
@@ -868,7 +868,7 @@ export function LandingPage() {
                 <span className="text-white">devzgo wrap --status</span>
               </div>
               <div className="text-amber-300">
-                ★ 2026 Monthly Wrap is tuned and streaming: 6 chapters, pixel retro player ready.
+                ★ Monthly Wrap: your month in projects, connections and collaboration, counted from real activity.
               </div>
               <div className="pt-2 flex items-center gap-2">
                 <span className="text-emerald-400">visitor@devzgo:~$</span>
