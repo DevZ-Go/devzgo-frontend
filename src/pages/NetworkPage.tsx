@@ -1,30 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Heart,
-  MessageSquare,
-  Share2,
-  Search,
-  Users,
-  Send,
-  Loader2,
-  Trash2,
-  Sparkles,
-  Check,
-  UserPlus,
-  Clock,
-  ArrowRight,
-  Compass,
-  LayoutGrid,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Search, Users, Send, Loader2, Sparkles, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import {
-  fetchFeed,
-  createPost,
-  toggleActivityLike,
-  addActivityComment,
-  deleteActivityComment,
-} from "../api/network";
+import { createPost, fetchFeedPage } from "../api/network";
 import {
   fetchConnections,
   acceptConnection,
@@ -32,52 +11,68 @@ import {
   sendConnectionRequest,
   fetchSuggestedDevelopers,
 } from "../api/connections";
-import type { FeedActivity, Connection, ConnectionUserSummary } from "../types/network";
+import type { Connection, ConnectionUserSummary } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
+import { queryKeys } from "../api/queryKeys";
+import { getApiErrorMessage } from "../utils/apiError";
+import { FeedItem } from "../features/network/FeedItem";
 import { HangingCardsHeader } from "../components/network/HangingCardsHeader";
 import { ConstellationGraph } from "../components/network/ConstellationGraph";
 import { CuteFlower, CurlyDoodleBanner } from "../components/network/DoodleDecorations";
 
-function formatTimeAgo(isoString: string): string {
-  try {
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return "";
-  }
-}
-
 export function NetworkPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [feed, setFeed] = useState<FeedActivity[]>([]);
-  const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [params, setParams] = useSearchParams();
+  const filter = params.get("filter") ?? "all";
+  const [searchQuery, setSearchQuery] = useState(params.get("q") ?? "");
+  const debouncedSearch = params.get("q") ?? "";
   const [viewMode, setViewMode] = useState<"feed" | "constellation">("feed");
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    const t = setTimeout(() => setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (searchQuery.trim()) next.set("q", searchQuery.trim());
+      else next.delete("q");
+      return next;
+    }, { replace: true }), 300);
     return () => clearTimeout(t);
-  }, [searchQuery]);
-  const [loading, setLoading] = useState(true);
+  }, [searchQuery, setParams]);
+
+  function setFilter(id: string) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === "all") next.delete("filter");
+      else next.set("filter", id);
+      return next;
+    });
+  }
+
+  const client = useQueryClient();
+  const feedQuery = useInfiniteQuery({
+    queryKey: [...queryKeys.feed, "list", filter, debouncedSearch],
+    queryFn: ({ pageParam }) => fetchFeedPage(filter, debouncedSearch, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.nextPage,
+  });
+  const feed = feedQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const loading = feedQuery.isPending;
+  const moreRef = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feedQuery;
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "400px" });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Quick post state
   const [postContent, setPostContent] = useState("");
   const [postType, setPostType] = useState<string>("post");
   const [posting, setPosting] = useState(false);
-
-  // Active comments open accordion
-  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
-  const [commentSubmitting, setCommentSubmitting] = useState<Record<string, boolean>>({});
 
   // Connections sidebar state
   const [connections, setConnections] = useState<{
@@ -95,18 +90,6 @@ export function NetworkPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
-
-  const loadFeed = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchFeed(filter, debouncedSearch);
-      setFeed(data);
-    } catch {
-      showToast("Could not load the feed");
-    } finally {
-      setLoading(false);
-    }
-  }, [filter, debouncedSearch]);
 
   const loadSidebar = useCallback(async () => {
     try {
@@ -126,22 +109,16 @@ export function NetworkPage() {
   }, []);
 
   useEffect(() => {
-    void loadFeed();
-  }, [loadFeed]);
-
-  useEffect(() => {
     void loadSidebar();
-    const handleUpdate = () => {
-      void loadFeed();
-      void loadSidebar();
-    };
-    window.addEventListener("devzgo:feed-updated", handleUpdate);
+    const handleUpdate = () => void loadSidebar();
+    const handleDemoFeed = () => void client.invalidateQueries({ queryKey: queryKeys.feed });
+    window.addEventListener("devzgo:feed-updated", handleDemoFeed);
     window.addEventListener("devzgo:connections-updated", handleUpdate);
     return () => {
-      window.removeEventListener("devzgo:feed-updated", handleUpdate);
+      window.removeEventListener("devzgo:feed-updated", handleDemoFeed);
       window.removeEventListener("devzgo:connections-updated", handleUpdate);
     };
-  }, [loadFeed, loadSidebar]);
+  }, [loadSidebar, client]);
 
   async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
@@ -154,95 +131,11 @@ export function NetworkPage() {
       });
       setPostContent("");
       showToast("Spark pinned to the network! 🌿");
-      await loadFeed();
-    } catch {
-      showToast("Failed to share post");
+      await client.invalidateQueries({ queryKey: queryKeys.feed });
+    } catch (err) {
+      showToast(getApiErrorMessage(err));
     } finally {
       setPosting(false);
-    }
-  }
-
-  async function handleLikeToggle(activityId: string) {
-    setFeed((prev) =>
-      prev.map((act) => {
-        if (act.id === activityId) {
-          const isLiked = !act.isLiked;
-          const likesCount = isLiked ? act.likesCount + 1 : Math.max(0, act.likesCount - 1);
-          return { ...act, isLiked, likesCount };
-        }
-        return act;
-      })
-    );
-
-    try {
-      const res = await toggleActivityLike(activityId);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? { ...act, isLiked: res.isLiked, likesCount: res.likesCount }
-            : act
-        )
-      );
-    } catch {
-      showToast("Could not update like");
-      void loadFeed();
-    }
-  }
-
-  async function handleAddComment(activityId: string, e: React.FormEvent) {
-    e.preventDefault();
-    const text = commentInputs[activityId]?.trim();
-    if (!text) return;
-
-    setCommentSubmitting((prev) => ({ ...prev, [activityId]: true }));
-    try {
-      const newComment = await addActivityComment(activityId, text);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? {
-                ...act,
-                commentsCount: act.commentsCount + 1,
-                comments: [...act.comments, newComment],
-              }
-            : act
-        )
-      );
-      setCommentInputs((prev) => ({ ...prev, [activityId]: "" }));
-    } catch {
-      showToast("Failed to post comment");
-    } finally {
-      setCommentSubmitting((prev) => ({ ...prev, [activityId]: false }));
-    }
-  }
-
-  async function handleDeleteComment(activityId: string, commentId: string) {
-    try {
-      await deleteActivityComment(commentId);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? {
-                ...act,
-                commentsCount: Math.max(0, act.commentsCount - 1),
-                comments: act.comments.filter((c) => c.id !== commentId),
-              }
-            : act
-        )
-      );
-      showToast("Comment deleted");
-    } catch {
-      showToast("Could not delete comment");
-    }
-  }
-
-  function handleShare(activityId: string) {
-    const url = `${window.location.origin}/network#${activityId}`;
-    if (navigator.clipboard) {
-      void navigator.clipboard.writeText(url);
-      showToast("Link copied to clipboard! ✦");
-    } else {
-      showToast("Copied link: " + url);
     }
   }
 
@@ -277,23 +170,6 @@ export function NetworkPage() {
       showToast("Failed to send request");
     }
   }
-
-  const getActivityBadge = (type: string) => {
-    switch (type) {
-      case "project_added":
-        return { label: "NEW PROJECT", color: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]" };
-      case "project_analyzed":
-        return { label: "CODE SPARK", color: "bg-[#FEF3C7] text-[#78350F] border border-[#D97706]" };
-      case "profile_updated":
-        return { label: "PROFILE GLOW", color: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]" };
-      case "wrap_up_published":
-        return { label: "MONTHLY WRAP", color: "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]" };
-      case "collaboration":
-        return { label: "COLLAB CALL", color: "bg-[#DCFCE7] text-[#14532D] border border-[#15803D]" };
-      default:
-        return { label: "SHARED SPARK", color: "bg-stone-100 text-stone-700 border border-stone-300" };
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF7EE] text-[#1C1917] font-sans antialiased">
@@ -457,8 +333,8 @@ export function NetworkPage() {
                       <span className="font-sans text-xs text-stone-500 font-semibold mr-1">Type:</span>
                       {[
                         { id: "post", label: "Quick Spark" },
-                        { id: "project_added", label: "Milestone" },
-                        { id: "collaboration", label: "Collab Call" },
+                        { id: "milestone", label: "Milestone" },
+                        { id: "collab_call", label: "Collab Call" },
                       ].map((t) => (
                         <button
                           key={t.id}
@@ -508,314 +384,16 @@ export function NetworkPage() {
                 </p>
               </div>
             ) : (
-              feed.map((activity, idx) => {
-                const badge = getActivityBadge(activity.activityType);
-                const isCommentsOpen = Boolean(openComments[activity.id]);
-                const isGreen = idx % 2 === 0;
-
-                return (
-                  <article
-                    key={activity.id}
-                    id={activity.id}
-                    className="relative rounded-2xl border-2 border-[#1c1917]/20 bg-white shadow-xs overflow-hidden hover:shadow-sm transition-all duration-200"
-                  >
-                    {/* Washi tape on top right */}
-                    <div
-                      className={`${
-                        isGreen ? "washi-tape-green" : "washi-tape-red"
-                      } absolute -top-2.5 right-6 w-18 h-3.5 rounded-xs rotate-[1.5deg] z-10 flex items-center justify-center text-[10px] text-[#1C1917] font-bold font-sans tracking-wider border border-[#1C1917]/20`}
-                    >
-                      {isGreen ? "GARDEN" : "SPARK"}
-                    </div>
-
-                    <div className="p-5 sm:p-6">
-                      {/* Author Header */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Link
-                            to={`/profile/${activity.userId || activity.authorUsername}`}
-                            className="group block shrink-0"
-                          >
-                            {activity.authorAvatar ? (
-                              <img
-                                src={activity.authorAvatar}
-                                alt={activity.authorName}
-                                className="w-11 h-11 rounded-xl object-cover ring-2 ring-forest-600/40 group-hover:ring-crimson-500 transition"
-                              />
-                            ) : (
-                              <div className="w-11 h-11 rounded-xl bg-[#DCFCE7] text-[#14532D] font-cursive font-bold flex items-center justify-center text-lg shadow-xs border border-forest-600">
-                                {activity.authorName?.slice(0, 2).toUpperCase() || "DV"}
-                              </div>
-                            )}
-                          </Link>
-
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {/* Whimsical Cursive ONLY for author heading */}
-                              <Link
-                                to={`/profile/${activity.userId || activity.authorUsername}`}
-                                className="font-cursive text-2xl font-bold text-[#1C1917] hover:text-crimson-600 transition"
-                              >
-                                {activity.authorName}
-                              </Link>
-                              <span className="font-sans text-xs text-stone-500 font-medium">
-                                @{activity.authorUsername}
-                              </span>
-                              <span
-                                className={`font-sans text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${badge.color}`}
-                              >
-                                {badge.label}
-                              </span>
-                            </div>
-                            {activity.authorHeadline && (
-                              <p className="font-sans text-xs text-stone-600 mt-0.5 truncate font-normal">
-                                {activity.authorHeadline}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1.5 text-[11px] text-stone-400 mt-0.5 font-sans">
-                              <Clock className="w-3 h-3" />
-                              <span>{formatTimeAgo(activity.createdAt)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Share Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleShare(activity.id)}
-                          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition"
-                          title="Share / Copy Link"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Post Title: Whimsical Cursive ONLY */}
-                      {activity.title && (
-                        <h3 className="font-cursive text-2xl sm:text-3xl font-bold text-[#1C1917] mb-2 leading-tight">
-                          {activity.title}
-                        </h3>
-                      )}
-
-                      {/* Post Content: Clean Straight Body Text */}
-                      {activity.content && (
-                        <p className="font-sans text-sm text-stone-800 whitespace-pre-wrap leading-relaxed mb-3.5">
-                          {activity.content}
-                        </p>
-                      )}
-
-                      {/* Media Image Attachment */}
-                      {activity.mediaUrl && !activity.project && (
-                        <div className="rounded-xl overflow-hidden border border-stone-200 mb-3.5 bg-gray-50 max-h-[340px]">
-                          <img
-                            src={activity.mediaUrl}
-                            alt="Activity attachment"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-
-                      {/* Attached Project Card */}
-                      {activity.project && (
-                        <Link
-                          to={`/project/${activity.project.id}`}
-                          className="group block my-3 rounded-xl border border-forest-600/40 bg-[#FDFBF7] text-[#1C1917] overflow-hidden hover:border-crimson-600 transition shadow-2xs"
-                        >
-                          {activity.project.coverImageUrl && (
-                            <div className="aspect-[2.6/1] w-full overflow-hidden bg-gray-100">
-                              <img
-                                src={activity.project.coverImageUrl}
-                                alt={activity.project.title}
-                                className="w-full h-full object-cover group-hover:scale-102 transition duration-300"
-                              />
-                            </div>
-                          )}
-                          <div className="p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {(activity.project.techStacks || []).map((t) => (
-                                  <span
-                                    key={t}
-                                    className="px-2 py-0.5 rounded-md font-sans text-[10px] font-semibold bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]"
-                                  >
-                                    {t}
-                                  </span>
-                                ))}
-                                {activity.project.complexity && (
-                                  <span className="font-sans text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]">
-                                    {activity.project.complexity}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="font-sans text-xs text-forest-700 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
-                                Open spark <ArrowRight className="w-3.5 h-3.5" />
-                              </span>
-                            </div>
-
-                            <h4 className="font-cursive text-xl sm:text-2xl font-bold text-[#1C1917] group-hover:text-forest-700 transition">
-                              {activity.project.title}
-                            </h4>
-                            {activity.project.shortDescription && (
-                              <p className="font-sans text-xs text-stone-600 mt-1 line-clamp-2 leading-relaxed">
-                                {activity.project.shortDescription}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      )}
-
-                      {/* Action Bar: Straight, Clean, Neatly Positioned */}
-                      <div className="mt-3.5 pt-3 border-t border-stone-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          {/* Heart Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleLikeToggle(activity.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
-                              activity.isLiked
-                                ? "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]"
-                                : "text-stone-700 hover:bg-stone-50 border border-stone-200"
-                            }`}
-                          >
-                            <Heart
-                              className={`w-3.5 h-3.5 ${
-                                activity.isLiked ? "fill-crimson-600 text-crimson-600" : ""
-                              }`}
-                            />
-                            <span>{activity.likesCount}</span>
-                          </button>
-
-                          {/* Comment Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenComments((prev) => ({
-                                ...prev,
-                                [activity.id]: !prev[activity.id],
-                              }))
-                            }
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
-                              isCommentsOpen
-                                ? "bg-[#DCFCE7] text-[#14532D] border border-[#15803D]"
-                                : "text-stone-700 hover:bg-stone-50 border border-stone-200"
-                            }`}
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>{activity.commentsCount} notes</span>
-                          </button>
-                        </div>
-
-                        {/* Direct Say Hi Button */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(
-                              `/messages?user=${activity.userId || activity.authorUsername}`
-                            )
-                          }
-                          className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#14532D] px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] border border-[#15803D] shadow-2xs transition"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>Say Hi 💌</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Comments Accordion Section */}
-                    {isCommentsOpen && (
-                      <div className="bg-[#FAF7EE] border-t border-stone-100 px-5 sm:px-6 py-4">
-                        <form
-                          onSubmit={(e) => handleAddComment(activity.id, e)}
-                          className="flex items-center gap-2.5 mb-3"
-                        >
-                          <input
-                            type="text"
-                            placeholder="Write a constructive note on this spark..."
-                            value={commentInputs[activity.id] || ""}
-                            onChange={(e) =>
-                              setCommentInputs((prev) => ({
-                                ...prev,
-                                [activity.id]: e.target.value,
-                              }))
-                            }
-                            className="flex-1 rounded-lg border border-stone-300 bg-white px-3 py-1.5 font-sans text-xs text-[#1C1917] shadow-2xs focus:border-forest-600 focus:outline-none"
-                          />
-                          <button
-                            type="submit"
-                            disabled={
-                              !commentInputs[activity.id]?.trim() ||
-                              commentSubmitting[activity.id]
-                            }
-                            className="px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1"
-                          >
-                            {commentSubmitting[activity.id] ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              "Reply"
-                            )}
-                          </button>
-                        </form>
-
-                        <div className="space-y-2.5 max-h-[240px] overflow-y-auto">
-                          {(activity.comments || []).length === 0 ? (
-                            <p className="font-cursive text-xl text-forest-800 font-semibold py-1">
-                              No notes yet. Leave a sweet word of encouragement ~
-                            </p>
-                          ) : (
-                            (activity.comments || []).map((comment) => (
-                              <div
-                                key={comment.id}
-                                className="group flex items-start justify-between gap-3 p-2.5 rounded-xl bg-white border border-stone-200 shadow-2xs"
-                              >
-                                <div className="flex items-start gap-2.5 min-w-0">
-                                  {comment.authorAvatar ? (
-                                    <img
-                                      src={comment.authorAvatar}
-                                      alt={comment.authorName}
-                                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
-                                    />
-                                  ) : (
-                                    <div className="w-7 h-7 rounded-full bg-[#DCFCE7] text-[#14532D] font-sans font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px] border border-forest-600">
-                                      {comment.authorName.slice(0, 2).toUpperCase()}
-                                    </div>
-                                  )}
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-cursive text-lg font-bold text-[#1C1917]">
-                                        {comment.authorName}
-                                      </span>
-                                      <span className="text-[11px] text-stone-400 font-sans">
-                                        @{comment.authorUsername} ·{" "}
-                                        {formatTimeAgo(comment.createdAt)}
-                                      </span>
-                                    </div>
-                                    <p className="font-sans text-xs text-stone-700 mt-0.5 leading-relaxed">
-                                      {comment.commentText}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {user?.id != null && String(user.id) === comment.authorId && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDeleteComment(activity.id, comment.id)
-                                    }
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-crimson-600 transition shrink-0"
-                                    title="Delete comment"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })
+              <>
+                {feed.map((activity, idx) => <FeedItem key={activity.id} activity={activity} index={idx} notify={showToast} />)}
+                <div ref={moreRef} />
+                {feedQuery.hasNextPage && (
+                  <button type="button" disabled={feedQuery.isFetchingNextPage} onClick={() => void feedQuery.fetchNextPage()}
+                    className="w-full rounded-xl border border-stone-200 bg-white py-2 font-sans text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                    {feedQuery.isFetchingNextPage ? "Loading…" : "Load more sparks"}
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -834,19 +412,27 @@ export function NetworkPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-[#F0FDF4] border border-forest-300">
+                <Link to="/network/connections" className="p-3 rounded-xl bg-[#F0FDF4] border border-forest-300 hover:border-forest-600 transition">
                   <p className="font-sans text-xs text-[#14532D] font-medium">Connections</p>
                   <p className="font-sans text-2xl font-extrabold text-[#14532D] mt-0.5">
                     {connections?.accepted?.length || 0}
                   </p>
-                </div>
-                <div className="p-3 rounded-xl bg-[#FEF2F2] border border-crimson-300">
+                </Link>
+                <Link to="/network/connections?tab=incoming" className="p-3 rounded-xl bg-[#FEF2F2] border border-crimson-300 hover:border-crimson-600 transition">
                   <p className="font-sans text-xs text-[#991B1B] font-medium">Pending</p>
                   <p className="font-sans text-2xl font-extrabold text-[#991B1B] mt-0.5">
                     {connections?.pendingIncoming?.length || 0}
                   </p>
-                </div>
+                </Link>
               </div>
+
+              <Link
+                to="/network/connections"
+                className="mb-2 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-[#1C1917] px-4 py-2 font-sans text-xs font-semibold transition shadow-2xs"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Manage connections
+              </Link>
 
               <Link
                 to="/messages"

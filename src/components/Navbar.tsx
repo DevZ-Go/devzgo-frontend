@@ -12,6 +12,7 @@ import {
   Search,
   MessageSquare,
   Users,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
@@ -165,6 +166,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <User className="w-5 h-5 drop-shadow-sm" />
             </Link>
 
+            <Link
+              to="/settings"
+              className="p-1.5 hover:text-white hover:bg-white/15 rounded-full transition-all"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5 drop-shadow-sm" />
+            </Link>
+
             <button
               type="button"
               onClick={handleLogout}
@@ -221,6 +230,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
                 >
                   Explore Projects
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm font-medium py-1 text-white hover:text-[#fced96]"
+                >
+                  Settings
                 </Link>
                 <Link
                   to="/add-project"
@@ -333,6 +349,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           <div className="ml-1">
             <ThemeToggle variant="ghost" />
           </div>
+          <Link to="/settings" aria-label="Settings"
+            className="ml-1 p-2.5 text-gray-400 dark:text-stone-400 hover:text-maroon-700 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-xl transition-all">
+            <Settings className="w-4 h-4" />
+          </Link>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -414,6 +434,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 className={linkClass("/profile") + " w-full"}
               >
                 <User className="w-4 h-4" /> Profile
+              </Link>
+              <Link
+                to="/settings"
+                onClick={() => setMobileOpen(false)}
+                className={linkClass("/settings") + " w-full"}
+              >
+                <Settings className="w-4 h-4" /> Settings
               </Link>
               <Link
                 to="/add-project"

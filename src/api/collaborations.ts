@@ -1,6 +1,6 @@
 import { api } from "./client";
 import { demoFallback, assetUrlOrNull } from "./config";
-import type { CollaborationRequest, ProjectCollaborator } from "../types/network";
+import type { CollabPermissions, CollaborationRequest, ProjectCollaborator } from "../types/network";
 import { INITIAL_PROJECT_COLLABORATORS, INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
 const STORAGE_KEY_COLLABORATORS = "devzgo_collaborators_v1";
@@ -59,8 +59,52 @@ function mapCollaborator(c: Record<string, unknown>): ProjectCollaborator {
     avatarUrl: assetUrlOrNull(u.avatar_url || u.avatarUrl || c.avatar_url || c.avatarUrl),
     role: (c.role || "Collaborator") as string,
     createdAt: (c.created_at || c.joined_at || c.createdAt || new Date().toISOString()) as string,
+    isOwner: Boolean(c.is_owner),
+    permissions: (c.permissions as CollabPermissions | undefined) ?? NO_PERMISSIONS,
   };
 }
+
+export const NO_PERMISSIONS: CollabPermissions = { can_edit_details: false, can_manage_files: false, can_view_secrets: false };
+
+type RawUser = { id: string; username: string; full_name?: string | null; headline?: string | null; avatar_url?: string | null };
+export type MyCollabStatus = {
+  status: "owner" | "member" | "requested" | "invited" | "none";
+  request_id?: string | null;
+  invitation_id?: string | null;
+  permissions: CollabPermissions;
+};
+export type Invitation = {
+  id: string;
+  project_id: string;
+  project_title: string;
+  inviter: RawUser;
+  invitee: RawUser;
+  role: string;
+  message?: string | null;
+  permissions: CollabPermissions;
+  expires_at: string;
+};
+export type Invitee = RawUser & { status: "member" | "invited" | "requested" | "none" };
+
+const base = (projectId: string) => `/collaborations/projects/${projectId}`;
+const get = async <T,>(url: string, params?: object): Promise<T> => (await api.get(url, { params })).data;
+
+export const fetchMyCollabStatus = (projectId: string) => get<MyCollabStatus>(`${base(projectId)}/me`);
+export const fetchProjectInvitations = (projectId: string) => get<Invitation[]>(`${base(projectId)}/invitations`);
+export const fetchMyInvitations = () => get<Invitation[]>("/collaborations/invitations/mine");
+export const searchInvitees = (projectId: string, q: string) => get<Invitee[]>(`${base(projectId)}/invitee-search`, { q });
+export const fetchUserCollaborations = (userId: string) =>
+  get<{ id: string; title: string; contribution_info?: string | null; owner_username?: string | null }[]>(`/profiles/${userId}/collaborations`);
+
+export const inviteCollaborator = (projectId: string, body: { username: string; role: string; permissions: CollabPermissions }) =>
+  api.post(`${base(projectId)}/invitations`, body);
+export const answerInvitation = (id: string, answer: "accept" | "decline") => api.put(`/collaborations/invitations/${id}/${answer}`);
+export const revokeInvitation = (id: string) => api.delete(`/collaborations/invitations/${id}`);
+export const withdrawCollabRequest = (id: string) => api.delete(`/collaborations/requests/${id}`);
+export const leaveProject = (projectId: string) => api.delete(`${base(projectId)}/members/me`);
+export const removeMember = (projectId: string, userId: string) => api.delete(`${base(projectId)}/members/${userId}`);
+export const updateMemberPermissions = (projectId: string, userId: string, permissions: CollabPermissions) =>
+  api.patch(`${base(projectId)}/members/${userId}`, permissions);
 
 function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
   const u = ((r.requester || r.user) as Record<string, unknown>) || {};

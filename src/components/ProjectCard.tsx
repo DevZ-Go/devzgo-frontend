@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Heart, Eye, MessageCircle, ArrowRight } from "lucide-react";
+import { Heart, MessageCircle, ArrowRight } from "lucide-react";
 import { ImageWithFallback } from "./ImageWithFallback";
 import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 import type { Project } from "../types/project";
+import { useProjectLike } from "../hooks/useProjectLike";
 
 interface ProjectCardProps {
   project: Project;
@@ -12,6 +13,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) {
   const techClass = (tech: string) => getTechStackChipClasses(tech, "onDark");
+  const { count, liked } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
 
   if (variant === "hero") {
     return (
@@ -46,16 +48,12 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-sm text-gray-400">
                 <div className="flex items-center gap-1">
-                  <Heart className="w-3.5 h-3.5" />
-                  <span>{project.likes}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>{project.views}</span>
+                  <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+                  <span>{count}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span>{project.comments}</span>
+                  <span>{project.commentsCount}</span>
                 </div>
               </div>
               <span className="text-lavender-500 group-hover:text-lavender-600 flex items-center gap-1 text-sm font-medium">
@@ -112,16 +110,12 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
               </div>
               <div className="flex items-center gap-5 text-white/60 text-sm">
                 <div className="flex items-center gap-1.5">
-                  <Heart className="w-4 h-4" />
-                  <span>{project.likes.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4" />
-                  <span>{project.views.toLocaleString()}</span>
+                  <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
+                  <span>{count.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MessageCircle className="w-4 h-4" />
-                  <span>{project.comments}</span>
+                  <span>{project.commentsCount}</span>
                 </div>
               </div>
             </div>
@@ -162,12 +156,12 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
             </div>
             <div className="flex items-center gap-3 text-white/60 text-xs">
               <div className="flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5" />
-                <span>{project.likes}</span>
+                <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+                <span>{count}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Eye className="w-3.5 h-3.5" />
-                <span>{project.views.toLocaleString()}</span>
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>{project.commentsCount}</span>
               </div>
               {project.author.username && (
                 <div className="flex items-center gap-1">

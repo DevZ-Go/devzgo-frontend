@@ -36,6 +36,8 @@ function mapConnection(raw: Record<string, unknown>): Connection {
     status: (raw.status || "pending") as Connection["status"],
     createdAt: (raw.created_at || raw.createdAt || new Date().toISOString()) as string,
     updatedAt: (raw.updated_at || raw.updatedAt || null) as string | null,
+    acceptedAt: (raw.accepted_at || null) as string | null,
+    mutualCount: Number(raw.mutual_count ?? 0),
     partner: partner
       ? {
           id: String(partner.id),
@@ -54,44 +56,30 @@ function mapConnection(raw: Record<string, unknown>): Connection {
   };
 }
 
+export type ConnectionList = "accepted" | "incoming" | "outgoing";
+
+/** One page of my connections (searchable) or of received/sent requests. */
+export async function fetchConnectionPage(
+  kind: ConnectionList,
+  search: string,
+  page: string | null,
+  limit = 20
+): Promise<{ items: Connection[]; nextPage: string | null }> {
+  const params = { page: page ?? undefined, limit, ...(kind === "accepted" ? { search: search || undefined } : { direction: kind }) };
+  const { data } = await api.get(kind === "accepted" ? "/connections" : "/connections/requests", { params });
+  return { items: (data.items as Record<string, unknown>[]).map(mapConnection), nextPage: data.next_page ?? null };
+}
+
 export async function fetchConnections(): Promise<{
   accepted: Connection[];
   pendingIncoming: Connection[];
   pendingOutgoing: Connection[];
 }> {
   try {
-    const res = await api.get("/connections?status_filter=");
-    if (res.data) {
-      if (Array.isArray(res.data)) {
-        const accepted: Connection[] = [];
-        const pendingIncoming: Connection[] = [];
-        const pendingOutgoing: Connection[] = [];
-
-        for (const item of res.data) {
-          const conn = mapConnection(item);
-          if (conn.status === "accepted") {
-            accepted.push(conn);
-          } else if (conn.status === "pending") {
-            if (item.receiver_id && item.partner && item.receiver_id === item.partner.id) {
-              pendingOutgoing.push(conn);
-            } else {
-              pendingIncoming.push(conn);
-            }
-          }
-        }
-        return { accepted, pendingIncoming, pendingOutgoing };
-      } else if (typeof res.data === "object") {
-        return {
-          accepted: Array.isArray(res.data.accepted) ? res.data.accepted.map(mapConnection) : [],
-          pendingIncoming: Array.isArray(res.data.pendingIncoming)
-            ? res.data.pendingIncoming.map(mapConnection)
-            : [],
-          pendingOutgoing: Array.isArray(res.data.pendingOutgoing)
-            ? res.data.pendingOutgoing.map(mapConnection)
-            : [],
-        };
-      }
-    }
+    const [accepted, pendingIncoming, pendingOutgoing] = await Promise.all(
+      (["accepted", "incoming", "outgoing"] as const).map(async (kind) => (await fetchConnectionPage(kind, "", null, 50)).items)
+    );
+    return { accepted, pendingIncoming, pendingOutgoing };
   } catch (err) {
     demoFallback(err);
   }

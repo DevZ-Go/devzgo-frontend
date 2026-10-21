@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Users, X, Loader2, Sparkles, CheckCircle } from "lucide-react";
 import { requestCollaboration } from "../api/collaborations";
+import { getApiErrorMessage } from "../utils/apiError";
 
 interface CollaborationModalProps {
   projectId: string;
@@ -56,9 +57,7 @@ export function CollaborationModal({
         if (onSuccess) onSuccess();
       }, 1500);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to submit collaboration request";
-      setError(msg);
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
