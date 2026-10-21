@@ -70,8 +70,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["React", "TypeScript", "FastAPI", "TailwindCSS"],
     cover_image_url: "https://picsum.photos/seed/devzgo/800/600",
     likes: 142,
-    views: 2300,
-    comments: 28,
+    comments_count: 28,
     owner: {
       username: "DevZGoDemoUser",
       name: "Demo User",
@@ -94,8 +93,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["Next.js", "TypeScript", "PostgreSQL"],
     cover_image_url: "https://picsum.photos/seed/cloudnotes/800/600",
     likes: 89,
-    views: 1450,
-    comments: 12,
+    comments_count: 12,
     owner: {
       username: "coder_jane",
       name: "Jane Smith",
@@ -118,8 +116,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["React", "TypeScript"],
     cover_image_url: "https://picsum.photos/seed/pixelforge/800/600",
     likes: 210,
-    views: 3800,
-    comments: 45,
+    comments_count: 45,
     owner: {
       username: "art_dev",
       name: "Alex Rivera",
@@ -142,8 +139,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["Rust"],
     cover_image_url: "https://picsum.photos/seed/rustcli/800/600",
     likes: 176,
-    views: 2100,
-    comments: 19,
+    comments_count: 19,
     owner: {
       username: "rustacean42",
       name: "Sam Lee",
@@ -166,8 +162,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["Go", "Docker", "React"],
     cover_image_url: "https://picsum.photos/seed/microserve/800/600",
     likes: 98,
-    views: 1670,
-    comments: 8,
+    comments_count: 8,
     owner: {
       username: "infra_max",
       name: "Max Chen",
@@ -190,8 +185,7 @@ const MOCK_PROJECTS: ApiProject[] = [
     tech_stacks: ["Python", "React", "MongoDB"],
     cover_image_url: "https://picsum.photos/seed/dataviz/800/600",
     likes: 134,
-    views: 1920,
-    comments: 22,
+    comments_count: 22,
     owner: {
       username: "data_queen",
       name: "Priya Patel",
@@ -269,8 +263,7 @@ export async function createProject(
     ),
     cover_image_url: `https://picsum.photos/seed/proj${id}/800/600`,
     likes: 0,
-    views: 0,
-    comments: 0,
+    comments_count: 0,
     owner: { username: "DevZGoDemoUser", name: "Demo User", avatar: "" },
     owner_username: "DevZGoDemoUser",
   });

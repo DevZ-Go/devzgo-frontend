@@ -4,6 +4,8 @@ import { Lock, Mail } from "lucide-react";
 import { AuthLayout } from "../components/AuthLayout";
 import { requestPasswordReset, resetPassword } from "../api/auth";
 import { getApiErrorMessage } from "../utils/apiError";
+import { PasswordField } from "../components/PasswordField";
+import { passwordValid } from "../utils/passwordPolicy";
 
 const inputClass =
   "w-full rounded-2xl border-2 border-cream-200 bg-cream-50/50 pl-10 pr-4 py-3 text-gray-800 placeholder:text-gray-300 transition-all focus:border-lavender-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200/40 text-sm";
@@ -93,15 +95,17 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Choose a new password" subtitle="At least 8 characters">
-      <Card onSubmit={submit} busy={busy || !token} label="Update password" error={error}>
-        {[{ v: password, set: setPassword, ph: "New password" }, { v: confirm, set: setConfirm, ph: "Repeat new password" }].map((f) => (
-          <div key={f.ph} className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-            <input type="password" required minLength={8} value={f.v} onChange={(e) => f.set(e.target.value)}
-              autoComplete="new-password" placeholder={f.ph} className={inputClass} />
-          </div>
-        ))}
+    <AuthLayout title="Choose a new password" subtitle="Updating it signs you out on other devices">
+      <Card onSubmit={submit} busy={busy || !token || !passwordValid(password)} label="Update password" error={error}>
+        <div className="relative">
+          <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-300" />
+          <PasswordField value={password} onChange={setPassword} className={inputClass} />
+        </div>
+        <div className="relative">
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password" placeholder="Repeat new password" className={inputClass} />
+        </div>
       </Card>
     </AuthLayout>
   );

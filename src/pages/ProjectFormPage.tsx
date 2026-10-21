@@ -65,6 +65,7 @@ export function ProjectFormPage() {
   const [category, setCategory] = useState<string>("");
   const [categoryOther, setCategoryOther] = useState("");
   const [visibility, setVisibility] = useState<ProjectVisibility>("Public");
+  const [commentsEnabled, setCommentsEnabled] = useState(true);
   const [step, setStep] = useState(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [submitPhase, setSubmitPhase] = useState<string | null>(null);
@@ -157,6 +158,7 @@ export function ProjectFormPage() {
         if (vis === "Public" || vis === "Private") {
           setVisibility(vis);
         }
+        setCommentsEnabled(p.comments_enabled !== false);
         setSelectedStackIds(
           Array.isArray(p.tech_stack_ids) ? p.tech_stack_ids : []
         );
@@ -189,7 +191,7 @@ export function ProjectFormPage() {
       return;
     }
     if (!loadedProject) return;
-    if (loadedProject.is_owner === true) {
+    if (loadedProject.is_owner === true || loadedProject.access?.edit) {
       setForbidden(false);
       return;
     }
@@ -321,6 +323,7 @@ export function ProjectFormPage() {
           ...projectPayloadBase(),
           cover_image_url: coverForPut,
           demo_video_url: demoForPut,
+          comments_enabled: commentsEnabled,
         });
         projectId = editProjectId;
       } else {
@@ -713,6 +716,13 @@ export function ProjectFormPage() {
                   </select>
                 </div>
               </div>
+              {isEdit && (
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input type="checkbox" checked={commentsEnabled} onChange={(e) => setCommentsEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300" />
+                  Allow comments on this project
+                </label>
+              )}
               {category === "Other" && (
                 <div>
                   <label

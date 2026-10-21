@@ -1,28 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Heart,
-  MessageSquare,
-  Share2,
-  Search,
-  Users,
-  Send,
-  Loader2,
-  Trash2,
-  Sparkles,
-  Check,
-  UserPlus,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Search, Users, Send, Loader2, Sparkles, Check, UserPlus } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import {
-  fetchFeed,
-  createPost,
-  toggleActivityLike,
-  addActivityComment,
-  deleteActivityComment,
-} from "../api/network";
+import { createPost, fetchFeedPage } from "../api/network";
 import {
   fetchConnections,
   acceptConnection,
@@ -30,49 +11,64 @@ import {
   sendConnectionRequest,
   fetchSuggestedDevelopers,
 } from "../api/connections";
-import type { FeedActivity, Connection, ConnectionUserSummary } from "../types/network";
-import { getTechStackChipClasses } from "../utils/techStackChipStyle";
+import type { Connection, ConnectionUserSummary } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
-
-function formatTimeAgo(isoString: string): string {
-  try {
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return "";
-  }
-}
+import { queryKeys } from "../api/queryKeys";
+import { getApiErrorMessage } from "../utils/apiError";
+import { FeedItem } from "../features/network/FeedItem";
 
 export function NetworkPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [feed, setFeed] = useState<FeedActivity[]>([]);
-  const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [params, setParams] = useSearchParams();
+  const filter = params.get("filter") ?? "all";
+  const [searchQuery, setSearchQuery] = useState(params.get("q") ?? "");
+  const debouncedSearch = params.get("q") ?? "";
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    const t = setTimeout(() => setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (searchQuery.trim()) next.set("q", searchQuery.trim());
+      else next.delete("q");
+      return next;
+    }, { replace: true }), 300);
     return () => clearTimeout(t);
-  }, [searchQuery]);
-  const [loading, setLoading] = useState(true);
+  }, [searchQuery, setParams]);
+
+  function setFilter(id: string) {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === "all") next.delete("filter");
+      else next.set("filter", id);
+      return next;
+    });
+  }
+
+  const client = useQueryClient();
+  const feedQuery = useInfiniteQuery({
+    queryKey: [...queryKeys.feed, "list", filter, debouncedSearch],
+    queryFn: ({ pageParam }) => fetchFeedPage(filter, debouncedSearch, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.nextPage,
+  });
+  const feed = feedQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const loading = feedQuery.isPending;
+  const moreRef = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feedQuery;
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "400px" });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Quick post state
   const [postContent, setPostContent] = useState("");
   const [postType, setPostType] = useState<string>("post");
   const [posting, setPosting] = useState(false);
-
-  // Active comments open accordion
-  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
-  const [commentSubmitting, setCommentSubmitting] = useState<Record<string, boolean>>({});
 
   // Connections sidebar state
   const [connections, setConnections] = useState<{
@@ -90,18 +86,6 @@ export function NetworkPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
-
-  const loadFeed = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchFeed(filter, debouncedSearch);
-      setFeed(data);
-    } catch {
-      showToast("Could not load the feed");
-    } finally {
-      setLoading(false);
-    }
-  }, [filter, debouncedSearch]);
 
   const loadSidebar = useCallback(async () => {
     try {
@@ -121,22 +105,16 @@ export function NetworkPage() {
   }, []);
 
   useEffect(() => {
-    void loadFeed();
-  }, [loadFeed]);
-
-  useEffect(() => {
     void loadSidebar();
-    const handleUpdate = () => {
-      void loadFeed();
-      void loadSidebar();
-    };
-    window.addEventListener("devzgo:feed-updated", handleUpdate);
+    const handleUpdate = () => void loadSidebar();
+    const handleDemoFeed = () => void client.invalidateQueries({ queryKey: queryKeys.feed });
+    window.addEventListener("devzgo:feed-updated", handleDemoFeed);
     window.addEventListener("devzgo:connections-updated", handleUpdate);
     return () => {
-      window.removeEventListener("devzgo:feed-updated", handleUpdate);
+      window.removeEventListener("devzgo:feed-updated", handleDemoFeed);
       window.removeEventListener("devzgo:connections-updated", handleUpdate);
     };
-  }, [loadFeed, loadSidebar]);
+  }, [loadSidebar, client]);
 
   async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
@@ -149,96 +127,11 @@ export function NetworkPage() {
       });
       setPostContent("");
       showToast("Post shared to network!");
-      await loadFeed();
-    } catch {
-      showToast("Failed to share post");
+      await client.invalidateQueries({ queryKey: queryKeys.feed });
+    } catch (err) {
+      showToast(getApiErrorMessage(err));
     } finally {
       setPosting(false);
-    }
-  }
-
-  async function handleLikeToggle(activityId: string) {
-    // Optimistic UI update
-    setFeed((prev) =>
-      prev.map((act) => {
-        if (act.id === activityId) {
-          const isLiked = !act.isLiked;
-          const likesCount = isLiked ? act.likesCount + 1 : Math.max(0, act.likesCount - 1);
-          return { ...act, isLiked, likesCount };
-        }
-        return act;
-      })
-    );
-
-    try {
-      const res = await toggleActivityLike(activityId);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? { ...act, isLiked: res.isLiked, likesCount: res.likesCount }
-            : act
-        )
-      );
-    } catch {
-      showToast("Could not update like");
-      void loadFeed();
-    }
-  }
-
-  async function handleAddComment(activityId: string, e: React.FormEvent) {
-    e.preventDefault();
-    const text = commentInputs[activityId]?.trim();
-    if (!text) return;
-
-    setCommentSubmitting((prev) => ({ ...prev, [activityId]: true }));
-    try {
-      const newComment = await addActivityComment(activityId, text);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? {
-                ...act,
-                commentsCount: act.commentsCount + 1,
-                comments: [...act.comments, newComment],
-              }
-            : act
-        )
-      );
-      setCommentInputs((prev) => ({ ...prev, [activityId]: "" }));
-    } catch {
-      showToast("Failed to post comment");
-    } finally {
-      setCommentSubmitting((prev) => ({ ...prev, [activityId]: false }));
-    }
-  }
-
-  async function handleDeleteComment(activityId: string, commentId: string) {
-    try {
-      await deleteActivityComment(commentId);
-      setFeed((prev) =>
-        prev.map((act) =>
-          act.id === activityId
-            ? {
-                ...act,
-                commentsCount: Math.max(0, act.commentsCount - 1),
-                comments: act.comments.filter((c) => c.id !== commentId),
-              }
-            : act
-        )
-      );
-      showToast("Comment deleted");
-    } catch {
-      showToast("Could not delete comment");
-    }
-  }
-
-  function handleShare(activityId: string) {
-    const url = `${window.location.origin}/network#${activityId}`;
-    if (navigator.clipboard) {
-      void navigator.clipboard.writeText(url);
-      showToast("Link copied to clipboard!");
-    } else {
-      showToast("Copied link: " + url);
     }
   }
 
@@ -273,23 +166,6 @@ export function NetworkPage() {
       showToast("Failed to send request");
     }
   }
-
-  const getActivityBadge = (type: string) => {
-    switch (type) {
-      case "project_added":
-        return { label: "Added new project", color: "bg-blue-50 text-blue-700 border-blue-200" };
-      case "project_analyzed":
-        return { label: "Analyzed project", color: "bg-purple-50 text-purple-700 border-purple-200" };
-      case "profile_updated":
-        return { label: "Updated profile", color: "bg-emerald-50 text-emerald-700 border-emerald-200" };
-      case "wrap_up_published":
-        return { label: "Published monthly wrap-up", color: "bg-amber-50 text-amber-700 border-amber-200" };
-      case "collaboration":
-        return { label: "Joined collaboration", color: "bg-indigo-50 text-indigo-700 border-indigo-200" };
-      default:
-        return { label: "Shared an update", color: "bg-gray-50 text-gray-700 border-gray-200" };
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900">
@@ -381,8 +257,8 @@ export function NetworkPage() {
                       <span className="text-xs text-gray-500 mr-1">Type:</span>
                       {[
                         { id: "post", label: "Post" },
-                        { id: "project_added", label: "Milestone" },
-                        { id: "collaboration", label: "Collab Call" },
+                        { id: "milestone", label: "Milestone" },
+                        { id: "collab_call", label: "Collab Call" },
                       ].map((t) => (
                         <button
                           key={t.id}
@@ -432,304 +308,16 @@ export function NetworkPage() {
                 </p>
               </div>
             ) : (
-              feed.map((activity) => {
-                const badge = getActivityBadge(activity.activityType);
-                const isCommentsOpen = Boolean(openComments[activity.id]);
-
-                return (
-                  <article
-                    key={activity.id}
-                    id={activity.id}
-                    className="rounded-3xl border border-gray-200/90 bg-white shadow-sm overflow-hidden hover:shadow-md transition duration-200"
-                  >
-                    {/* Activity Header */}
-                    <div className="p-6 sm:p-7">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <Link
-                            to={`/profile/${activity.userId || activity.authorUsername}`}
-                            className="group block shrink-0"
-                          >
-                            {activity.authorAvatar ? (
-                              <img
-                                src={activity.authorAvatar}
-                                alt={activity.authorName}
-                                className="w-12 h-12 rounded-2xl object-cover ring-1 ring-gray-200 group-hover:ring-blue-500 transition"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
-                                {activity.authorName?.slice(0, 2).toUpperCase() || "DV"}
-                              </div>
-                            )}
-                          </Link>
-
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Link
-                                to={`/profile/${activity.userId || activity.authorUsername}`}
-                                className="font-bold text-gray-900 hover:text-blue-600 transition"
-                              >
-                                {activity.authorName}
-                              </Link>
-                              <span className="text-xs text-gray-400">
-                                @{activity.authorUsername}
-                              </span>
-                              <span
-                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${badge.color}`}
-                              >
-                                {badge.label}
-                              </span>
-                            </div>
-                            {activity.authorHeadline && (
-                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                                {activity.authorHeadline}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{formatTimeAgo(activity.createdAt)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleShare(activity.id)}
-                          className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
-                          title="Share / Copy Link"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Post Content */}
-                      {activity.title && (
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
-                          {activity.title}
-                        </h3>
-                      )}
-                      {activity.content && (
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">
-                          {activity.content}
-                        </p>
-                      )}
-
-                      {/* Attached Media */}
-                      {activity.mediaUrl && !activity.project && (
-                        <div className="rounded-2xl overflow-hidden border border-gray-100 mb-4 bg-gray-50 max-h-[360px]">
-                          <img
-                            src={activity.mediaUrl}
-                            alt="Activity attachment"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-
-                      {/* Project Preview Card */}
-                      {activity.project && (
-                        <Link
-                          to={`/project/${activity.project.id}`}
-                          className="group block my-4 rounded-2xl border border-gray-200 bg-slate-900 text-white overflow-hidden hover:border-blue-500 transition shadow-sm"
-                        >
-                          {activity.project.coverImageUrl && (
-                            <div className="aspect-[2.5/1] w-full overflow-hidden bg-slate-800">
-                              <img
-                                src={activity.project.coverImageUrl}
-                                alt={activity.project.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                              />
-                            </div>
-                          )}
-                          <div className="p-5">
-                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {(activity.project.techStacks || []).map((t) => (
-                                  <span
-                                    key={t}
-                                    className={getTechStackChipClasses(t, "onDark")}
-                                  >
-                                    {t}
-                                  </span>
-                                ))}
-                                {activity.project.complexity && (
-                                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                                    {activity.project.complexity}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs text-blue-400 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
-                                Open project <ArrowRight className="w-3.5 h-3.5" />
-                              </span>
-                            </div>
-
-                            <h4 className="text-xl font-bold text-white group-hover:text-blue-400 transition">
-                              {activity.project.title}
-                            </h4>
-                            {activity.project.shortDescription && (
-                              <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">
-                                {activity.project.shortDescription}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      )}
-
-                      {/* Interactive Action Bar */}
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2 sm:gap-4">
-                          {/* Like Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleLikeToggle(activity.id)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                              activity.isLiked
-                                ? "bg-rose-50 text-rose-600 border border-rose-200"
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            }`}
-                          >
-                            <Heart
-                              className={`w-4 h-4 ${
-                                activity.isLiked ? "fill-rose-500 text-rose-500" : ""
-                              }`}
-                            />
-                            <span>{activity.likesCount}</span>
-                          </button>
-
-                          {/* Comment Toggle Button */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenComments((prev) => ({
-                                ...prev,
-                                [activity.id]: !prev[activity.id],
-                              }))
-                            }
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                              isCommentsOpen
-                                ? "bg-blue-50 text-blue-600"
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                            }`}
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                            <span>{activity.commentsCount}</span>
-                          </button>
-                        </div>
-
-                        {/* Direct Collaboration / Message button */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/messages?user=${activity.userId || activity.authorUsername}`
-                              )
-                            }
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-blue-600 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Message</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Comments Accordion Section */}
-                    {isCommentsOpen && (
-                      <div className="bg-gray-50/70 border-t border-gray-100 px-6 sm:px-8 py-5">
-                        {/* New Comment Input */}
-                        <form
-                          onSubmit={(e) => handleAddComment(activity.id, e)}
-                          className="flex items-center gap-3 mb-4"
-                        >
-                          <input
-                            type="text"
-                            placeholder="Write a constructive comment..."
-                            value={commentInputs[activity.id] || ""}
-                            onChange={(e) =>
-                              setCommentInputs((prev) => ({
-                                ...prev,
-                                [activity.id]: e.target.value,
-                              }))
-                            }
-                            className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
-                          <button
-                            type="submit"
-                            disabled={
-                              !commentInputs[activity.id]?.trim() ||
-                              commentSubmitting[activity.id]
-                            }
-                            className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-1"
-                          >
-                            {commentSubmitting[activity.id] ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              "Reply"
-                            )}
-                          </button>
-                        </form>
-
-                        {/* Comments Stream */}
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                          {(activity.comments || []).length === 0 ? (
-                            <p className="text-xs text-gray-400 italic py-2">
-                              No comments yet. Start the conversation!
-                            </p>
-                          ) : (
-                            (activity.comments || []).map((comment) => (
-                              <div
-                                key={comment.id}
-                                className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs"
-                              >
-                                <div className="flex items-start gap-2.5">
-                                  {comment.authorAvatar ? (
-                                    <img
-                                      src={comment.authorAvatar}
-                                      alt={comment.authorName}
-                                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
-                                    />
-                                  ) : (
-                                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                                      {comment.authorName.slice(0, 2).toUpperCase()}
-                                    </div>
-                                  )}
-                                  <div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-xs font-bold text-gray-900">
-                                        {comment.authorName}
-                                      </span>
-                                      <span className="text-[10px] text-gray-400">
-                                        @{comment.authorUsername} ·{" "}
-                                        {formatTimeAgo(comment.createdAt)}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-gray-700 mt-0.5">
-                                      {comment.commentText}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {user?.id != null && String(user.id) === comment.authorId && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDeleteComment(activity.id, comment.id)
-                                    }
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-600 transition"
-                                    title="Delete comment"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })
+              <>
+                {feed.map((activity) => <FeedItem key={activity.id} activity={activity} notify={showToast} />)}
+                <div ref={moreRef} />
+                {feedQuery.hasNextPage && (
+                  <button type="button" disabled={feedQuery.isFetchingNextPage} onClick={() => void feedQuery.fetchNextPage()}
+                    className="w-full rounded-xl border border-gray-200 bg-white py-2 text-sm font-semibold text-gray-700">
+                    {feedQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -745,20 +333,27 @@ export function NetworkPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                <Link to="/network/connections" className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition">
                   <p className="text-xs text-gray-500 font-medium">Connections</p>
                   <p className="text-2xl font-black text-gray-900 mt-1">
                     {connections?.accepted?.length || 0}
                   </p>
-                </div>
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                </Link>
+                <Link to="/network/connections?tab=incoming" className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition">
                   <p className="text-xs text-gray-500 font-medium">Pending</p>
                   <p className="text-2xl font-black text-blue-600 mt-1">
                     {connections?.pendingIncoming?.length || 0}
                   </p>
-                </div>
+                </Link>
               </div>
 
+              <Link
+                to="/network/connections"
+                className="mb-2 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-800 hover:bg-gray-50 transition"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Manage connections
+              </Link>
               <Link
                 to="/messages"
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-2.5 text-xs font-semibold hover:bg-gray-800 transition"
