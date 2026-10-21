@@ -99,7 +99,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-stone-900">
           <Users className="w-5 h-5 text-forest-700" />
-          <h2 className="font-serif text-2xl">Team ({list.length})</h2>
+          <h2 className="font-serif text-2xl text-stone-900">Team ({list.length})</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {status === "none" && <button className={primary} onClick={() => setShowRequest(true)}>Request to join</button>}

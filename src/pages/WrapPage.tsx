@@ -150,18 +150,18 @@ export function WrapPage() {
           </Center>
         ) : code === "not_ready" ? (
           <Center>
-            <h2 className="font-serif text-3xl font-bold">Your wrap is being prepared</h2>
+            <h2 className="font-serif text-3xl font-bold text-stone-50">Your wrap is being prepared</h2>
             <p className="text-stone-400">Finished months are stored a few hours after they end. Check back soon.</p>
           </Center>
         ) : wrap.isError ? (
           <Center>
-            <h2 className="font-serif text-2xl font-bold">Could not load your wrap</h2>
+            <h2 className="font-serif text-2xl font-bold text-stone-50">Could not load your wrap</h2>
             <p className="text-stone-400">{getApiErrorMessage(wrap.error)}</p>
             <button className={button} onClick={() => void wrap.refetch()}>Try again</button>
           </Center>
         ) : w!.empty ? (
           <Center>
-            <h2 className="font-serif text-3xl font-bold">{w!.status === "completed" ? `Nothing happened in ${monthName(w!.month)}` : "Your month is just getting started"}</h2>
+            <h2 className="font-serif text-3xl font-bold text-stone-50">{w!.status === "completed" ? `Nothing happened in ${monthName(w!.month)}` : "Your month is just getting started"}</h2>
             <p className="max-w-md text-stone-400">Your wrap fills in from real activity: projects, posts, connections and collaborations.</p>
             <div className="flex gap-3">
               <Link to="/add-project" className={button}>Add a project</Link>
@@ -174,7 +174,7 @@ export function WrapPage() {
               <span className="font-mono text-sm tracking-widest text-stone-400">
                 {w!.status === "completed" ? "MONTHLY WRAP" : `SO FAR · AS OF ${new Date(w!.as_of!).toLocaleString()}`}
               </span>
-              <h1 className="font-serif text-5xl font-bold md:text-7xl">{monthName(w!.month)}</h1>
+              <h1 className="font-serif text-5xl font-bold text-stone-50 md:text-7xl">{monthName(w!.month)}</h1>
               <p className="text-stone-400">Times in {w!.period.timezone}.</p>
             </section>
             {slides.map((c, i) => (
