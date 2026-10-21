@@ -7,7 +7,8 @@ import {
   X,
   Mail,
   Calendar,
-  Sparkles,
+  CalendarDays,
+  Handshake,
   Send,
   Github,
   MapPin,
@@ -340,7 +341,7 @@ export function ProfilePage() {
                         to="/wrap"
                         className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-300" /> View your Wrapped
+                        <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
                       </Link>
                     </>
                   ) : (
@@ -392,7 +393,7 @@ export function ProfilePage() {
 
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
-                <Sparkles className="w-4 h-4 text-purple-600" />
+                <Handshake className="w-4 h-4 text-purple-600" />
                 Collaborations
               </div>
               <p className="text-3xl font-black text-gray-900 tabular-nums">

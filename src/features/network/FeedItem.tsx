@@ -105,7 +105,7 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
 
   function share() {
     void navigator.clipboard?.writeText(`${window.location.origin}/network/post/${activity.id}`);
-    notify("Link copied to clipboard! ✦");
+    notify("Link copied to clipboard");
   }
 
   const iconButton = "p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition";

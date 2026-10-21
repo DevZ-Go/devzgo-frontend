@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Sparkles,
   ExternalLink,
   UserPlus,
   Compass,
@@ -25,6 +24,8 @@ interface ConstellationNode {
   coordsLabel: string;
   accent: "green" | "red";
 }
+
+const isSample = (node: ConstellationNode) => node.id.startsWith("usr-");
 
 interface ConstellationGraphProps {
   creators: ConnectionUserSummary[];
@@ -369,11 +370,6 @@ export function ConstellationGraph({
                   </div>
                 )}
 
-                {node.id === "usr-janasi" && (
-                  <div className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-[#DC2626] text-white shadow-xs">
-                    <Sparkles className="w-2.5 h-2.5" />
-                  </div>
-                )}
               </div>
 
               {/* Coordinates Pill & Label (Clean Straight Font, Compact) */}
@@ -442,14 +438,14 @@ export function ConstellationGraph({
               {selectedNode.type === "user" ? (
                 <>
                   <Link
-                    to={`/profile/${selectedNode.username || selectedNode.id}`}
+                    to={isSample(selectedNode) ? "/explore/developers" : `/profile/${selectedNode.id}`}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold shadow-xs transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     View Profile
                   </Link>
 
-                  <button
+                  {!isSample(selectedNode) && <button
                     type="button"
                     onClick={() => {
                       if (onConnect) onConnect(selectedNode.id);
@@ -468,16 +464,16 @@ export function ConstellationGraph({
                         Connect
                       </>
                     )}
-                  </button>
+                  </button>}
                 </>
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate(`/projects`)}
+                  onClick={() => navigate("/explore")}
                   className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#78350F] border border-[#D97706] font-sans text-xs font-semibold shadow-xs transition"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Explore Project
+                  <Compass className="w-3.5 h-3.5" />
+                  Explore projects
                 </button>
               )}
             </div>
