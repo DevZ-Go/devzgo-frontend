@@ -115,24 +115,24 @@ export function RegisterPage() {
             <button
               type="submit"
               disabled={loading || !usernameOk || !passwordValid(password)}
-              className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-60 disabled:pointer-events-none"
+              className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-base font-semibold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 disabled:pointer-events-none"
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
           <div className="px-8 pb-8 -mt-3">
-            <div className="mb-4 flex items-center gap-3 text-xs text-gray-300">
-              <span className="h-px flex-1 bg-cream-200" />or<span className="h-px flex-1 bg-cream-200" />
+            <div className="mb-4 flex items-center gap-3 text-xs text-stone-400">
+              <span className="h-px flex-1 bg-stone-200" />or<span className="h-px flex-1 bg-stone-200" />
             </div>
             <GitHubButton />
           </div>
         </div>
 
-        <p className="mt-8 text-center text-gray-600">
+        <p className="mt-8 text-center text-stone-600">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-semibold text-blue-600 hover:text-blue-700"
+            className="font-semibold text-maroon-700 hover:text-maroon-900"
           >
             Sign in
           </Link>

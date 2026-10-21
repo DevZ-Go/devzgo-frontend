@@ -24,15 +24,16 @@ import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { CollabPermissions } from "../types/network";
 import { CollaborationModal } from "./CollaborationModal";
+import { ui } from "../styles/editorial";
 
 const LABELS: [keyof CollabPermissions, string][] = [
   ["can_edit_details", "Edit details"],
   ["can_manage_files", "Manage files"],
   ["can_view_secrets", "View secret files"],
 ];
-const btn = "rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60";
-const quiet = `${btn} border border-slate-200 text-slate-700 hover:bg-slate-50`;
-const primary = `${btn} bg-gradient-to-r from-blue-600 to-purple-600 text-white`;
+const btn = ui.btn;
+const quiet = `${btn} ${ui.neutral}`;
+const primary = `${btn} ${ui.primary}`;
 
 function PermissionToggles({ value, onChange, disabled }: {
   value: CollabPermissions;
@@ -42,8 +43,8 @@ function PermissionToggles({ value, onChange, disabled }: {
   return (
     <div className="flex flex-wrap gap-3">
       {LABELS.map(([key, label]) => (
-        <label key={key} className="flex items-center gap-1.5 text-xs text-slate-600">
-          <input type="checkbox" checked={value[key]} disabled={disabled}
+        <label key={key} className="flex items-center gap-1.5 font-sans text-xs text-stone-600">
+          <input type="checkbox" className="accent-forest-700" checked={value[key]} disabled={disabled}
             onChange={(e) => onChange({ ...value, [key]: e.target.checked })} />
           {label}
         </label>
@@ -94,23 +95,23 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
   const list = members.data ?? [];
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8 space-y-5">
+    <section className="rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-slate-900">
-          <Users className="w-5 h-5 text-blue-600" />
-          <h2 className="text-lg font-bold">Team ({list.length})</h2>
+        <div className="flex items-center gap-2 text-stone-900">
+          <Users className="w-5 h-5 text-forest-700" />
+          <h2 className="font-serif text-2xl text-stone-900">Team ({list.length})</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {status === "none" && <button className={primary} onClick={() => setShowRequest(true)}>Request to join</button>}
           {status === "requested" && (
             <>
-              <span className={`${btn} bg-slate-100 text-slate-500`}>Request sent</span>
+              <span className={`${btn} bg-stone-100 text-stone-500 border border-stone-200`}>Request sent</span>
               <button className={quiet} disabled={act.isPending} onClick={() => run(() => withdrawCollabRequest(me.data!.request_id!))}>Withdraw</button>
             </>
           )}
           {status === "invited" && (
             <>
-              <button className={`${btn} bg-emerald-600 text-white`} disabled={act.isPending}
+              <button className={`${btn} ${ui.positive}`} disabled={act.isPending}
                 onClick={() => run(() => answerInvitation(me.data!.invitation_id!, "accept"))}>Accept invitation</button>
               <button className={quiet} disabled={act.isPending}
                 onClick={() => run(() => answerInvitation(me.data!.invitation_id!, "decline"))}>Decline</button>
@@ -122,14 +123,14 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           )}
         </div>
       </div>
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className={ui.error}>{error}</p>}
 
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-stone-100">
         {list.map((m) => (
           <li key={m.id} className="flex flex-wrap items-center gap-3 py-3">
             <Link to={`/profile/${m.userId}`} className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-slate-900">{m.fullName || m.username}</span>
-              <span className="block truncate text-xs text-slate-500">@{m.username} · {m.role}</span>
+              <span className="block truncate font-cursive text-xl font-bold text-[#1C1917]">{m.fullName || m.username}</span>
+              <span className="block truncate font-sans text-xs text-stone-500">@{m.username} · {m.role}</span>
             </Link>
             {isOwner && !m.isOwner && (
               <>
@@ -147,14 +148,14 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
 
       {isOwner && (requests.data?.length ?? 0) > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-slate-900">Join requests</h3>
+          <h3 className="mb-2 font-serif text-base text-stone-900">Join requests</h3>
           {requests.data!.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-3 py-2">
-              <span className="flex-1 text-sm text-slate-700">
+              <span className="flex-1 font-sans text-sm text-stone-700">
                 <b>{r.requester.fullName || r.requester.username}</b> as {r.role}
-                {r.message && <span className="block text-xs text-slate-500">“{r.message}”</span>}
+                {r.message && <span className="block text-xs text-stone-500">“{r.message}”</span>}
               </span>
-              <button className={`${btn} bg-emerald-600 text-white`} disabled={act.isPending}
+              <button className={`${btn} ${ui.positive}`} disabled={act.isPending}
                 onClick={() => run(() => acceptCollaborationRequest(r.id, projectId))}>Accept</button>
               <button className={quiet} disabled={act.isPending} onClick={() => run(() => declineCollaborationRequest(r.id))}>Decline</button>
             </div>
@@ -163,13 +164,13 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
       )}
 
       {isOwner && (
-        <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-          <h3 className="text-sm font-semibold text-slate-900">Invite by username</h3>
+        <div className="space-y-3 rounded-xl border border-forest-600/20 bg-[#FAF7EE] p-4">
+          <h3 className="font-serif text-base text-stone-900">Invite by username</h3>
           <div className="flex flex-wrap gap-2">
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" aria-label="Invite username"
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+              className={`min-w-0 flex-1 ${ui.input} py-1.5`} />
             <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role" aria-label="Invite role"
-              className="w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm" />
+              className={`!w-40 ${ui.input} py-1.5`} />
             <button className={primary} disabled={act.isPending || !username.trim() || !role.trim()}
               onClick={() => run(async () => {
                 await inviteCollaborator(projectId, { username: username.trim(), role: role.trim(), permissions: perms });
@@ -192,7 +193,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           )}
           <PermissionToggles value={perms} onChange={setPerms} />
           {(invitations.data ?? []).map((i) => (
-            <div key={i.id} className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
+            <div key={i.id} className="flex flex-wrap items-center gap-3 font-sans text-sm text-stone-700">
               <span className="flex-1">
                 Invited <b>@{i.invitee.username}</b> as {i.role} · expires {new Date(i.expires_at).toLocaleDateString()}
               </span>

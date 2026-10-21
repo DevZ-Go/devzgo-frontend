@@ -1,0 +1,22 @@
+// Shared class names for the editorial (cream, forest, crimson, maroon) look used across the app.
+export const ui = {
+  page: "min-h-screen bg-[#FAF7EE] text-[#1C1917] font-sans antialiased",
+  main: "mx-auto px-4 sm:px-6 pt-28 pb-16",
+  title: "font-cursive text-4xl sm:text-5xl font-bold text-[#1C1917]",
+  heading: "font-serif text-lg font-bold text-[#1C1917]",
+  card: "rounded-2xl border-2 border-forest-600/30 bg-white shadow-xs",
+  muted: "font-sans text-xs text-stone-500",
+  link: "font-sans text-sm font-semibold text-forest-700 hover:underline",
+  input: "w-full rounded-xl bg-white border border-stone-200 px-3 py-2 font-sans text-sm text-[#1C1917] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:border-forest-600",
+  btn: "inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 font-sans text-xs font-semibold transition disabled:opacity-60",
+  primary: "bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber",
+  positive: "bg-[#DCFCE7] text-[#14532D] border border-[#15803D] hover:bg-[#BBF7D0]",
+  danger: "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626] hover:bg-[#FECACA]",
+  neutral: "bg-white text-stone-700 border border-stone-200 hover:bg-stone-50",
+  pillOn: "bg-[#DCFCE7] text-[#14532D] border border-[#15803D] shadow-xs",
+  pillOff: "bg-white text-stone-600 hover:text-black hover:bg-stone-50 border border-stone-200",
+  avatar: "flex items-center justify-center bg-[#DCFCE7] text-[#14532D] border border-forest-600 font-bold",
+  error: "font-sans text-sm text-crimson-700",
+  empty: "rounded-2xl border-2 border-dashed border-forest-300 bg-white/80 p-8 text-center font-sans text-sm text-stone-600",
+  toast: "fixed bottom-6 right-6 z-50 rounded-xl bg-white text-[#14532D] px-4 py-2.5 text-sm font-semibold shadow-xl border-2 border-[#15803D]",
+};

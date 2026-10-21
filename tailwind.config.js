@@ -1,13 +1,63 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}", "./ui/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        cursive: ['"Caveat"', 'cursive'],
+        hand: ['"Caveat"', 'cursive'],
       },
       colors: {
+        // Rich Red and Green
+        forest: {
+          50: '#F0FDF4',
+          100: '#DCFCE7',
+          200: '#BBF7D0',
+          300: '#86EFAC',
+          400: '#4ADE80',
+          500: '#22C55E',
+          600: '#16A34A',
+          700: '#15803D',
+          800: '#166534',
+          900: '#14532D',
+        },
+        crimson: {
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          200: '#FECACA',
+          300: '#FCA5A5',
+          400: '#F87171',
+          500: '#EF4444',
+          600: '#DC2626',
+          700: '#B91C1C',
+          800: '#991B1B',
+          900: '#7F1D1D',
+        },
+        // Autumnal Maroon Palette
+        maroon: {
+          50: '#FDF2F4',
+          100: '#FCE7EB',
+          200: '#F8D0D7',
+          300: '#F2AAB6',
+          400: '#E67184',
+          500: '#CF3E58',
+          600: '#B32842',
+          700: '#8B263E',
+          800: '#721C2A',
+          900: '#5E1522',
+          950: '#3D0A14',
+        },
+        autumn: {
+          amber: '#B45309',
+          rust: '#9A3412',
+          gold: '#D97706',
+          maroon: '#721C2A',
+          wine: '#8B263E',
+          cream: '#F8F6F0',
+        },
         // Warm pastel palette
         cream: {
           50: '#FFFDF7',

@@ -14,7 +14,6 @@ import { queryKeys } from "../../api/queryKeys";
 import { FeedProjectStats } from "../../components/FeedProjectStats";
 import type { ActivityComment, FeedActivity } from "../../types/network";
 import { getApiErrorMessage } from "../../utils/apiError";
-import { getTechStackChipClasses } from "../../utils/techStackChipStyle";
 
 function formatTimeAgo(isoString: string): string {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
@@ -25,33 +24,37 @@ function formatTimeAgo(isoString: string): string {
   return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
 }
 
+const GREEN = "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]";
+const AMBER = "bg-[#FEF3C7] text-[#78350F] border border-[#D97706]";
+const RED = "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]";
 const BADGES: Record<string, [string, string]> = {
-  post: ["Shared an update", "bg-gray-50 text-gray-700 border-gray-200"],
-  milestone: ["Milestone", "bg-emerald-50 text-emerald-700 border-emerald-200"],
-  collab_call: ["Looking for collaborators", "bg-indigo-50 text-indigo-700 border-indigo-200"],
-  project_update: ["Project update", "bg-blue-50 text-blue-700 border-blue-200"],
-  project_added: ["Added new project", "bg-blue-50 text-blue-700 border-blue-200"],
-  project_analyzed: ["Analyzed project", "bg-purple-50 text-purple-700 border-purple-200"],
-  profile_updated: ["Updated profile", "bg-emerald-50 text-emerald-700 border-emerald-200"],
-  wrap_up_published: ["Published monthly wrap-up", "bg-amber-50 text-amber-700 border-amber-200"],
-  collaboration: ["Joined collaboration", "bg-indigo-50 text-indigo-700 border-indigo-200"],
+  post: ["SHARED SPARK", "bg-stone-100 text-stone-700 border border-stone-300"],
+  milestone: ["MILESTONE", AMBER],
+  collab_call: ["COLLAB CALL", GREEN],
+  project_update: ["PROJECT UPDATE", AMBER],
+  project_added: ["NEW PROJECT", GREEN],
+  project_analyzed: ["CODE SPARK", AMBER],
+  profile_updated: ["PROFILE GLOW", GREEN],
+  wrap_up_published: ["MONTHLY WRAP", RED],
+  collaboration: ["JOINED A TEAM", GREEN],
 };
 
 function Avatar({ name, url, className }: { name: string; url?: string | null; className: string }) {
   return url ? (
     <img src={url} alt={name} className={`${className} object-cover`} />
   ) : (
-    <div className={`${className} bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center`}>
+    <div className={`${className} bg-[#DCFCE7] text-[#14532D] font-bold flex items-center justify-center border border-forest-600`}>
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
 }
 
 /** One feed post. In the feed it shows the latest two comments; on its own page (`expanded`) every comment, paged. */
-export function FeedItem({ activity, expanded = false, notify }: {
+export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
   activity: FeedActivity;
   expanded?: boolean;
   notify: (message: string) => void;
+  index?: number;
 }) {
   const client = useQueryClient();
   const navigate = useNavigate();
@@ -63,6 +66,8 @@ export function FeedItem({ activity, expanded = false, notify }: {
   const [editing, setEditing] = useState<string | null>(null);
   const shown = like ?? activity;
   const [label, color] = BADGES[activity.activityType] ?? BADGES.post!;
+  const green = index % 2 === 0;
+  const profile = `/profile/${activity.userId || activity.authorUsername}`;
 
   const allComments = useInfiniteQuery({
     queryKey: [...queryKeys.activity(activity.id), "comments"],
@@ -99,29 +104,36 @@ export function FeedItem({ activity, expanded = false, notify }: {
   }
 
   function share() {
-    const url = `${window.location.origin}/network/post/${activity.id}`;
-    void navigator.clipboard?.writeText(url);
-    notify("Link copied to clipboard!");
+    void navigator.clipboard?.writeText(`${window.location.origin}/network/post/${activity.id}`);
+    notify("Link copied to clipboard! ✦");
   }
 
+  const iconButton = "p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition";
+
   return (
-    <article id={activity.id} className="rounded-3xl border border-gray-200/90 bg-white shadow-sm overflow-hidden hover:shadow-md transition duration-200">
-      <div className="p-6 sm:p-7">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <Link to={`/profile/${activity.userId || activity.authorUsername}`} className="block shrink-0">
-              <Avatar name={activity.authorName} url={activity.authorAvatar} className="w-12 h-12 rounded-2xl text-base" />
+    <article id={activity.id} className="relative rounded-2xl border-2 border-[#1c1917]/20 bg-white shadow-xs hover:shadow-sm transition-all duration-200">
+      <div className={`${green ? "washi-tape-green" : "washi-tape-red"} absolute -top-2.5 right-6 w-18 h-3.5 rounded-xs rotate-[1.5deg] z-10 flex items-center justify-center text-[10px] text-[#1C1917] font-bold font-sans tracking-wider border border-[#1C1917]/20`}>
+        {green ? "GARDEN" : "SPARK"}
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to={profile} className="group block shrink-0">
+              <Avatar name={activity.authorName || "DV"} url={activity.authorAvatar} className="w-11 h-11 rounded-xl font-cursive text-lg" />
             </Link>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Link to={`/profile/${activity.userId || activity.authorUsername}`} className="font-bold text-gray-900 hover:text-blue-600 transition">
+                <Link to={profile} className="font-cursive text-2xl font-bold text-[#1C1917] hover:text-crimson-600 transition">
                   {activity.authorName}
                 </Link>
-                <span className="text-xs text-gray-400">@{activity.authorUsername}</span>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>{label}</span>
+                <span className="font-sans text-xs text-stone-500 font-medium">@{activity.authorUsername}</span>
+                <span className={`font-sans text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${color}`}>{label}</span>
               </div>
-              {activity.authorHeadline && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{activity.authorHeadline}</p>}
-              <Link to={`/network/post/${activity.id}`} className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-1 hover:underline">
+              {activity.authorHeadline && (
+                <p className="font-sans text-xs text-stone-600 mt-0.5 truncate font-normal">{activity.authorHeadline}</p>
+              )}
+              <Link to={`/network/post/${activity.id}`} className="flex items-center gap-1.5 text-[11px] text-stone-400 mt-0.5 font-sans hover:underline">
                 <Clock className="w-3 h-3" />
                 <span>{formatTimeAgo(activity.createdAt)}</span>
               </Link>
@@ -130,142 +142,149 @@ export function FeedItem({ activity, expanded = false, notify }: {
           <div className="flex items-center gap-1">
             {activity.canEdit && (
               <>
-                <button type="button" title="Edit post" disabled={busy} onClick={() => setEditing(activity.content ?? "")}
-                  className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
+                <button type="button" title="Edit post" disabled={busy} onClick={() => setEditing(activity.content ?? "")} className={iconButton}>
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button type="button" title="Delete post" disabled={busy}
+                <button type="button" title="Delete post" disabled={busy} className={`${iconButton} hover:text-crimson-600`}
                   onClick={() => window.confirm("Delete this post?") &&
-                    void run(async () => { await deletePost(activity.id); if (expanded) navigate("/network"); }, "Could not delete post")}
-                  className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-gray-100 transition">
+                    void run(async () => { await deletePost(activity.id); if (expanded) navigate("/network"); }, "Could not delete post")}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
             )}
-            <button type="button" onClick={share} title="Copy link" className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
+            <button type="button" onClick={share} title="Share / Copy Link" className={iconButton}>
               <Share2 className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {activity.title && <h3 className="text-lg font-bold text-gray-900 mb-2">{activity.title}</h3>}
+        {activity.title && (
+          <h3 className="font-cursive text-2xl sm:text-3xl font-bold text-[#1C1917] mb-2 leading-tight">{activity.title}</h3>
+        )}
         {editing !== null ? (
-          <form className="mb-4 space-y-2" onSubmit={(e) => {
+          <form className="mb-3.5 space-y-2" onSubmit={(e) => {
             e.preventDefault();
             void run(async () => { await updatePost(activity.id, { content: editing.trim() }); setEditing(null); }, "Could not save post");
           }}>
             <textarea value={editing} onChange={(e) => setEditing(e.target.value)} rows={3} aria-label="Edit post"
-              className="w-full rounded-xl border border-gray-200 p-3 text-sm" />
+              className="w-full rounded-xl border border-stone-300 bg-[#FAF7EE] p-3 font-sans text-sm" />
             <div className="flex gap-2">
-              <button type="submit" disabled={busy || !editing.trim()} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Save</button>
-              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold">Cancel</button>
+              <button type="submit" disabled={busy || !editing.trim()}
+                className="rounded-lg bg-[#DCFCE7] border border-[#15803D] px-3 py-1.5 font-sans text-xs font-semibold text-[#14532D] disabled:opacity-50">Save</button>
+              <button type="button" onClick={() => setEditing(null)}
+                className="rounded-lg border border-stone-300 px-3 py-1.5 font-sans text-xs font-semibold">Cancel</button>
             </div>
           </form>
         ) : activity.content && (
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">{activity.content}</p>
+          <p className="font-sans text-sm text-stone-800 whitespace-pre-wrap leading-relaxed mb-3.5">{activity.content}</p>
         )}
 
         {activity.mediaUrl && !activity.project && (
-          <div className="rounded-2xl overflow-hidden border border-gray-100 mb-4 bg-gray-50 max-h-[360px]">
+          <div className="rounded-xl overflow-hidden border border-stone-200 mb-3.5 bg-gray-50 max-h-[340px]">
             <img src={activity.mediaUrl} alt="Activity attachment" className="w-full h-full object-cover" />
           </div>
         )}
 
         {activity.project && (
           <Link to={`/project/${activity.project.id}`}
-            className="group block my-4 rounded-2xl border border-gray-200 bg-slate-900 text-white overflow-hidden hover:border-blue-500 transition shadow-sm">
+            className="group block my-3 rounded-xl border border-forest-600/40 bg-[#FDFBF7] text-[#1C1917] overflow-hidden hover:border-crimson-600 transition shadow-2xs">
             {activity.project.coverImageUrl && (
-              <div className="aspect-[2.5/1] w-full overflow-hidden bg-slate-800">
+              <div className="aspect-[2.6/1] w-full overflow-hidden bg-gray-100">
                 <img src={activity.project.coverImageUrl} alt={activity.project.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  className="w-full h-full object-cover group-hover:scale-102 transition duration-300" />
               </div>
             )}
-            <div className="p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {(activity.project.techStacks || []).map((t) => (
-                    <span key={t} className={getTechStackChipClasses(t, "onDark")}>{t}</span>
+                    <span key={t} className={`px-2 py-0.5 rounded-md font-sans text-[10px] font-semibold ${GREEN}`}>{t}</span>
                   ))}
+                  {activity.project.complexity && (
+                    <span className={`font-sans text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md ${RED}`}>
+                      {activity.project.complexity}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs text-blue-400 font-semibold flex items-center gap-1">
-                  Open project <ArrowRight className="w-3.5 h-3.5" />
+                <span className="font-sans text-xs text-forest-700 font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
+                  Open spark <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
-              <h4 className="text-xl font-bold text-white group-hover:text-blue-400 transition">{activity.project.title}</h4>
+              <h4 className="font-cursive text-xl sm:text-2xl font-bold text-[#1C1917] group-hover:text-forest-700 transition">{activity.project.title}</h4>
               {activity.project.shortDescription && (
-                <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">{activity.project.shortDescription}</p>
+                <p className="font-sans text-xs text-stone-600 mt-1 line-clamp-2 leading-relaxed">{activity.project.shortDescription}</p>
               )}
             </div>
           </Link>
         )}
         {activity.project && !activity.isDemo && <FeedProjectStats project={activity.project} />}
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
+        <div className="mt-3.5 pt-3 border-t border-stone-100 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <button type="button" onClick={() => void toggleLike()} aria-label="Like post"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                shown.isLiked ? "bg-rose-50 text-rose-600 border border-rose-200" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"}`}>
-              <Heart className={`w-4 h-4 ${shown.isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
+                shown.isLiked ? RED : "text-stone-700 hover:bg-stone-50 border border-stone-200"}`}>
+              <Heart className={`w-3.5 h-3.5 ${shown.isLiked ? "fill-crimson-600 text-crimson-600" : ""}`} />
               <span>{shown.likesCount}</span>
             </button>
             <button type="button" onClick={() => setCommentsOpen((o) => !o)} aria-label="Comments"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                commentsOpen ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"}`}>
-              <MessageSquare className="w-4 h-4" />
-              <span>{activity.commentsCount}</span>
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans text-xs font-semibold transition ${
+                commentsOpen ? "bg-[#DCFCE7] text-[#14532D] border border-[#15803D]" : "text-stone-700 hover:bg-stone-50 border border-stone-200"}`}>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>{activity.commentsCount} notes</span>
             </button>
           </div>
           <button type="button" onClick={() => navigate(`/messages?user=${activity.userId || activity.authorUsername}`)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-blue-600 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition">
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Message</span>
+            className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#14532D] px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] border border-[#15803D] shadow-2xs transition">
+            <Send className="w-3 h-3" />
+            <span>Say Hi 💌</span>
           </button>
         </div>
       </div>
 
       {commentsOpen && (
-        <div className="bg-gray-50/70 border-t border-gray-100 px-6 sm:px-8 py-5">
-          <form className="flex items-center gap-3 mb-4" onSubmit={(e) => {
+        <div className="bg-[#FAF7EE] border-t border-stone-100 px-5 sm:px-6 py-4 rounded-b-2xl">
+          <form className="flex items-center gap-2.5 mb-3" onSubmit={(e) => {
             e.preventDefault();
             void run(async () => {
               await addActivityComment(activity.id, draft.trim());
               setDraft("");
             }, "Failed to post comment");
           }}>
-            <input type="text" placeholder="Write a constructive comment..." value={draft} aria-label="Write a comment"
+            <input type="text" placeholder="Write a constructive note on this spark..." value={draft} aria-label="Write a comment"
               onChange={(e) => setDraft(e.target.value)}
-              className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              className="flex-1 rounded-lg border border-stone-300 bg-white px-3 py-1.5 font-sans text-xs text-[#1C1917] shadow-2xs focus:border-forest-600 focus:outline-none" />
             <button type="submit" disabled={!draft.trim() || busy}
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-1">
+              className="px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1">
               {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Reply"}
             </button>
           </form>
 
           {expanded && allComments.hasNextPage && (
-            <button type="button" className="mb-3 text-xs font-semibold text-blue-600" disabled={allComments.isFetchingNextPage}
+            <button type="button" className="mb-3 font-sans text-xs font-semibold text-forest-700" disabled={allComments.isFetchingNextPage}
               onClick={() => void allComments.fetchNextPage()}>
-              Load older comments
+              Load older notes
             </button>
           )}
-          <div className="space-y-3">
+          <div className={`space-y-2.5 ${expanded ? "" : "max-h-[240px] overflow-y-auto"}`}>
             {comments.length === 0 ? (
-              <p className="text-xs text-gray-400 italic py-2">No comments yet. Start the conversation!</p>
+              <p className="font-cursive text-xl text-forest-800 font-semibold py-1">No notes yet. Leave a sweet word of encouragement ~</p>
             ) : comments.map((comment) => (
-              <div key={comment.id} className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-gray-100 shadow-2xs">
-                <div className="flex items-start gap-2.5">
-                  <Avatar name={comment.authorName} url={comment.authorAvatar} className="w-7 h-7 rounded-full text-[10px] shrink-0 mt-0.5" />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-gray-900">{comment.authorName}</span>
-                      <span className="text-[10px] text-gray-400">@{comment.authorUsername} · {formatTimeAgo(comment.createdAt)}</span>
+              <div key={comment.id} className="group flex items-start justify-between gap-3 p-2.5 rounded-xl bg-white border border-stone-200 shadow-2xs">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <Avatar name={comment.authorName} url={comment.authorAvatar} className="w-7 h-7 rounded-full shrink-0 mt-0.5 text-[10px]" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-cursive text-lg font-bold text-[#1C1917]">{comment.authorName}</span>
+                      <span className="text-[11px] text-stone-400 font-sans">@{comment.authorUsername} · {formatTimeAgo(comment.createdAt)}</span>
                     </div>
-                    <p className="text-xs text-gray-700 mt-0.5">{comment.commentText}</p>
+                    <p className="font-sans text-xs text-stone-700 mt-0.5 leading-relaxed">{comment.commentText}</p>
                   </div>
                 </div>
                 {comment.canDelete && (
                   <button type="button" title="Delete comment" disabled={busy}
                     onClick={() => void run(() => deleteActivityComment(comment.id), "Could not delete comment")}
-                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 text-gray-400 hover:text-rose-600 transition">
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 text-gray-400 hover:text-crimson-600 transition shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -273,8 +292,8 @@ export function FeedItem({ activity, expanded = false, notify }: {
             ))}
           </div>
           {!expanded && activity.commentsCount > comments.length && (
-            <Link to={`/network/post/${activity.id}`} className="mt-3 inline-block text-xs font-semibold text-blue-600 hover:underline">
-              View all {activity.commentsCount} comments
+            <Link to={`/network/post/${activity.id}`} className="mt-3 inline-block font-sans text-xs font-semibold text-forest-700 hover:underline">
+              View all {activity.commentsCount} notes
             </Link>
           )}
         </div>
