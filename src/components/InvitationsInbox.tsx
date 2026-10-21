@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { answerInvitation, fetchMyInvitations } from "../api/collaborations";
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
+import { ui } from "../styles/editorial";
 
-const btn = "rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60";
+const btn = ui.btn;
 
 /** Project invitations waiting for me; hidden when there are none. */
 export function InvitationsInbox() {
@@ -26,18 +27,18 @@ export function InvitationsInbox() {
   if (!data?.length) return null;
 
   return (
-    <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-      <h2 className="mb-2 text-sm font-semibold text-amber-900">Project invitations ({data.length})</h2>
-      {error && <p role="alert" className="mb-2 text-xs text-red-600">{error}</p>}
+    <section className="relative mb-6 rounded-2xl border-2 border-crimson-300 bg-crimson-50/60 p-5 shadow-xs">
+      <h2 className="mb-3 font-sans text-xs font-bold uppercase tracking-wider text-crimson-900">Project invitations ({data.length})</h2>
+      {error && <p role="alert" className={`mb-2 ${ui.error}`}>{error}</p>}
       <ul className="space-y-2">
         {data.map((i) => (
-          <li key={i.id} className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
+          <li key={i.id} className="flex flex-wrap items-center gap-3 rounded-xl bg-white border border-crimson-200 p-3 font-sans text-sm text-stone-700">
             <span className="flex-1">
               <b>@{i.inviter.username}</b> invited you to <b>{i.project_title}</b> as {i.role} · expires {new Date(i.expires_at).toLocaleDateString()}
             </span>
-            <button className={`${btn} bg-emerald-600 text-white`} disabled={answer.isPending}
+            <button className={`${btn} ${ui.positive}`} disabled={answer.isPending}
               onClick={() => answer.mutate({ id: i.id, reply: "accept" })}>Accept</button>
-            <button className={`${btn} border border-slate-200 bg-white text-slate-700`} disabled={answer.isPending}
+            <button className={`${btn} ${ui.neutral}`} disabled={answer.isPending}
               onClick={() => answer.mutate({ id: i.id, reply: "decline" })}>Decline</button>
           </li>
         ))}
