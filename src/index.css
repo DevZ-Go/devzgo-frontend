@@ -31,6 +31,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dark {
+  --text: #cbd5e1;
+  --text-h: #f8fafc;
+  --bg: #090d16;
+  --border: #1e293b;
+  --code-bg: #0f172a;
+  --accent: #a78bfa;
+  --accent-bg: rgba(167, 139, 250, 0.12);
+  --accent-border: rgba(167, 139, 250, 0.3);
+  --social-bg: rgba(30, 41, 59, 0.6);
+  --shadow:
+    rgba(0, 0, 0, 0.35) 0 4px 20px -3px, rgba(0, 0, 0, 0.2) 0 2px 8px -1px;
+  color-scheme: dark;
+}
+
 #root {
   width: 100%;
   min-height: 100svh;
@@ -39,7 +54,9 @@
 
 body {
   margin: 0;
-  background: #FFFDF7;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 h1,
@@ -119,3 +136,75 @@ code {
   background: rgba(139, 92, 246, 0.15);
   color: #2d2b3a;
 }
+
+/* Whimsical cursive font utility */
+.font-cursive {
+  font-family: 'Caveat', cursive;
+}
+.font-hand {
+  font-family: 'Caveat', cursive;
+}
+
+/* Authentic hand-drawn wobbly doodle borders */
+.doodle-frame-green {
+  border: 3px solid #16a34a;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+.doodle-frame-red {
+  border: 3px solid #dc2626;
+  border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
+}
+.doodle-frame-dark {
+  border: 2.5px solid #1c1917;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+.doodle-pill {
+  border-radius: 255px 25px 225px 25px/25px 225px 25px 255px;
+}
+
+/* Rich red and green washi tape strips */
+.washi-tape-red {
+  background: rgba(220, 38, 38, 0.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.washi-tape-green {
+  background: rgba(22, 163, 74, 0.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.washi-tape-mint {
+  background: rgba(182, 245, 220, 0.75);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-peach {
+  background: rgba(255, 221, 181, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-lavender {
+  background: rgba(226, 215, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+.washi-tape-coral {
+  background: rgba(255, 212, 204, 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+}
+
+/* Hanging card gentle sway */
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+
+.animate-gentle-sway {
+  transform-origin: top center;
+  animation: gentle-sway 6s ease-in-out infinite;
+}
+
+

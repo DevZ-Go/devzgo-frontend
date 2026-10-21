@@ -279,21 +279,21 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
       <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-8 pt-28 pb-20">
         <Link
           to="/home"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 mb-8"
+          className="inline-flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-maroon-800 transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to home
         </Link>
 
         {loading && (
-          <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-600">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-            <p>Loading project…</p>
+          <div className="flex flex-col items-center justify-center py-24 gap-3 text-stone-600">
+            <Loader2 className="w-10 h-10 text-maroon-700 animate-spin" />
+            <p className="font-serif">Loading project…</p>
           </div>
         )}
 
@@ -305,10 +305,10 @@ export function ProjectDetailPage() {
 
         {!loading && !error && project && (
           <article className="space-y-8">
-            <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-white shadow-sm">
+            <div className="rounded-3xl overflow-hidden border border-stone-200/90 bg-white/95 shadow-sm">
               {/* Full-bleed cover: span the padded main column edge-to-edge */}
               <div className="-mx-6 sm:-mx-8">
-                <div className="relative w-full aspect-[2.4/1] min-h-[200px] max-h-[min(42vh,420px)] bg-slate-100">
+                <div className="relative w-full aspect-[2.4/1] min-h-[200px] max-h-[min(42vh,420px)] bg-stone-100">
                   <ImageWithFallback
                     src={coverUrl}
                     alt={project.title}
@@ -329,7 +329,7 @@ export function ProjectDetailPage() {
                     </span>
                   )}
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-3">
+                <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight mb-3">
                   {project.title}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-600 text-sm mb-6">

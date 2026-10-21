@@ -14,13 +14,14 @@ import {
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { Connection } from "../types/network";
+import { ui } from "../styles/editorial";
 
 const TABS: [ConnectionList, string][] = [
   ["accepted", "Connections"],
   ["incoming", "Received"],
   ["outgoing", "Sent"],
 ];
-const btn = "rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60";
+const btn = ui.btn;
 
 export function ConnectionsPage() {
   const [params, setParams] = useSearchParams();
@@ -52,15 +53,15 @@ export function ConnectionsPage() {
     if (tab === "incoming")
       return (
         <>
-          <button className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`} disabled={act.isPending}
+          <button className={`${btn} ${ui.positive}`} disabled={act.isPending}
             onClick={() => act.mutate(() => acceptConnection(c.id))}>Accept</button>
-          <button className={`${btn} border border-gray-200 text-gray-700 hover:bg-gray-50`} disabled={act.isPending}
+          <button className={`${btn} ${ui.neutral}`} disabled={act.isPending}
             onClick={() => act.mutate(() => declineConnection(c.id))}>Decline</button>
         </>
       );
     const label = tab === "outgoing" ? "Withdraw" : "Remove";
     return (
-      <button className={`${btn} border border-gray-200 text-gray-700 hover:bg-gray-50`} disabled={act.isPending}
+      <button className={`${btn} ${ui.neutral}`} disabled={act.isPending}
         onClick={() => (tab === "outgoing" || window.confirm(`Remove ${c.partner.fullName} from your connections?`)) &&
           act.mutate(() => removeConnection(c.id))}>
         {label}
@@ -69,55 +70,55 @@ export function ConnectionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={ui.page}>
       <Navbar />
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className={`${ui.main} max-w-3xl`}>
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">My network</h1>
-          <Link to="/network" className="text-sm text-blue-600 hover:underline">Back to feed</Link>
+          <h1 className={ui.title}>My network</h1>
+          <Link to="/network" className={ui.link}>Back to feed</Link>
         </div>
         <InvitationsInbox />
         <div role="tablist" className="mb-4 flex gap-2">
           {TABS.map(([key, label]) => (
             <button key={key} role="tab" aria-selected={tab === key}
               onClick={() => setParams(key === "accepted" ? {} : { tab: key })}
-              className={`${btn} ${tab === key ? "bg-gray-900 text-white" : "bg-white text-gray-700 border border-gray-200"}`}>
+              className={`${btn} rounded-full px-3.5 ${tab === key ? ui.pillOn : ui.pillOff}`}>
               {label}
             </button>
           ))}
         </div>
         {tab === "accepted" && (
-          <label className="mb-4 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2">
-            <Search className="h-4 w-4 text-gray-400" />
+          <label className="mb-4 flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-forest-400">
+            <Search className="h-4 w-4 text-forest-700" />
             <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search by name or username"
-              aria-label="Search connections" className="w-full text-sm outline-none" />
+              aria-label="Search connections" className="w-full bg-transparent font-sans text-sm outline-none" />
           </label>
         )}
-        {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className={`mb-3 ${ui.error}`}>{error}</p>}
         {list.isPending ? (
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-forest-700" />
         ) : list.isError ? (
-          <p className="text-sm text-red-600">{getApiErrorMessage(list.error)}</p>
+          <p className={ui.error}>{getApiErrorMessage(list.error)}</p>
         ) : items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+          <p className={ui.empty}>
             {tab === "accepted" ? (search ? "No connections match that search." : "No connections yet.")
               : tab === "incoming" ? "No requests waiting for you." : "No requests waiting on others."}
           </p>
         ) : (
-          <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+          <ul className={`divide-y divide-stone-100 ${ui.card}`}>
             {items.map((c) => (
               <li key={c.id} className="flex items-center gap-3 p-4">
                 <Link to={`/profile/${c.partner.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                   {c.partner.avatarUrl ? (
-                    <img src={c.partner.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    <img src={c.partner.avatarUrl} alt="" className="h-10 w-10 rounded-xl object-cover ring-2 ring-forest-600/40" />
                   ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                    <span className={`h-10 w-10 rounded-xl text-sm ${ui.avatar}`}>
                       {(c.partner.fullName || c.partner.username).slice(0, 1).toUpperCase()}
                     </span>
                   )}
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-gray-900">{c.partner.fullName}</span>
-                    <span className="block truncate text-xs text-gray-500">
+                    <span className="block truncate font-cursive text-xl font-bold text-[#1C1917]">{c.partner.fullName}</span>
+                    <span className="block truncate font-sans text-xs text-stone-500">
                       @{c.partner.username}
                       {c.partner.headline ? ` · ${c.partner.headline}` : ""}
                       {tab === "accepted" && c.mutualCount ? ` · ${c.mutualCount} mutual` : ""}
@@ -130,7 +131,7 @@ export function ConnectionsPage() {
           </ul>
         )}
         {list.hasNextPage && (
-          <button className={`${btn} mt-4 w-full border border-gray-200 bg-white text-gray-700`}
+          <button className={`${btn} ${ui.neutral} mt-4 w-full py-2`}
             disabled={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>
             {list.isFetchingNextPage ? "Loading…" : "Load more"}
           </button>

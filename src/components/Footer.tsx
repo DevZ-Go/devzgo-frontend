@@ -5,27 +5,27 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-cream-300/60 bg-cream-50">
+    <footer className="mt-auto border-t border-amber-200/40 dark:border-stone-800 bg-[#f8f6f0] dark:bg-stone-950 transition-colors duration-300">
       <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-6 px-6 py-10 sm:flex-row sm:px-10">
-        <p className="text-center text-sm text-gray-400 sm:text-left flex items-center gap-1.5">
+        <p className="text-center text-sm text-stone-500 dark:text-stone-400 sm:text-left flex items-center gap-1.5 font-sans">
           © {year} DevZ-Go · Made with{" "}
-          <Heart className="w-3.5 h-3.5 text-coral-400 fill-coral-400 inline" />{" "}
+          <Heart className="w-3.5 h-3.5 text-maroon-700 fill-maroon-700/50 inline" />{" "}
           by developers, for developers.
         </p>
         <nav
-          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-400"
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-stone-500 dark:text-stone-400"
           aria-label="Footer"
         >
-          <Link to="/home" className="transition-colors hover:text-lavender-500">
+          <Link to="/home" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Home
           </Link>
-          <Link to="/explore" className="transition-colors hover:text-lavender-500">
+          <Link to="/explore" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Explore
           </Link>
-          <Link to="/add-project" className="transition-colors hover:text-lavender-500">
+          <Link to="/add-project" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Add project
           </Link>
-          <Link to="/profile" className="transition-colors hover:text-lavender-500">
+          <Link to="/profile" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Profile
           </Link>
         </nav>

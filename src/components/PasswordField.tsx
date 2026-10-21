@@ -16,7 +16,7 @@ export function PasswordField({ id, value, onChange, placeholder = "New password
         {PASSWORD_RULES.map((r) => {
           const ok = r.ok(value);
           return (
-            <li key={r.label} className={`flex items-center gap-1.5 ${ok ? "text-emerald-600" : "text-gray-400"}`}>
+            <li key={r.label} className={`flex items-center gap-1.5 ${ok ? "text-forest-700" : "text-stone-400"}`}>
               {ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} {r.label}
             </li>
           );

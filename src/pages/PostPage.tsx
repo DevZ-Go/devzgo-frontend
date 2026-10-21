@@ -6,6 +6,7 @@ import { Navbar } from "../components/Navbar";
 import { fetchActivity } from "../api/network";
 import { queryKeys } from "../api/queryKeys";
 import { FeedItem } from "../features/network/FeedItem";
+import { ui } from "../styles/editorial";
 
 export function PostPage() {
   const { id = "" } = useParams();
@@ -18,16 +19,16 @@ export function PostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={ui.page}>
       <Navbar />
-      <main className="mx-auto max-w-2xl px-4 py-8">
-        <Link to="/network" className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-gray-600 hover:text-blue-600">
+      <main className={`${ui.main} max-w-2xl`}>
+        <Link to="/network" className="mb-5 inline-flex items-center gap-1 font-cursive text-2xl font-bold text-forest-800 hover:text-crimson-600">
           <ArrowLeft className="h-4 w-4" /> Back to feed
         </Link>
         {post.isPending ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-forest-700" /></div>
         ) : post.isError ? (
-          <p className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-600">
+          <p className={ui.empty}>
             This post was deleted or you can't see it.
           </p>
         ) : (
@@ -35,7 +36,7 @@ export function PostPage() {
         )}
       </main>
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-xl bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">{toast}</div>
+        <div className={ui.toast}>{toast}</div>
       )}
     </div>
   );
