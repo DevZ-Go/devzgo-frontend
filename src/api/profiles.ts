@@ -74,8 +74,17 @@ function mapProfile(p: Record<string, unknown>): DeveloperProfile {
     notifyConnections: p.notify_connections !== false && p.notifyConnections !== false,
     notifyMessages: p.notify_messages !== false && p.notifyMessages !== false,
     notifyCollaborations: p.notify_collaborations !== false && p.notifyCollaborations !== false,
+    accountType: p.account_type === "recruiter" ? "recruiter" : "developer",
+    tourVersion: typeof p.tour_version === "number" ? p.tour_version : null,
+    tourState: (p.tour_state || null) as string | null,
+    openToWork: p.open_to_work === true || p.openToWork === true,
+    workTypes: (Array.isArray(p.work_types) ? p.work_types : p.workTypes ?? []) as string[],
+    workArrangements: (Array.isArray(p.work_arrangements) ? p.work_arrangements : p.workArrangements ?? []) as string[],
+    availabilityNote: (p.availability_note || p.availabilityNote || null) as string | null,
   };
 }
+
+export { mapProfile };
 
 export async function fetchUserProfile(userIdOrUsername: string): Promise<DeveloperProfile> {
   try {
@@ -137,6 +146,10 @@ export async function updateMyProfile(
       notify_connections: payload.notifyConnections,
       notify_messages: payload.notifyMessages,
       notify_collaborations: payload.notifyCollaborations,
+      open_to_work: payload.openToWork,
+      work_types: payload.workTypes,
+      work_arrangements: payload.workArrangements,
+      availability_note: payload.availabilityNote,
     });
     if (res.data) {
       return mapProfile(res.data);
@@ -209,21 +222,45 @@ export type TalentCard = {
   location: string | null;
   skills: string | null;
   projects: number;
+  relevant_projects: number;
+  source_projects: number;
   commits: number;
   pushes: number;
+  github_history: boolean;
   connections: number | null;
   activity: number | null;
   last_push: string | null;
   tech: string[];
+  open_to_work: boolean;
+  work_types: string[];
+  work_arrangements: string[];
+  restricted: boolean;
+  match: string[];
 };
 
+/** Each sort is one visible measure; there is no combined score. */
 export const TALENT_SORTS = [
-  ["projects", "Most projects"],
-  ["commits", "Most commits"],
-  ["pushes", "Most pushes"],
-  ["connections", "Most connections"],
-  ["activity", "Most active"],
+  ["relevance", "Best evidence for the tech", "Project use of the tech you picked counts more than a listed skill, then source code and GitHub history."],
+  ["recent", "Most recent GitHub push", "People without imported GitHub history come after, without counting as inactive."],
+  ["projects", "Most projects", "Public projects you are allowed to see."],
+  ["commits", "Most commits", "Commits credited from imported GitHub repositories."],
+  ["pushes", "Most pushes", "Pushes recorded from imported GitHub repositories."],
+  ["connections", "Most connections", "Hidden connection counts are left out."],
+  ["activity", "Most active", "Hidden activity is left out."],
 ] as const;
+
+export type TalentFilters = {
+  q?: string;
+  tech?: string[];
+  sort?: string;
+  evidence?: "any" | "projects";
+  minProjects?: number;
+  github?: boolean;
+  source?: boolean;
+  openToWork?: boolean;
+  workType?: string;
+  arrangement?: string;
+};
 
 export async function fetchProfileProjects(userId: string): Promise<ApiProject[]> {
   const { data } = await api.get<ApiProject[]>(`/profiles/${userId}/projects`);
@@ -240,15 +277,26 @@ export async function fetchStanding(userId: string): Promise<Standing> {
   return data;
 }
 
-export async function fetchTalent(params: { q?: string; tech?: string[]; sort?: string }): Promise<TalentCard[]> {
+export async function fetchTalent(params: TalentFilters): Promise<TalentCard[]> {
   const { data } = await api.get<TalentCard[]>("/profiles/talent", {
-    params: { q: params.q || undefined, tech: params.tech?.join(",") || undefined, sort: params.sort || "projects" },
+    params: {
+      q: params.q || undefined,
+      tech: params.tech?.join(",") || undefined,
+      sort: params.sort || "relevance",
+      evidence: params.evidence === "projects" ? "projects" : undefined,
+      min_projects: params.minProjects || undefined,
+      github: params.github || undefined,
+      source: params.source || undefined,
+      open_to_work: params.openToWork || undefined,
+      work_type: params.workType || undefined,
+      arrangement: params.arrangement || undefined,
+    },
   });
   return data.map((card) => ({ ...card, avatar_url: assetUrlOrNull(card.avatar_url) }));
 }
 
-export async function markRecruitingGuide(): Promise<void> {
-  await api.post("/profiles/me/guide");
+export async function saveTourState(version: number, state: "completed" | "skipped"): Promise<void> {
+  await api.put("/profiles/me/tour", { version, state });
 }
 
 export async function searchDevelopers(query: string): Promise<DeveloperProfile[]> {

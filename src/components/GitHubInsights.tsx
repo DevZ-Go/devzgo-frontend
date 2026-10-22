@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { GitCommitHorizontal, Github, Loader2, RefreshCw, Upload } from "lucide-react";
+import { Activity, GitCommitHorizontal, Github, Loader2, RefreshCw, Upload } from "lucide-react";
 import {
   fetchGitHubCommits,
   fetchGitHubInsights,
@@ -129,12 +129,19 @@ export function GitHubInsights({ projectId }: { projectId: string }) {
             {" "}Members are matched by their linked GitHub account or email; everyone else shows their GitHub name.
           </p>
         </div>
-        {data.can_refresh && (
-          <button type="button" className={`${ui.btn} ${ui.primary}`} onClick={refresh} disabled={starting}>
-            {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Refresh from GitHub
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {!empty && (
+            <Link to={`/project/${projectId}/activity`} className={`${ui.btn} ${ui.neutral}`}>
+              <Activity className="h-3.5 w-3.5 text-maroon-800" /> Open activity log
+            </Link>
+          )}
+          {data.can_refresh && (
+            <button type="button" className={`${ui.btn} ${ui.primary}`} onClick={refresh} disabled={starting}>
+              {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Refresh from GitHub
+            </button>
+          )}
+        </div>
       </div>
       {refreshError && <p role="alert" className={ui.error}>{refreshError}</p>}
 
