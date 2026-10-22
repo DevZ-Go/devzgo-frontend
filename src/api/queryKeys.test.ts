@@ -18,6 +18,8 @@ describe("keysForEvent", () => {
       .toEqual([queryKeys.collab, queryKeys.notifications]);
     expect(keysForEvent({ type: "notification.new", notification_type: "challenge_feedback" }))
       .toEqual([queryKeys.challenges, queryKeys.notifications]);
+    expect(keysForEvent({ type: "notification.new", notification_type: "workspace_commit" }))
+      .toEqual([queryKeys.projects, queryKeys.notifications]);
     expect(keysForEvent({ type: "unknown.thing" })).toEqual([]);
   });
 });
