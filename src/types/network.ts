@@ -47,6 +47,13 @@ export interface DeveloperProfile {
   notifyConnections?: boolean | null;
   notifyMessages?: boolean | null;
   notifyCollaborations?: boolean | null;
+  accountType?: "developer" | "recruiter";
+  tourVersion?: number | null;
+  tourState?: string | null;
+  openToWork?: boolean;
+  workTypes?: string[];
+  workArrangements?: string[];
+  availabilityNote?: string | null;
 }
 
 export interface ProjectPreview {
@@ -210,7 +217,10 @@ export interface NotificationItem {
     | "collaboration_invitation"
     | "collaboration_joined"
     | "collaboration_left"
-    | "collaboration_removed";
+    | "collaboration_removed"
+    | "recruitment_request"
+    | "recruitment_accepted"
+    | "recruitment_declined";
   relatedId?: string | null;
   message: string;
   read: boolean;

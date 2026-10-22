@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Footer } from "./Footer";
-import { RecruiterGuide } from "./RecruiterGuide";
+import { RecruiterTour } from "./tour/RecruiterTour";
 
 function PageLoading() {
   return (
@@ -30,7 +30,7 @@ export function AppLayout() {
         <Suspense fallback={<PageLoading />}>
           <Outlet />
         </Suspense>
-        <RecruiterGuide />
+        <RecruiterTour />
       </div>
       {!fullScreen && <Footer />}
     </div>
