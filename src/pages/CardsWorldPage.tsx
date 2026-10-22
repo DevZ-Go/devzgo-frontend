@@ -1,273 +1,203 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { ExploreFilters } from "../components/ExploreFilters";
+import { AnimatePresence, motion } from "motion/react";
+import { ExploreStage } from "../components/explore/ExploreStage";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { toTvProject } from "../components/tvworld/worldLayout";
 import type { TvProject } from "../components/tvworld/types";
 import { useProjectLike } from "../hooks/useProjectLike";
 import { useAuth } from "../auth/AuthContext";
 
-function CardLikeButton({ project }: { project: TvProject }) {
+const SUITS = ["hearts", "diamonds", "clubs", "spades"] as const;
+const RANKS = ["A", "K", "Q", "J", "10", "9", "8", "7"];
+
+const RED = "#e11d48";
+const INK = "#1c1917";
+
+function Suit({ name, className }: { name: (typeof SUITS)[number]; className?: string }) {
+  const ink = name === "hearts" || name === "diamonds" ? RED : INK;
+  if (name === "clubs") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <circle cx="12" cy="7.1" r="3.15" fill={ink} />
+        <circle cx="7.35" cy="12.7" r="3.15" fill={ink} />
+        <circle cx="16.65" cy="12.7" r="3.15" fill={ink} />
+        <path d="M10.7 14.2h2.6l.9 6.2h-4.4l.9-6.2z" fill={ink} />
+      </svg>
+    );
+  }
+  if (name === "spades") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <path d="M12 1.8c2.7 3.5 7.6 6 7.6 10.6a4.7 4.7 0 0 1-7.8 3.5 4.7 4.7 0 0 1-7.8-3.5C4.4 7.8 9.3 5.3 12 1.8z" fill={ink} />
+        <path d="M10.7 15.2h2.6l.9 6.2h-4.4l.9-6.2z" fill={ink} />
+      </svg>
+    );
+  }
+  const path = name === "hearts"
+    ? "M12 20.6S4.6 16 4.6 11.2a4.15 4.15 0 0 1 7.4-2.6 4.15 4.15 0 0 1 7.4 2.6C19.4 16 12 20.6 12 20.6z"
+    : "M12 2.2 20.2 12 12 21.8 3.8 12 12 2.2z";
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d={path} fill={ink} />
+    </svg>
+  );
+}
+
+function CardFace({ project, suit, rank }: { project: TvProject; suit: (typeof SUITS)[number]; rank: string }) {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { count, liked, busy, toggle } = useProjectLike(project.id, project.likes, project.isLiked);
+  const media = project.coverUrl || project.videoUrl;
+
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!token) navigate("/login");
-        else void toggle();
-      }}
-      className={`w-full py-3 rounded-2xl font-black text-lg shadow-[0_4px_0_rgba(0,0,0,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 ${
-        liked ? "bg-maroon-700 text-white" : "bg-stone-200 text-stone-700"
-      }`}
-    >
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" /></svg>
-      {liked ? "LIKED" : "LIKE"} · {count.toLocaleString()}
-    </button>
+    <article className="relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-white/80 bg-white text-stone-950 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+      <div className="flex items-start justify-between px-4 pt-3">
+        <div className="text-center leading-none">
+          <div className="font-serif text-2xl">{rank}</div>
+          <Suit name={suit} className="mx-auto mt-1 h-4 w-4" />
+        </div>
+        <span className="rounded-full bg-[#fced96] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-stone-900">
+          {project.category || "Project"}
+        </span>
+        <div className="rotate-180 text-center leading-none">
+          <div className="font-serif text-2xl">{rank}</div>
+          <Suit name={suit} className="mx-auto mt-1 h-4 w-4" />
+        </div>
+      </div>
+      <div className="relative mx-1 mt-2 min-h-0 flex-1 overflow-hidden rounded-xl border border-stone-200 bg-stone-100">
+        {media ? (
+          <img src={media} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,#fff7ed,#fecdd3)]">
+            <Suit name={suit} className="h-16 w-16" />
+          </div>
+        )}
+        <Suit name={suit} className="pointer-events-none absolute bottom-2 right-2 h-8 w-8 opacity-80" />
+      </div>
+      <div className="space-y-3 px-4 py-4">
+        <div>
+          <h2 className="break-words font-serif text-2xl leading-tight text-stone-950">{project.title}</h2>
+          <p className="mt-1 break-all font-mono text-[11px] text-stone-500">@{project.author}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              if (!token) navigate("/login");
+              else void toggle();
+            }}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${liked ? "bg-rose-600 text-white" : "bg-stone-100 text-stone-800"}`}
+          >
+            {liked ? "Liked" : "Like"} · {count.toLocaleString()}
+          </button>
+          <Link to={`/project/${project.id}`} className="rounded-full bg-stone-950 px-3 py-1.5 text-xs font-semibold text-[#fced96]">
+            Open
+          </Link>
+          {project.ownerId && (
+            <Link to={`/profile/${project.ownerId}`} className="rounded-full border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700">
+              Profile
+            </Link>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }
 
 export function CardsWorldPage() {
-  const navigate = useNavigate();
-  const {
-    filters,
-    setFilters,
-    clearFilters,
-    hasFilters,
-    projects: apiProjects,
-    appliedKey,
-    error,
-    reload,
-    techStacks,
-  } = useExploreProjects();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const data = useExploreProjects();
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const projects = useMemo(() => (data.projects ?? []).map((p, i) => toTvProject(p, i)), [data.projects]);
 
-  // Cards follow the API order, so sort_by is visible in the stack.
-  const projects = useMemo(
-    () => (apiProjects ?? []).map((p, i) => toTvProject(p, i)),
-    [apiProjects]
-  );
-
-  // New results start at the first card.
   useEffect(() => {
-    setCurrentIndex(0);
-  }, [appliedKey]);
+    setIndex(0);
+  }, [data.appliedKey]);
 
-  // Keyboard navigation
+  function go(next: number) {
+    setDirection(next > index ? 1 : -1);
+    setIndex(next);
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
-      if (e.key === "ArrowLeft") {
-        setCurrentIndex(prev => Math.max(0, prev - 1));
-      } else if (e.key === "ArrowRight") {
-        setCurrentIndex(prev => Math.min(projects.length - 1, prev + 1));
-      }
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowLeft") go(Math.max(0, index - 1));
+      if (e.key === "ArrowRight") go(Math.min(projects.length - 1, index + 1));
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [projects.length]);
+  }, [index, projects.length]);
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: "DevZGo House of Cards",
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
-    }
-  };
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-stone-900 text-white flex items-center justify-center font-sans">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">{error}</p>
-          <button onClick={reload} className="px-4 py-2 bg-stone-800 rounded">Retry</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (apiProjects === null) {
-    return (
-      <div className="min-h-screen bg-stone-900 text-white flex items-center justify-center font-sans">
-        <p className="animate-pulse font-mono tracking-widest text-sm">SHUFFLING CARDS...</p>
-      </div>
-    );
-  }
+  const current = projects[index];
+  const suit = SUITS[index % SUITS.length]!;
+  const rank = RANKS[index % RANKS.length]!;
 
   return (
-    <div className="min-h-screen bg-black overflow-hidden flex flex-col font-sans" style={{ fontFamily: "'Fredoka One', 'Comic Sans MS', 'Nunito', sans-serif" }}>
-      {/* Header */}
-      <header className="relative z-50 p-6 flex items-center justify-between pointer-events-auto">
-        <Link to="/explore" className="text-white/60 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest">
-          &larr; BACK
-        </Link>
-
-        <ExploreFilters
-          filters={filters}
-          onChange={setFilters}
-          techStacks={techStacks}
-          hasFilters={hasFilters}
-          onClear={clearFilters}
-          classes={{
-            root: "flex-1 mx-6 flex flex-wrap items-center justify-center gap-2",
-            input:
-              "w-full sm:w-64 bg-white/10 border-2 border-white/20 rounded-full px-5 py-2 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 focus:bg-white/15 transition-all",
-            select:
-              "bg-stone-900 border-2 border-white/20 rounded-full px-4 py-2 text-sm font-bold text-white/80 focus:outline-none focus:border-white/50",
-            button:
-              "rounded-full px-4 py-2 text-sm font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors",
-          }}
-        />
-
-        <button onClick={handleShare} className="text-white/60 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-          SHARE
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-        </button>
-      </header>
-
-      {/* Main Stage */}
-      <main className="flex-1 relative flex items-center justify-center w-full px-4 overflow-hidden">
-        {projects.length === 0 ? (
-          <div className="text-white/50 text-xl">No projects found.</div>
-        ) : (
-          <div className="relative w-full max-w-5xl h-[70vh] flex items-center justify-center perspective-[1000px]">
-            <AnimatePresence mode="popLayout">
-              {projects.map((t, index) => {
-                const isCenter = index === currentIndex;
-                const isLeft = index === currentIndex - 1;
-                const isRight = index === currentIndex + 1;
-
-                if (!isCenter && !isLeft && !isRight) return null;
-
-                // Media: Try video first, fallback to image
-                const mediaUrl = t.videoUrl || t.coverUrl;
-
-                return (
+    <ExploreStage title="House of Cards" tone="deck" data={data}>
+      {data.projects === null ? (
+        <p className="flex h-full items-center justify-center font-serif text-lg text-fuchsia-100">Shuffling the deck…</p>
+      ) : projects.length === 0 ? (
+        <p className="flex h-full items-center justify-center text-fuchsia-100/80">No projects match these filters.</p>
+      ) : (
+        <div className="relative flex h-full flex-col overflow-hidden bg-[#120814]">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-1/2 h-[150%] w-[150%] -translate-x-1/2 -translate-y-[46%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,#2f9d62_0%,#146b3a_46%,transparent_70%)]" />
+            <div className="absolute left-1/2 top-1/2 h-[70%] w-[min(880px,88%)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-[12px] border-[#e7c56a] shadow-[inset_0_0_60px_rgba(0,0,0,0.35),0_0_0_8px_rgba(120,53,15,0.45)]" />
+          </div>
+          {[
+            { name: "hearts" as const, className: "left-[8%] top-[18%] h-14 w-14" },
+            { name: "diamonds" as const, className: "right-[10%] top-[22%] h-12 w-12" },
+            { name: "clubs" as const, className: "left-[14%] bottom-[18%] h-12 w-12" },
+            { name: "spades" as const, className: "right-[12%] bottom-[20%] h-14 w-14" },
+          ].map((pip, i) => (
+            <motion.div
+              key={pip.name}
+              className={`pointer-events-none absolute ${pip.className}`}
+              animate={{ y: [0, -10, 0], rotate: [0, i % 2 ? 10 : -10, 0] }}
+              transition={{ duration: 4.5 + i, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Suit name={pip.name} className="h-full w-full drop-shadow-[0_6px_10px_rgba(0,0,0,0.35)]" />
+            </motion.div>
+          ))}
+          <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-4 py-3">
+            <div className="relative h-[min(32rem,100%)] w-[min(18.5rem,72vw)]">
+              <div className="absolute inset-y-2 -left-3 right-6 origin-bottom -rotate-[16deg] rounded-[1.35rem] border border-white/30 bg-[repeating-linear-gradient(135deg,#fb7185_0_14px,#9f1239_14px_28px)] shadow-2xl" />
+              <div className="absolute inset-y-1 -right-3 left-6 origin-bottom rotate-[14deg] rounded-[1.35rem] border border-white/30 bg-[radial-gradient(circle_at_30%_20%,#99f6e4,#0f766e)] shadow-2xl" />
+              <div className="absolute inset-0 origin-bottom rotate-[4deg] rounded-[1.35rem] border border-[#e7c56a]/50 bg-[repeating-linear-gradient(45deg,#fde68a_0_12px,#b45309_12px_24px)] shadow-2xl" />
+              <AnimatePresence mode="wait" custom={direction}>
+                {current && (
                   <motion.div
-                    key={t.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8, y: 100 }}
-                    animate={{
-                      opacity: isCenter ? 1 : 0.6,
-                      scale: isCenter ? 1 : 0.8,
-                      x: isCenter ? "0%" : isLeft ? "-60%" : "60%",
-                      y: isCenter ? "0%" : "20%", // Edges and at bottom
-                      zIndex: isCenter ? 30 : 10,
-                      filter: isCenter ? "blur(0px)" : "blur(8px)",
-                      rotateY: isCenter ? 0 : isLeft ? 15 : -15, // slight tilt
-                    }}
-                    exit={{ opacity: 0, scale: 0.8, y: 100 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute w-[320px] sm:w-[400px] aspect-[3/4] bg-white rounded-[2.5rem] p-4 flex flex-col shadow-2xl cursor-pointer"
-                    onClick={() => {
-                      if (isLeft) setCurrentIndex(prev => prev - 1);
-                      if (isRight) setCurrentIndex(prev => prev + 1);
-                    }}
+                    key={current.id}
+                    custom={direction}
+                    initial={{ x: direction * 160, y: 36, rotate: direction * 14, opacity: 0 }}
+                    animate={{ x: 0, y: 0, rotate: -2, opacity: 1 }}
+                    exit={{ x: direction * -180, y: 24, rotate: direction * -12, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                    className="relative z-10 h-full"
                   >
-                    {/* Inner Card content */}
-                    <div className="w-full h-full rounded-3xl bg-stone-100 flex flex-col overflow-hidden relative border-4 border-stone-200">
-                      
-                      {/* Top Header */}
-                      <div className="p-4 bg-white border-b-4 border-stone-200 flex justify-between items-center z-10 shrink-0">
-                        <div className="flex items-center gap-2">
-                          {t.authorAvatar ? (
-                            <img src={t.authorAvatar} className="w-8 h-8 rounded-full bg-stone-300" alt="" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-emerald-200" />
-                          )}
-                          <span className="font-bold text-stone-800 text-sm">{t.author}</span>
-                        </div>
-                        <span className="text-xs font-black text-stone-400 bg-stone-100 px-2 py-1 rounded-full border-2 border-stone-200">
-                          {t.category || "PROJECT"}
-                        </span>
-                      </div>
-
-                      {/* Media Area */}
-                      <div className="flex-1 w-full bg-stone-900 relative flex items-center justify-center overflow-hidden">
-                        {mediaUrl ? (
-                          t.videoUrl && isCenter ? (
-                            <video src={mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                          ) : (
-                            <img src={mediaUrl} className="w-full h-full object-cover" alt="" />
-                          )
-                        ) : (
-                          <div className="text-stone-700 font-black text-4xl opacity-50">NO SIGNAL</div>
-                        )}
-                        
-                        {/* Overlay Gradient for Text Readability */}
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
-                        
-                        {/* Project Title overlaying media bottom */}
-                        <div className="absolute bottom-4 left-4 right-4 text-white">
-                          <h2 className="font-serif text-2xl font-normal leading-tight mb-1" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
-                            {t.title}
-                          </h2>
-                          <div className="flex flex-wrap gap-1">
-                            {t.techStack.slice(0, 3).map(tech => (
-                              <span key={tech} className="text-[10px] uppercase font-bold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30 text-white/90">
-                                {tech}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Bar (Bottom) */}
-                      {isCenter && (
-                        <div className="p-4 bg-white border-t-4 border-stone-200 shrink-0 space-y-3">
-                          <CardLikeButton project={t} />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => navigate(`/project/${t.id}`)}
-                              className="flex-1 py-2.5 rounded-xl bg-stone-100 border-2 border-stone-300 text-stone-600 font-bold hover:bg-stone-200 transition-colors"
-                            >
-                              SEE DETAILS
-                            </button>
-                            <button className="flex-1 py-2.5 rounded-xl bg-maroon-100 border-2 border-maroon-300 text-maroon-800 font-bold hover:bg-maroon-200 transition-colors">
-                              CONNECT +
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <CardFace project={current} suit={suit} rank={rank} />
                   </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        )}
-      </main>
-
-      {/* Nav Controls for Desktop */}
-      {projects.length > 0 && (
-        <div className="fixed bottom-12 inset-x-0 flex justify-center gap-6 z-50 pointer-events-auto">
-          <button
-            onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-            disabled={currentIndex === 0}
-            className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed backdrop-blur-md transition-all"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="h-14 flex items-center px-4 font-bold text-white/50 tracking-widest bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
-            {currentIndex + 1} OF {projects.length}
+          <div className="relative z-10 flex shrink-0 items-center justify-center gap-3 px-4 pb-4">
+            <button type="button" disabled={index === 0} onClick={() => go(Math.max(0, index - 1))} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-stone-950 shadow disabled:opacity-30">
+              Previous
+            </button>
+            <span className="grid h-11 w-11 place-items-center rounded-full border-4 border-dashed border-[#e7c56a] bg-[#b91c1c] font-mono text-[10px] text-white">
+              {index + 1}/{projects.length}
+            </span>
+            <button type="button" disabled={index === projects.length - 1} onClick={() => go(Math.min(projects.length - 1, index + 1))} className="rounded-full bg-[#fced96] px-4 py-2 text-sm font-semibold text-stone-950 shadow disabled:opacity-30">
+              Next
+            </button>
           </div>
-          <button
-            onClick={() => setCurrentIndex(prev => Math.min(projects.length - 1, prev + 1))}
-            disabled={currentIndex === projects.length - 1}
-            className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border-2 border-white/20 text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed backdrop-blur-md transition-all"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-          </button>
         </div>
       )}
-    </div>
+    </ExploreStage>
   );
 }

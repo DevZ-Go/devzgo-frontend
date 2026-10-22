@@ -11,6 +11,8 @@ export interface TvProject {
   techStack: string[];
   category: string | null;
   author: string;
+  /** Profile id, when the API sent one. Sample rows have none. */
+  ownerId: string | null;
   authorAvatar: string | null;
   createdAt: string | null;
   /** True when the logged-in viewer owns the project (from the API). */

@@ -202,6 +202,10 @@ export async function createPost(payload: {
   return newActivity;
 }
 
+export async function shareActivity(activityId: string): Promise<void> {
+  await api.post(`/network/activities/${activityId}/share`);
+}
+
 export async function toggleActivityLike(
   activityId: string
 ): Promise<{ likesCount: number; isLiked: boolean }> {

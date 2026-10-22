@@ -7,7 +7,7 @@ import {
   Check,
   Layers,
 } from "lucide-react";
-import type { ConnectionUserSummary, FeedActivity } from "../../types/network";
+import type { Connection, ConnectionUserSummary, FeedActivity } from "../../types/network";
 
 interface ConstellationNode {
   id: string;
@@ -21,21 +21,33 @@ interface ConstellationNode {
   size: number;
   tags: string[];
   connections: string[];
-  coordsLabel: string;
   accent: "green" | "red";
 }
 
-const isSample = (node: ConstellationNode) => node.id.startsWith("usr-");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function ring(i: number, count: number, rx: number, ry: number) {
+  const angle = (i / Math.max(count, 1)) * Math.PI * 2 - Math.PI / 2;
+  return {
+    x: Math.min(86, Math.max(14, 50 + Math.cos(angle) * rx)),
+    y: Math.min(84, Math.max(16, 48 + Math.sin(angle) * ry)),
+  };
+}
 
 interface ConstellationGraphProps {
+  meId?: string;
   creators: ConnectionUserSummary[];
+  connections?: Connection[];
   activities?: FeedActivity[];
   onConnect?: (userId: string) => void;
   requestedUsers?: Record<string, boolean>;
 }
 
 export function ConstellationGraph({
+  meId = "",
   creators,
+  connections = [],
+  activities = [],
   onConnect,
   requestedUsers = {},
 }: ConstellationGraphProps) {
@@ -47,151 +59,67 @@ export function ConstellationGraph({
   // Zoomed-out, balanced celestial layout centered around (50, 50)
   // Perfectly in place with ample margin so nothing is crowded or cut off!
   const nodes = useMemo<ConstellationNode[]>(() => {
-    const list: ConstellationNode[] = [
-      // Central Core Node (Current user or central hub)
-      {
-        id: "usr-janasi",
-        type: "user",
-        name: "Janasi Rajput",
-        username: "janasi",
-        role: "Backend & Systems",
-        avatarUrl:
-          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-        x: 50,
-        y: 48,
-        size: 46,
-        tags: ["FastAPI", "WebSockets"],
-        connections: ["usr-chan", "usr-khushbu", "proj-hub", "usr-manasi", "proj-metrics"],
-        coordsLabel: "λ: 1042 · φ: 821",
-        accent: "green",
-      },
-      // Inner / Mid Ring (Zoomed-out coordinates with ample padding)
-      {
-        id: "usr-chan",
-        type: "user",
-        name: "Chan S.",
-        username: "chan",
-        role: "Auth Architect",
-        avatarUrl:
-          "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=256&h=256&fit=crop&crop=faces",
-        x: 32,
-        y: 30,
-        size: 38,
-        tags: ["OAuth2", "React"],
-        connections: ["usr-janasi", "proj-vault"],
-        coordsLabel: "λ: 610 · φ: 340",
-        accent: "red",
-      },
-      {
-        id: "usr-khushbu",
-        type: "user",
-        name: "Khushbu Patel",
-        username: "khushbu",
-        role: "Talent & UI",
-        avatarUrl:
-          "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=256&h=256&fit=crop&crop=faces",
-        x: 68,
-        y: 30,
-        size: 38,
-        tags: ["GraphQL", "Tailwind"],
-        connections: ["usr-janasi", "proj-talent"],
-        coordsLabel: "λ: 1480 · φ: 390",
-        accent: "green",
-      },
-      {
-        id: "usr-manasi",
-        type: "user",
-        name: "Manasi Sharma",
-        username: "manasi",
-        role: "Analytics Engineer",
-        avatarUrl:
-          "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=256&h=256&fit=crop&crop=faces",
-        x: 66,
-        y: 68,
-        size: 38,
-        tags: ["Metrics", "ChartJS"],
-        connections: ["usr-janasi", "proj-metrics"],
-        coordsLabel: "λ: 1390 · φ: 1120",
-        accent: "red",
-      },
-      {
-        id: "proj-hub",
+    const people = new Map<string, ConnectionUserSummary>();
+    for (const connection of connections) {
+      const partnerId = connection.partner?.id || "";
+      if (partnerId !== meId && UUID.test(partnerId)) people.set(partnerId, connection.partner);
+    }
+    for (const creator of creators) {
+      if (creator.id !== meId && UUID.test(creator.id) && !people.has(creator.id)) people.set(creator.id, creator);
+    }
+    for (const activity of activities) {
+      if (activity.isDemo || activity.userId === meId || !UUID.test(activity.userId) || people.has(activity.userId)) continue;
+      people.set(activity.userId, {
+        id: activity.userId,
+        username: activity.authorUsername,
+        fullName: activity.authorName,
+        headline: activity.authorHeadline,
+        avatarUrl: activity.authorAvatar,
+      });
+    }
+    const users = [...people.values()].slice(0, 10);
+    const projects: { id: string; title: string; ownerId: string; tags: string[] }[] = [];
+    const seenProjects = new Set<string>();
+    for (const activity of activities) {
+      const project = activity.project;
+      if (activity.isDemo || !project || !UUID.test(project.id) || seenProjects.has(project.id)) continue;
+      seenProjects.add(project.id);
+      projects.push({
+        id: project.id,
+        title: project.title,
+        ownerId: activity.userId,
+        tags: (project.techStacks || []).slice(0, 3),
+      });
+    }
+    const shownProjects = projects.slice(0, 8);
+    const list: ConstellationNode[] = users.map((user, i) => ({
+      id: user.id,
+      type: "user",
+      name: user.fullName || user.username,
+      username: user.username,
+      role: user.headline || `@${user.username}`,
+      avatarUrl: user.avatarUrl || undefined,
+      ...ring(i, users.length, 34, 30),
+      size: 40,
+      tags: [],
+      connections: shownProjects.filter((p) => p.ownerId === user.id).map((p) => p.id),
+      accent: i % 2 === 0 ? "green" : "red",
+    }));
+    shownProjects.forEach((project, i) => {
+      list.push({
+        id: project.id,
         type: "project",
-        name: "WebSocket Hub",
-        role: "Collab Infrastructure",
-        x: 34,
-        y: 66,
-        size: 34,
-        tags: ["Realtime", "Sub-10ms"],
-        connections: ["usr-janasi", "usr-chan"],
-        coordsLabel: "x: 720 · y: 980",
-        accent: "green",
-      },
-      // Outer Satellites (Zoomed out gracefully)
-      {
-        id: "proj-vault",
-        type: "project",
-        name: "Token Vault",
-        role: "Security AST",
-        x: 18,
-        y: 45,
+        name: project.title,
+        role: "Project",
+        ...ring(i, shownProjects.length, 16, 14),
         size: 32,
-        tags: ["Security"],
-        connections: ["usr-chan"],
-        coordsLabel: "x: 310 · y: 740",
-        accent: "red",
-      },
-      {
-        id: "proj-talent",
-        type: "project",
-        name: "Talent Heuristic",
-        role: "Skill Graph",
-        x: 82,
-        y: 46,
-        size: 32,
-        tags: ["Graph"],
-        connections: ["usr-khushbu"],
-        coordsLabel: "x: 1820 · y: 810",
+        tags: project.tags,
+        connections: [],
         accent: "green",
-      },
-      {
-        id: "proj-metrics",
-        type: "project",
-        name: "Wrap Visualizer",
-        role: "Pixel Engine",
-        x: 50,
-        y: 78,
-        size: 32,
-        tags: ["Canvas"],
-        connections: ["usr-manasi", "usr-janasi"],
-        coordsLabel: "x: 1090 · y: 1410",
-        accent: "red",
-      },
-    ];
-
-    // Additional creators added outward
-    creators.slice(0, 2).forEach((creator, idx) => {
-      if (!list.find((n) => n.id === creator.id)) {
-        list.push({
-          id: creator.id,
-          type: "user",
-          name: creator.fullName || creator.username,
-          username: creator.username,
-          role: creator.headline || "Student Builder",
-          avatarUrl: creator.avatarUrl || undefined,
-          x: idx === 0 ? 20 : 80,
-          y: idx === 0 ? 22 : 22,
-          size: 36,
-          tags: ["Peer"],
-          connections: ["usr-janasi"],
-          coordsLabel: `λ: ${500 + idx * 300} · φ: 400`,
-          accent: idx % 2 === 0 ? "green" : "red",
-        });
-      }
+      });
     });
-
     return list;
-  }, [creators]);
+  }, [activities, connections, creators, meId]);
 
   const filteredNodes = useMemo(() => {
     if (filterCluster === "users") return nodes.filter((n) => n.type === "user");
@@ -264,7 +192,11 @@ export function ConstellationGraph({
         <div className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 w-88 h-88 rounded-full border border-forest-600/10 pointer-events-none" />
 
         {/* Constellation SVG Connecting Filaments (Radiating from central nodes) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        >
           <defs>
             <linearGradient id="threadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#16a34a" stopOpacity="0.55" />
@@ -293,17 +225,18 @@ export function ConstellationGraph({
               return (
                 <g key={`${node.id}-${target.id}`}>
                   <path
-                    d={`M ${node.x}% ${node.y}% Q ${midX}% ${midY}%, ${target.x}% ${target.y}%`}
+                    d={`M ${node.x} ${node.y} Q ${midX} ${midY} ${target.x} ${target.y}`}
                     fill="none"
                     stroke={isHighlighted ? "url(#threadActive)" : "url(#threadGrad)"}
                     strokeWidth={isHighlighted ? 2.5 : 1.2}
+                    vectorEffect="non-scaling-stroke"
                     strokeDasharray={isHighlighted ? "none" : "3, 3"}
                     className="transition-all duration-300"
                   />
                   {isHighlighted && (
                     <circle r="3.5" fill="#dc2626" className="animate-ping">
                       <animateMotion
-                        path={`M ${node.x}% ${node.y}% Q ${midX}% ${midY}%, ${target.x}% ${target.y}%`}
+                        path={`M ${node.x} ${node.y} Q ${midX} ${midY} ${target.x} ${target.y}`}
                         dur="2.5s"
                         repeatCount="indefinite"
                       />
@@ -315,7 +248,11 @@ export function ConstellationGraph({
           })}
         </svg>
 
-        {/* Node Elements (Compact, Zoomed-Out, Perfectly positioned) */}
+        {filteredNodes.length === 0 && (
+          <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-stone-500">
+            No people on the network yet.
+          </p>
+        )}
         {filteredNodes.map((node) => {
           const isSelected = selectedNodeId === node.id;
           const isHovered = hoveredNodeId === node.id;
@@ -373,11 +310,8 @@ export function ConstellationGraph({
               </div>
 
               {/* Coordinates Pill & Label (Clean Straight Font, Compact) */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap pointer-events-none">
-                <span className="font-mono text-[9px] text-stone-700 bg-white/95 border border-stone-200 px-1 py-0.5 rounded shadow-2xs font-semibold">
-                  {node.coordsLabel}
-                </span>
-                <p className="font-sans text-[11px] font-bold text-[#14532D] text-center mt-0.5 drop-shadow-xs">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 max-w-24 pointer-events-none">
+                <p className="font-sans text-[11px] font-bold text-[#14532D] text-center break-words">
                   {node.name.split(" ")[0]}
                 </p>
               </div>
@@ -406,9 +340,9 @@ export function ConstellationGraph({
                     {selectedNode.name}
                   </h4>
                   <p className="text-xs text-stone-600 font-sans">{selectedNode.role}</p>
-                  <span className="font-mono text-[10px] text-[#15803D] font-bold">
-                    {selectedNode.coordsLabel}
-                  </span>
+                  {selectedNode.username && (
+                    <span className="block break-all font-mono text-[10px] text-[#15803D]">@{selectedNode.username}</span>
+                  )}
                 </div>
               </div>
 
@@ -438,14 +372,15 @@ export function ConstellationGraph({
               {selectedNode.type === "user" ? (
                 <>
                   <Link
-                    to={isSample(selectedNode) ? "/explore/developers" : `/profile/${selectedNode.id}`}
+                    to={`/profile/${selectedNode.id}`}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#14532D] border border-[#15803D] font-sans text-xs font-semibold shadow-xs transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     View Profile
                   </Link>
 
-                  {!isSample(selectedNode) && <button
+                  {selectedNode.id !== meId && (
+                  <button
                     type="button"
                     onClick={() => {
                       if (onConnect) onConnect(selectedNode.id);
@@ -464,12 +399,13 @@ export function ConstellationGraph({
                         Connect
                       </>
                     )}
-                  </button>}
+                  </button>
+                  )}
                 </>
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate("/explore")}
+                  onClick={() => navigate(`/project/${selectedNode.id}`)}
                   className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#78350F] border border-[#D97706] font-sans text-xs font-semibold shadow-xs transition"
                 >
                   <Compass className="w-3.5 h-3.5" />

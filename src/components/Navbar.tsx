@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -51,6 +51,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -94,12 +95,20 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
   useEffect(() => {
     if (variant !== "editorial") return;
+    let node = headerRef.current?.parentElement ?? null;
+    while (node) {
+      const overflow = getComputedStyle(node).overflowY;
+      if (overflow === "auto" || overflow === "scroll") break;
+      node = node.parentElement;
+    }
+    const scroller: HTMLElement | Window = node ?? window;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+      const top = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+      setIsScrolled(top > 40);
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    scroller.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => scroller.removeEventListener("scroll", handleScroll);
   }, [variant]);
 
   function handleLogout() {
@@ -210,10 +219,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         {label}
       </Link>
     );
-    const iconLink = "hidden lg:inline-flex p-1.5 hover:text-white hover:bg-white/15 rounded-full transition-all";
+    const iconLink = "hidden lg:inline-flex p-1.5 rounded-full bg-stone-950/80 text-white shadow-sm ring-1 ring-white/20 hover:bg-stone-950 transition-all";
 
     return (
       <header
+        ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           solid ? "bg-black/70 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
         }`}
@@ -255,7 +265,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
               <span>Wrap</span>
             </Link>
-            <NotificationsDropdown />
+            <NotificationsDropdown className="bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white" />
             <Link to="/profile" className={iconLink} title="My account" aria-label="My account">
               <User className="w-5 h-5 drop-shadow-sm" />
             </Link>
@@ -265,7 +275,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-300`} title="Log out" aria-label="Log out">
               <LogOut className="w-5 h-5 drop-shadow-sm" />
             </button>
-            {menuButton("hover:text-white hover:bg-white/15")}
+            {menuButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950")}
           </div>
         </nav>
 
@@ -280,7 +290,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         ? "bg-maroon-100 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 font-semibold"
         : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60"
     }`;
-  const iconButton = "p-2.5 text-stone-500 dark:text-stone-400 hover:text-maroon-700 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-xl transition-all";
+  const iconButton = "p-2.5 text-stone-800 dark:text-stone-100 hover:text-maroon-800 hover:bg-stone-200/80 dark:hover:bg-stone-800 rounded-xl transition-all";
 
   return (
     <nav
@@ -306,7 +316,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <div className="hidden lg:flex items-center gap-1">
-          {isDesktop && <NotificationsDropdown />}
+          {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800" />}
           <Link
             to="/add-project"
             className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
@@ -324,8 +334,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <div className="lg:hidden flex items-center gap-1">
-          {!isDesktop && <NotificationsDropdown />}
-          {menuButton("text-stone-600 dark:text-stone-300 hover:bg-cream-200 dark:hover:bg-stone-800")}
+          {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800" />}
+          {menuButton("text-stone-900 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-800")}
         </div>
       </div>
 

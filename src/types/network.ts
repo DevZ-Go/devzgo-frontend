@@ -10,7 +10,11 @@ export interface DeveloperProfile {
   email: string;
   fullName?: string | null;
   headline?: string | null;
+  role?: string | null;
+  company?: string | null;
+  guideSeen?: boolean;
   bio?: string | null;
+  timezone?: string | null;
   avatarUrl?: string | null;
   githubUrl?: string | null;
   linkedinUrl?: string | null;
@@ -22,6 +26,27 @@ export interface DeveloperProfile {
   connectionsCount: number;
   collaborationsCount: number;
   connectionStatus?: "none" | "pending_sent" | "pending_received" | "connected" | null;
+  restricted?: boolean;
+  canMessage?: boolean;
+  acceptsConnections?: boolean;
+  profileVisibility?: "public" | "connections" | null;
+  messagePolicy?: "anyone" | "connections" | null;
+  commentPolicy?: "anyone" | "connections" | null;
+  activityVisibility?: "public" | "connections" | null;
+  discoverable?: boolean | null;
+  allowConnectionRequests?: boolean | null;
+  connectionVisibility?: "public" | "connections" | "private" | null;
+  collaborationPolicy?: "anyone" | "connections" | "none" | null;
+  emailVisibility?: "public" | "connections" | "private" | null;
+  resumeUrl?: string | null;
+  resumeVisibility?: "public" | "connections" | "private" | null;
+  connectionsVisible?: boolean;
+  notifyLikes?: boolean | null;
+  notifyComments?: boolean | null;
+  notifyShares?: boolean | null;
+  notifyConnections?: boolean | null;
+  notifyMessages?: boolean | null;
+  notifyCollaborations?: boolean | null;
 }
 
 export interface ProjectPreview {
@@ -112,6 +137,9 @@ export interface Message {
   read: boolean;
   createdAt: string;
   isOutgoing?: boolean;
+  senderUsername?: string;
+  senderName?: string;
+  roomId?: string;
 }
 
 export interface Conversation {
@@ -167,8 +195,16 @@ export interface NotificationItem {
     | "collaboration_request"
     | "collaboration_accepted"
     | "comment"
+    | "project_comment"
     | "like"
-    | "project_like";
+    | "project_like"
+    | "share"
+    | "project_share"
+    | "achievement"
+    | "collaboration_invitation"
+    | "collaboration_joined"
+    | "collaboration_left"
+    | "collaboration_removed";
   relatedId?: string | null;
   message: string;
   read: boolean;

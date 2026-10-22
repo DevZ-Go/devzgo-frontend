@@ -1,9 +1,4 @@
-import {
-  CuteSmileyCloud,
-  CuteLightBulb,
-  CuteGoldfish,
-  CuteRedApple,
-} from "./DoodleDecorations";
+import { Link } from "react-router-dom";
 import type { ConnectionUserSummary } from "../../types/network";
 
 interface HangingCardsHeaderProps {
@@ -11,44 +6,11 @@ interface HangingCardsHeaderProps {
   onSelectCreator?: (username: string) => void;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHeaderProps) {
-  const displayCreators =
-    creators.length >= 3
-      ? creators.slice(0, 4)
-      : [
-          {
-            id: "usr-janasi",
-            username: "janasi",
-            fullName: "Janasi Rajput",
-            headline: "Backend & Systems Lead",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-          },
-          {
-            id: "usr-chan",
-            username: "chan",
-            fullName: "Chan S.",
-            headline: "Security & Auth Architect",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=256&h=256&fit=crop&crop=faces",
-          },
-          {
-            id: "usr-khushbu",
-            username: "khushbu",
-            fullName: "Khushbu Patel",
-            headline: "Talent & UI Specialist",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=256&h=256&fit=crop&crop=faces",
-          },
-          {
-            id: "usr-manasi",
-            username: "manasi",
-            fullName: "Manasi Sharma",
-            headline: "Analytics & ML Engineer",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=256&h=256&fit=crop&crop=faces",
-          },
-        ];
+  const displayCreators = creators.filter((c) => c.id && UUID.test(c.id)).slice(0, 4);
+  if (displayCreators.length === 0) return null;
 
   const cardThemes = [
     {
@@ -57,8 +19,6 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
       tapeColor: "washi-tape-green",
       badgeColor: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]",
       stringHeight: "h-9",
-      doodle: <CuteSmileyCloud className="w-7 h-7" />,
-      tag: "cloud nine ☁️",
     },
     {
       borderColor: "border-[#dc2626]",
@@ -66,8 +26,6 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
       tapeColor: "washi-tape-red",
       badgeColor: "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]",
       stringHeight: "h-14",
-      doodle: <CuteRedApple className="w-7 h-7" />,
-      tag: "dream big 🍎",
     },
     {
       borderColor: "border-[#15803d]",
@@ -75,8 +33,6 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
       tapeColor: "washi-tape-green",
       badgeColor: "bg-[#DCFCE7] text-[#14532D] border border-[#16A34A]",
       stringHeight: "h-10",
-      doodle: <CuteLightBulb className="w-7 h-7" />,
-      tag: "night spark 💡",
     },
     {
       borderColor: "border-[#dc2626]",
@@ -84,8 +40,6 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
       tapeColor: "washi-tape-red",
       badgeColor: "bg-[#FEE2E2] text-[#991B1B] border border-[#DC2626]",
       stringHeight: "h-12",
-      doodle: <CuteGoldfish className="w-7 h-7" />,
-      tag: "in the flow 🐟",
     },
   ];
 
@@ -109,14 +63,9 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
       <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-3 mb-5 pt-2 px-1">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#DCFCE7] text-[#14532D] border border-[#15803D] font-sans text-xs font-bold uppercase tracking-wider mb-2 shadow-2xs">
-            <span>🌿</span> The Memory Branch
+            People
           </div>
-          <h2 className="font-cursive text-3xl sm:text-4xl text-[#14532D] font-bold tracking-tight">
-            sparks hanging from the branches
-          </h2>
-          <p className="font-cursive text-xl sm:text-2xl text-[#991B1B] font-semibold mt-0.5">
-            “past & future gather here at our warm little developer island”
-          </p>
+          <h2 className="font-serif text-3xl text-stone-900">People you can reach</h2>
         </div>
 
         <div className="hidden sm:block text-right">
@@ -131,9 +80,10 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
         {displayCreators.map((dev, idx) => {
           const theme = cardThemes[idx % cardThemes.length];
           return (
-            <div
-              key={dev.id || dev.username}
-              className="flex flex-col items-center group relative cursor-pointer"
+            <Link
+              key={dev.id}
+              to={`/profile/${dev.id}`}
+              className="flex flex-col items-center group relative"
               onClick={() => onSelectCreator?.(dev.username)}
             >
               {/* Branch Knot and Charcoal String */}
@@ -175,28 +125,22 @@ export function HangingCardsHeader({ creators, onSelectCreator }: HangingCardsHe
                     </div>
                   )}
 
-                  {/* Corner Doodle Sticker */}
-                  <div className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-white/95 backdrop-blur-xs shadow-xs border border-stone-200">
-                    {theme.doodle}
-                  </div>
                 </div>
 
                 {/* Caption: Whimsical Cursive ONLY for Name, Straight for Details */}
                 <div className="text-center px-1">
-                  <div className="font-cursive text-2xl font-bold text-[#1C1917] leading-tight truncate">
+                  <div className="font-cursive text-xl font-bold text-[#1C1917] leading-tight break-words">
                     {dev.fullName || dev.username}
                   </div>
-                  <div className="font-sans text-[11px] text-stone-600 font-medium truncate mt-0.5">
-                    {dev.headline || `@${dev.username}`}
+                  <div className="font-sans text-[11px] text-stone-600 font-medium break-all mt-0.5">
+                    @{dev.username}
                   </div>
-                  <div
-                    className={`mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-sans text-[11px] font-semibold ${theme.badgeColor}`}
-                  >
-                    {theme.tag}
-                  </div>
+                  {dev.headline && (
+                    <div className="font-sans text-[11px] text-stone-500 break-words mt-0.5">{dev.headline}</div>
+                  )}
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

@@ -1,6 +1,7 @@
 import { api } from "./client";
 import { demoFallback, USE_MOCK, assetUrlOrNull } from "./config";
 import type { DeveloperProfile } from "../types/network";
+import type { ApiProject } from "../types/project";
 import { INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
 const STORAGE_KEY_PROFILES = "devzgo_profiles_v1";
@@ -35,6 +36,10 @@ function mapProfile(p: Record<string, unknown>): DeveloperProfile {
     email: (p.email || "") as string,
     fullName: (p.full_name || p.fullName || p.username || "") as string,
     headline: (p.headline || null) as string | null,
+    role: (p.role || null) as string | null,
+    company: (p.company || null) as string | null,
+    guideSeen: p.guide_seen === true || p.guideSeen === true,
+    timezone: (p.timezone || null) as string | null,
     bio: (p.bio || null) as string | null,
     avatarUrl: assetUrlOrNull(p.avatar_url || p.avatarUrl),
     githubUrl: (p.github_url || p.githubUrl || null) as string | null,
@@ -47,6 +52,27 @@ function mapProfile(p: Record<string, unknown>): DeveloperProfile {
     connectionsCount: (p.connections_count ?? p.connectionsCount ?? 0) as number,
     collaborationsCount: (p.collaborations_count ?? p.collaborationsCount ?? 0) as number,
     connectionStatus: (p.connection_status ?? p.connectionStatus ?? null) as DeveloperProfile["connectionStatus"],
+    restricted: Boolean(p.restricted),
+    canMessage: p.can_message !== false && p.canMessage !== false,
+    acceptsConnections: p.accepts_connections !== false && p.acceptsConnections !== false,
+    profileVisibility: (p.profile_visibility || p.profileVisibility || null) as DeveloperProfile["profileVisibility"],
+    messagePolicy: (p.message_policy || p.messagePolicy || null) as DeveloperProfile["messagePolicy"],
+    commentPolicy: (p.comment_policy || p.commentPolicy || null) as DeveloperProfile["commentPolicy"],
+    activityVisibility: (p.activity_visibility || p.activityVisibility || null) as DeveloperProfile["activityVisibility"],
+    discoverable: p.discoverable === false ? false : p.discoverable === true ? true : null,
+    allowConnectionRequests: p.allow_connection_requests === false || p.allowConnectionRequests === false ? false : true,
+    connectionVisibility: (p.connection_visibility || p.connectionVisibility || null) as DeveloperProfile["connectionVisibility"],
+    collaborationPolicy: (p.collaboration_policy || p.collaborationPolicy || null) as DeveloperProfile["collaborationPolicy"],
+    emailVisibility: (p.email_visibility || p.emailVisibility || null) as DeveloperProfile["emailVisibility"],
+    resumeUrl: assetUrlOrNull(p.resume_url || p.resumeUrl),
+    resumeVisibility: (p.resume_visibility || p.resumeVisibility || null) as DeveloperProfile["resumeVisibility"],
+    connectionsVisible: p.connections_visible !== false && p.connectionsVisible !== false,
+    notifyLikes: p.notify_likes !== false && p.notifyLikes !== false,
+    notifyComments: p.notify_comments !== false && p.notifyComments !== false,
+    notifyShares: p.notify_shares !== false && p.notifyShares !== false,
+    notifyConnections: p.notify_connections !== false && p.notifyConnections !== false,
+    notifyMessages: p.notify_messages !== false && p.notifyMessages !== false,
+    notifyCollaborations: p.notify_collaborations !== false && p.notifyCollaborations !== false,
   };
 }
 
@@ -84,6 +110,9 @@ export async function updateMyProfile(
     const res = await api.put("/profiles/me", {
       full_name: payload.fullName,
       headline: payload.headline,
+      role: payload.role,
+      company: payload.company,
+      timezone: payload.timezone,
       bio: payload.bio,
       avatar_url: payload.avatarUrl,
       github_url: payload.githubUrl,
@@ -91,6 +120,22 @@ export async function updateMyProfile(
       website_url: payload.websiteUrl,
       skills: payload.skills,
       location: payload.location,
+      profile_visibility: payload.profileVisibility,
+      message_policy: payload.messagePolicy,
+      comment_policy: payload.commentPolicy,
+      activity_visibility: payload.activityVisibility,
+      discoverable: payload.discoverable,
+      allow_connection_requests: payload.allowConnectionRequests,
+      connection_visibility: payload.connectionVisibility,
+      collaboration_policy: payload.collaborationPolicy,
+      email_visibility: payload.emailVisibility,
+      resume_visibility: payload.resumeVisibility,
+      notify_likes: payload.notifyLikes,
+      notify_comments: payload.notifyComments,
+      notify_shares: payload.notifyShares,
+      notify_connections: payload.notifyConnections,
+      notify_messages: payload.notifyMessages,
+      notify_collaborations: payload.notifyCollaborations,
     });
     if (res.data) {
       return mapProfile(res.data);
@@ -111,6 +156,96 @@ export async function updateMyProfile(
   }
 
   return list[0]!;
+}
+
+export async function uploadAvatar(file: File): Promise<DeveloperProfile> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await api.post("/profiles/me/avatar", body);
+  return mapProfile(res.data);
+}
+
+export async function uploadResume(file: File): Promise<DeveloperProfile> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await api.post("/profiles/me/resume", body);
+  return mapProfile(res.data);
+}
+
+export const PROFILE_ROLES = ["Developer", "Designer", "Tester", "Student", "Researcher", "Data", "Security", "Product", "Recruiter"] as const;
+export const MEMBER_ROLES = PROFILE_ROLES.filter((role) => role !== "Recruiter");
+
+export type CollabGroup = {
+  project_id: string;
+  title: string;
+  visibility: string;
+  role: string;
+  members: { username: string; role: string }[];
+};
+
+export type Standing = {
+  projects: number;
+  commits: number;
+  pushes: number;
+  connections: number | null;
+  activity: number | null;
+  last_push: string | null;
+  languages: { name: string; percentage: number }[];
+  tech: { name: string; count: number }[];
+  top: Partial<Record<"projects" | "commits" | "pushes" | "connections" | "activity", number>>;
+};
+
+export type TalentCard = {
+  id: string;
+  username: string;
+  full_name: string | null;
+  headline: string | null;
+  role: string | null;
+  company: string | null;
+  avatar_url: string | null;
+  location: string | null;
+  skills: string | null;
+  projects: number;
+  commits: number;
+  pushes: number;
+  connections: number | null;
+  activity: number | null;
+  last_push: string | null;
+  tech: string[];
+};
+
+export const TALENT_SORTS = [
+  ["projects", "Most projects"],
+  ["commits", "Most commits"],
+  ["pushes", "Most pushes"],
+  ["connections", "Most connections"],
+  ["activity", "Most active"],
+] as const;
+
+export async function fetchProfileProjects(userId: string): Promise<ApiProject[]> {
+  const { data } = await api.get<ApiProject[]>(`/profiles/${userId}/projects`);
+  return data;
+}
+
+export async function fetchProfileGroups(userId: string): Promise<CollabGroup[]> {
+  const { data } = await api.get<CollabGroup[]>(`/profiles/${userId}/groups`);
+  return data;
+}
+
+export async function fetchStanding(userId: string): Promise<Standing> {
+  const { data } = await api.get<Standing>(`/profiles/${userId}/snapshot`);
+  return data;
+}
+
+export async function fetchTalent(params: { q?: string; tech?: string[]; sort?: string }): Promise<TalentCard[]> {
+  const { data } = await api.get<TalentCard[]>("/profiles/talent", {
+    params: { q: params.q || undefined, tech: params.tech?.join(",") || undefined, sort: params.sort || "projects" },
+  });
+  return data.map((card) => ({ ...card, avatar_url: assetUrlOrNull(card.avatar_url) }));
+}
+
+export async function markRecruitingGuide(): Promise<void> {
+  await api.post("/profiles/me/guide");
 }
 
 export async function searchDevelopers(query: string): Promise<DeveloperProfile[]> {
