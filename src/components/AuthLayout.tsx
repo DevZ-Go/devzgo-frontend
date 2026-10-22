@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Sparkles, Star, Heart, Code2 } from "lucide-react";
+import { Terminal, Heart, Code2 } from "lucide-react";
+import { BrandMark } from "./BrandMark";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -18,13 +19,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             to="/home"
             className="flex items-center gap-2.5 group"
           >
-            <motion.div
-              whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-maroon-800 via-maroon-700 to-autumn-rust text-amber-200 shadow-sm shadow-maroon-900/30"
-            >
-              <Sparkles className="w-4 h-4 text-amber-200" />
-            </motion.div>
+            <BrandMark />
             <span className="font-serif text-xl font-normal text-stone-900 tracking-tight group-hover:text-maroon-700 transition-colors">
               DevZ-Go
             </span>
@@ -60,7 +55,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           animate={{ y: [-6, 6, -6], rotate: [-5, 5, -5] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Star className="w-5 h-5 text-amber-400/60" />
+          <Terminal className="w-5 h-5 text-amber-500/50" />
         </motion.div>
         <motion.div
           className="absolute top-[15%] right-[12%]"

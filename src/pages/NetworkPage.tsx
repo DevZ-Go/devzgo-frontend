@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Search, Users, Send, Loader2, Sparkles, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
+import { MessageSquare, Search, Users, Send, Loader2, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { createPost, fetchFeedPage } from "../api/network";
 import {
@@ -178,7 +178,7 @@ export function NetworkPage() {
       {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-white text-[#14532D] px-4 py-2.5 text-sm font-semibold font-sans shadow-xl flex items-center gap-2 border-2 border-[#15803D] animate-in fade-in slide-in-from-bottom-2">
-          <Sparkles className="w-4 h-4 text-amber-500" />
+          <Check className="w-4 h-4 text-forest-600" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -234,7 +234,7 @@ export function NetworkPage() {
                   }`}
                 >
                   <Compass className="w-4 h-4 text-[#DC2626]" />
-                  Constellation Web ✦
+                  Constellation Web
                 </button>
               </div>
 
@@ -362,7 +362,7 @@ export function NetworkPage() {
                       ) : (
                         <Send className="w-3.5 h-3.5" />
                       )}
-                      Drop Spark ✦
+                      Drop Spark
                     </button>
                   </div>
                 </div>
@@ -447,7 +447,7 @@ export function NetworkPage() {
             {(connections?.pendingIncoming?.length || 0) > 0 && (
               <div className="rounded-2xl border border-crimson-300 bg-crimson-50/60 p-5 shadow-xs">
                 <div className="flex items-center gap-2 text-crimson-900 font-sans text-xs font-bold uppercase tracking-wider mb-3">
-                  <Sparkles className="w-4 h-4 text-crimson-600" />
+                  <UserPlus className="w-4 h-4 text-crimson-600" />
                   Connection Requests ({(connections?.pendingIncoming?.length || 0)})
                 </div>
 
@@ -512,7 +512,7 @@ export function NetworkPage() {
                 <h3 className="font-cursive text-2xl font-bold text-[#1C1917]">
                   Suggested Creators
                 </h3>
-                <span className="font-sans text-xs text-forest-700 font-semibold">explore ✦</span>
+                <span className="font-sans text-xs text-forest-700 font-semibold">explore</span>
               </div>
 
               <div className="space-y-3">

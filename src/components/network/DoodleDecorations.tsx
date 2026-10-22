@@ -11,14 +11,6 @@ export function CuteFlower({ className = "w-6 h-6 text-forest-600" }: { classNam
   );
 }
 
-export function CuteSparkle({ className = "w-5 h-5 text-crimson-600" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C12 7.5 7.5 12 2 12C7.5 12 12 16.5 12 22C12 16.5 16.5 12 22 12C16.5 12 12 7.5 12 2Z" />
-    </svg>
-  );
-}
-
 export function CuteRedApple({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 48 48" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
