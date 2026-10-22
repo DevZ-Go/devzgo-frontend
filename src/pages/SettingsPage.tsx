@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { changePassword, changeUsername } from "../api/auth";
-import { fetchMyProfile, PROFILE_ROLES, updateMyProfile, uploadAvatar } from "../api/profiles";
+import { Link } from "react-router-dom";
+import { fetchMyProfile, MEMBER_ROLES, updateMyProfile, uploadAvatar } from "../api/profiles";
+import { WORK_ARRANGEMENTS, WORK_TYPES } from "../api/recruiting";
 import { useAuth } from "../auth/AuthContext";
+import { useAccount } from "../auth/account";
 import { Navbar } from "../components/Navbar";
 import { PasswordField } from "../components/PasswordField";
 import { PasswordInput } from "../components/PasswordInput";
@@ -18,6 +21,7 @@ const ZONES = ["America/Toronto", "America/New_York", "America/Chicago", "Americ
 const SECTIONS = [
   ["account", "Account"],
   ["profile", "Profile"],
+  ["availability", "Availability"],
   ["privacy", "Privacy"],
   ["notifications", "Notifications"],
   ["appearance", "Appearance"],
@@ -77,8 +81,10 @@ function Save({ busy, disabled, children }: { busy: boolean; disabled?: boolean;
 export function SettingsPage() {
   const { user, login, refreshUser } = useAuth();
   const [params, setParams] = useSearchParams();
+  const { recruiter } = useAccount();
+  const sections = SECTIONS.filter(([id]) => !(recruiter && id === "availability"));
   const requested = params.get("section");
-  const section: Section = SECTIONS.some(([id]) => id === requested) ? requested as Section : "account";
+  const section: Section = sections.some(([id]) => id === requested) ? requested as Section : "account";
   const hasPassword = user?.has_password !== false;
   const [ready, setReady] = useState(false);
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
@@ -109,6 +115,10 @@ export function SettingsPage() {
   const [notifyConnections, setNotifyConnections] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
   const [notifyCollaborations, setNotifyCollaborations] = useState(true);
+  const [openToWork, setOpenToWork] = useState(false);
+  const [workTypes, setWorkTypes] = useState<string[]>([]);
+  const [workArrangements, setWorkArrangements] = useState<string[]>([]);
+  const [availabilityNote, setAvailabilityNote] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState("");
   const [nameReady, setNameReady] = useState(false);
@@ -151,6 +161,10 @@ export function SettingsPage() {
         setNotifyConnections(profile.notifyConnections !== false);
         setNotifyMessages(profile.notifyMessages !== false);
         setNotifyCollaborations(profile.notifyCollaborations !== false);
+        setOpenToWork(profile.openToWork === true);
+        setWorkTypes(profile.workTypes ?? []);
+        setWorkArrangements(profile.workArrangements ?? []);
+        setAvailabilityNote(profile.availabilityNote || "");
         setReady(true);
       })
       .catch(() => undefined);
@@ -183,7 +197,10 @@ export function SettingsPage() {
   async function saveProfile(e: FormEvent) {
     e.preventDefault();
     await run(async () => {
-      const saved = await updateMyProfile({ fullName, role, company, headline, bio, location, skills, githubUrl, linkedinUrl, websiteUrl, timezone });
+      const saved = await updateMyProfile({
+        fullName, role: recruiter ? undefined : role, company: recruiter ? company : undefined,
+        headline, bio, location, skills, githubUrl, linkedinUrl, websiteUrl, timezone,
+      });
       setSkills(saved.skills || "");
       setAvatarUrl(saved.avatarUrl || null);
       setMessage({ text: "Profile saved.", ok: true });
@@ -208,6 +225,16 @@ export function SettingsPage() {
       setMessage({ text: "Privacy saved.", ok: true });
     });
   }
+
+  async function saveAvailability(e: FormEvent) {
+    e.preventDefault();
+    await run(async () => {
+      await updateMyProfile({ openToWork, workTypes, workArrangements, availabilityNote });
+      setMessage({ text: "Availability saved.", ok: true });
+    });
+  }
+
+  const toggleIn = (list: string[], value: string) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
   async function saveNotifications(e: FormEvent) {
     e.preventDefault();
@@ -304,17 +331,23 @@ export function SettingsPage() {
           Name
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} className={`${inputClass} mt-1`} />
         </label>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
-          Role
-          <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputClass} mt-1 normal-case tracking-normal`} required>
-            <option value="">Choose a role</option>
-            {PROFILE_ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-        </label>
-        {role === "Recruiter" && (
+        {recruiter ? (
+          <>
+            <p className="rounded-2xl border border-stone-200 bg-[#f8f6f0] px-4 py-3 text-sm text-stone-700">
+              <span className="font-semibold">Recruiter account.</span> The account type is set when you sign up and does not change here.
+            </p>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+              Company or agency
+              <input required value={company} onChange={(e) => setCompany(e.target.value)} className={`${inputClass} mt-1`} placeholder="Where you recruit from" />
+            </label>
+          </>
+        ) : (
           <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
-            Company or agency
-            <input required value={company} onChange={(e) => setCompany(e.target.value)} className={`${inputClass} mt-1`} placeholder="Where you recruit from" />
+            Role
+            <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputClass} mt-1 normal-case tracking-normal`} required>
+              <option value="">Choose a role</option>
+              {MEMBER_ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
           </label>
         )}
         <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
@@ -352,7 +385,7 @@ export function SettingsPage() {
             {zones.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
           </select>
         </label>
-        <Save busy={busy} disabled={!ready || !role || (role === "Recruiter" && company.trim().length < 2)}>Save profile</Save>
+        <Save busy={busy} disabled={!ready || (recruiter ? company.trim().length < 2 : !role)}>Save profile</Save>
       </form>
     );
   } else if (section === "privacy") {
@@ -370,6 +403,49 @@ export function SettingsPage() {
         <SwitchRow label="Appear in search and suggestions" checked={discoverable} onChange={setDiscoverable} />
         <SwitchRow label="Accept connection requests" checked={allowRequests} onChange={setAllowRequests} />
         <Save busy={busy} disabled={!ready}>Save privacy</Save>
+      </form>
+    );
+  } else if (section === "availability") {
+    const chip = (on: boolean) =>
+      `rounded-full border px-3 py-1.5 text-xs font-semibold transition ${on ? "border-maroon-700 bg-maroon-800 text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`;
+    panel = (
+      <form onSubmit={saveAvailability} className="space-y-5">
+        <div>
+          <h2 className="font-serif text-2xl text-stone-900">Availability</h2>
+          <p className="mt-1 text-sm text-stone-500">
+            Off by default. Recruiters only see this when you turn it on and they can see your profile. It also lets recruiters send you a
+            contact request even if you only take messages from connections; you can accept or decline each one.
+          </p>
+        </div>
+        <SwitchRow label="Open to work" hint="Show recruiters that you are looking" checked={openToWork} onChange={setOpenToWork} />
+        <fieldset disabled={!openToWork} className="space-y-4 disabled:opacity-50">
+          <legend className="sr-only">What you are open to</legend>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Work types</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {WORK_TYPES.map((t) => (
+                <button key={t} type="button" aria-pressed={workTypes.includes(t)} onClick={() => setWorkTypes((v) => toggleIn(v, t))} className={chip(workTypes.includes(t))}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Arrangements</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {WORK_ARRANGEMENTS.map((t) => (
+                <button key={t} type="button" aria-pressed={workArrangements.includes(t)} onClick={() => setWorkArrangements((v) => toggleIn(v, t))} className={chip(workArrangements.includes(t))}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+            Note for recruiters
+            <input value={availabilityNote} onChange={(e) => setAvailabilityNote(e.target.value)} maxLength={160}
+              placeholder="e.g. Available from May 2027" className={`${inputClass} mt-1 normal-case tracking-normal`} />
+          </label>
+        </fieldset>
+        <div className="flex flex-wrap items-center gap-4">
+          <Save busy={busy} disabled={!ready}>Save availability</Save>
+          <Link to="/opportunities" className={ui.link}>See recruiter requests</Link>
+        </div>
       </form>
     );
   } else if (section === "notifications") {
@@ -405,7 +481,7 @@ export function SettingsPage() {
         <h1 className="font-serif text-4xl font-normal text-stone-900">Settings</h1>
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
           <nav className="flex gap-2 overflow-x-auto lg:flex-col" aria-label="Settings sections">
-            {SECTIONS.map(([id, label]) => (
+            {sections.map(([id, label]) => (
               <button
                 key={id}
                 type="button"
