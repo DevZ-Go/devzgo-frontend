@@ -37,6 +37,7 @@ const AuthCallbackPage = page(() => import("./pages/AuthCallbackPage"), "AuthCal
 const GitHubOnboardingPage = page(() => import("./pages/GitHubOnboardingPage"), "GitHubOnboardingPage");
 const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
+const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const ThemeSelectPage = page(() => import("./pages/ThemeSelectPage"), "ThemeSelectPage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
@@ -198,6 +199,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ProjectDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/project/:id/workspace",
+        element: (
+          <ProtectedRoute>
+            <ProjectWorkspacePage />
           </ProtectedRoute>
         ),
       },

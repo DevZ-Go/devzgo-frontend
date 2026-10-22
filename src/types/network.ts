@@ -223,7 +223,9 @@ export interface NotificationItem {
     | "recruitment_declined"
     | "challenge_invitation"
     | "challenge_submission"
-    | "challenge_feedback";
+    | "challenge_feedback"
+    | "workspace_commit"
+    | "workspace_pr";
   relatedId?: string | null;
   message: string;
   read: boolean;

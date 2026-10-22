@@ -45,10 +45,30 @@ export interface ApiProject {
     owner: boolean; member: boolean; view: boolean; edit: boolean; files: boolean; secrets: boolean;
     comment?: boolean; manage_team?: boolean;
   } | null;
+  /** Where the files come from and whether the stored copy is current (single project responses only) */
+  source?: ProjectSource | null;
   owner?: ApiProjectOwner;
   owner_username?: string;
   /** ISO timestamp from the backend (used to keep TV world positions stable) */
   created_at?: string;
+}
+
+export interface ProjectSource {
+  kind: "zip" | "github";
+  /** owner/name on GitHub */
+  repository?: string | null;
+  default_branch?: string | null;
+  /** The stored copy: a ZIP upload, or one GitHub branch at one commit */
+  snapshot?: {
+    origin: "zip" | "github";
+    ref?: string | null;
+    commit_sha?: string | null;
+    synced_at?: string | null;
+  } | null;
+  sync_state?: "pending" | "ok" | "failed" | null;
+  /** Shown to the owner and team members only */
+  sync_error?: string | null;
+  sync_updated_at?: string | null;
 }
 
 /** Normalized project for UI components */
