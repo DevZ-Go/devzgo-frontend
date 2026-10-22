@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Activity, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fetchStanding } from "../api/profiles";
 import { ui } from "../styles/editorial";
@@ -105,7 +105,12 @@ export function CandidateStanding({ userId }: { userId: string }) {
         </div>
       </div>
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-        <h3 className="font-serif text-xl text-stone-900">GitHub contributions</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-serif text-xl text-stone-900">GitHub contributions</h3>
+          <Link to={`/profile/${userId}/activity`} className={`${ui.btn} ${ui.primary} rounded-full px-4 py-2`}>
+            <Activity className="h-3.5 w-3.5" /> Open activity log
+          </Link>
+        </div>
         {(data.contributions ?? []).length === 0 ? (
           <p className="mt-3 text-sm text-stone-500">No commits or pushes from imported repositories are visible yet.</p>
         ) : (

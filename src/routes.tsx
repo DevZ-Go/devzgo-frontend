@@ -1,7 +1,8 @@
-import { lazy, type ComponentType } from "react";
+import { lazy, type ComponentType, type ReactElement } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DeveloperRoute, RecruiterRoute } from "./components/RoleRoute";
 
 const RELOADED_KEY = "devzgo.chunkReload";
 
@@ -48,6 +49,16 @@ const ConnectionsPage = page(() => import("./pages/ConnectionsPage"), "Connectio
 const PostPage = page(() => import("./pages/PostPage"), "PostPage");
 const MessagesPage = page(() => import("./pages/MessagesPage"), "MessagesPage");
 const GitHubImportPage = page(() => import("./pages/GitHubImportPage"), "GitHubImportPage");
+const RecruiterDashboardPage = page(() => import("./pages/RecruiterDashboardPage"), "RecruiterDashboardPage");
+const CandidatePage = page(() => import("./pages/CandidatePage"), "CandidatePage");
+const ShortlistsPage = page(() => import("./pages/ShortlistsPage"), "ShortlistsPage");
+const RecruiterInboxPage = page(() => import("./pages/RecruiterInboxPage"), "RecruiterInboxPage");
+const OpportunitiesPage = page(() => import("./pages/OpportunitiesPage"), "OpportunitiesPage");
+const PersonActivityPage = page(() => import("./pages/ActivityLogPage"), "PersonActivityPage");
+const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "ProjectActivityPage");
+
+const developer = (element: ReactElement) => <ProtectedRoute><DeveloperRoute>{element}</DeveloperRoute></ProtectedRoute>;
+const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{element}</RecruiterRoute></ProtectedRoute>;
 
 export const router = createBrowserRouter([
   {
@@ -59,11 +70,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/home",
-        element: (
-          <ProtectedRoute>
-            <LandingPage />
-          </ProtectedRoute>
-        ),
+        element: developer(<LandingPage />),
       },
       {
         path: "/login",
@@ -154,27 +161,15 @@ export const router = createBrowserRouter([
       },
       {
         path: "/add-project",
-        element: (
-          <ProtectedRoute>
-            <ProjectFormPage />
-          </ProtectedRoute>
-        ),
+        element: developer(<ProjectFormPage />),
       },
       {
         path: "/import/github",
-        element: (
-          <ProtectedRoute>
-            <GitHubImportPage />
-          </ProtectedRoute>
-        ),
+        element: developer(<GitHubImportPage />),
       },
       {
         path: "/project/:id/edit",
-        element: (
-          <ProtectedRoute>
-            <ProjectFormPage />
-          </ProtectedRoute>
-        ),
+        element: developer(<ProjectFormPage />),
       },
       {
         path: "/profile",
@@ -202,12 +197,17 @@ export const router = createBrowserRouter([
       },
       {
         path: "/wrap",
-        element: (
-          <ProtectedRoute>
-            <WrapPage />
-          </ProtectedRoute>
-        ),
+        element: developer(<WrapPage />),
       },
+      { path: "/opportunities", element: developer(<OpportunitiesPage />) },
+      { path: "/profile/:id/activity", element: <ProtectedRoute><PersonActivityPage /></ProtectedRoute> },
+      { path: "/project/:id/activity", element: <ProtectedRoute><ProjectActivityPage /></ProtectedRoute> },
+      { path: "/recruit", element: recruiting(<RecruiterDashboardPage />) },
+      { path: "/recruit/talent", element: recruiting(<DevelopersPage />) },
+      { path: "/recruit/candidates/:id", element: recruiting(<CandidatePage />) },
+      { path: "/recruit/shortlists", element: recruiting(<ShortlistsPage />) },
+      { path: "/recruit/shortlists/:id", element: recruiting(<ShortlistsPage />) },
+      { path: "/recruit/inbox", element: recruiting(<RecruiterInboxPage />) },
 
     ],
   },
