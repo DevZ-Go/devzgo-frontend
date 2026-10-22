@@ -7,7 +7,9 @@ import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
 
 /** Comments on a project (not on Network posts). Newest first with "load older". */
-export function ProjectComments({ projectId, enabled, signedIn }: { projectId: string; enabled: boolean; signedIn: boolean }) {
+export function ProjectComments({ projectId, enabled, signedIn, readOnly = false }: {
+  projectId: string; enabled: boolean; signedIn: boolean; readOnly?: boolean;
+}) {
   const client = useQueryClient();
   const key = queryKeys.projectComments(projectId);
   const [body, setBody] = useState("");
@@ -38,6 +40,8 @@ export function ProjectComments({ projectId, enabled, signedIn }: { projectId: s
       </h2>
       {!enabled ? (
         <p className="mb-4 text-sm text-stone-500">The owner has turned comments off for this project.</p>
+      ) : signedIn && readOnly ? (
+        <p className="mb-4 text-sm text-stone-500">You're on this team as a Viewer, so comments are read-only for you.</p>
       ) : signedIn ? (
         <form onSubmit={submit} className="mb-6 space-y-2">
           <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3}

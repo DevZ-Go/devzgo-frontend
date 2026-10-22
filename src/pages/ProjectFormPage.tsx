@@ -36,6 +36,8 @@ import type { ApiProject } from "../types/project";
 import type { ProjectCategory } from "../data/projectFormOptions";
 import { isProjectOwner } from "../utils/projectOwnership";
 import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
+import { inviteCollaborator } from "../api/collaborations";
+import { TeammatePicker, type Teammate } from "../components/TeammatePicker";
 
 const TOTAL_STEPS = 3;
 const STEP_META = [
@@ -46,7 +48,7 @@ const STEP_META = [
     icon: LayoutList,
   },
   { n: 2, title: "Classification", subtitle: "Category & visibility", icon: Layers },
-  { n: 3, title: "Assets", subtitle: "Media & workspace", icon: UploadCloud },
+  { n: 3, title: "Assets", subtitle: "Media, workspace & team", icon: UploadCloud },
 ] as const;
 
 export function ProjectFormPage() {
@@ -75,6 +77,7 @@ export function ProjectFormPage() {
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [demoVideoFile, setDemoVideoFile] = useState<File | null>(null);
   const [workspaceZip, setWorkspaceZip] = useState<File | null>(null);
+  const [teammates, setTeammates] = useState<Teammate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -332,6 +335,16 @@ export function ProjectFormPage() {
         projectId = String(created?.id ?? "").trim();
         if (!projectId) {
           throw new Error("Server did not return a project id. Try again.");
+        }
+        if (teammates.length > 0) setSubmitPhase("Inviting teammates…");
+        for (const mate of teammates) {
+          try {
+            await inviteCollaborator(projectId, {
+              username: mate.username, role: mate.role.trim() || "Collaborator", access: mate.access,
+            });
+          } catch (err) {
+            warnings.push(`Invite for @${mate.username}: ${getApiErrorMessage(err)}`);
+          }
         }
       }
 
@@ -965,6 +978,26 @@ export function ProjectFormPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="border-t border-stone-100 pt-6 space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                  Teammates
+                </h3>
+                {isEdit ? (
+                  <p className="text-xs text-stone-600">
+                    Invite people, set their access, and answer join requests from the Team section on the{" "}
+                    <Link to={`/project/${editProjectId}`} className="font-semibold text-maroon-700 hover:underline">project page</Link>.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-stone-600">
+                      Optional. Each person gets an invitation with the role and access you choose, and joins once they accept.
+                      Anyone can also ask to join later from the project page.
+                    </p>
+                    <TeammatePicker value={teammates} onChange={setTeammates} />
+                  </>
+                )}
               </div>
 
               {detectingStacks && (

@@ -8,16 +8,19 @@ type Props = {
   placeholder: string;
   onChange: (value: string) => void;
   className: string;
+  hints?: Record<string, string>;
+  ariaLabel?: string;
 };
 
 /** A styled single-choice dropdown that follows the listbox keyboard pattern. */
-export function SelectMenu({ id, value, options, placeholder, onChange, className }: Props) {
+export function SelectMenu({ id, value, options, placeholder, onChange, className, hints, ariaLabel }: Props) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [upward, setUpward] = useState(false);
+  const [endAligned, setEndAligned] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -35,6 +38,7 @@ export function SelectMenu({ id, value, options, placeholder, onChange, classNam
   function show() {
     const box = rootRef.current?.getBoundingClientRect();
     setUpward(Boolean(box && window.innerHeight - box.bottom < 300 && box.top > window.innerHeight - box.bottom));
+    setEndAligned(Boolean(box && box.left + 272 > window.innerWidth));
     setActive(Math.max(0, options.indexOf(value)));
     setOpen(true);
   }
@@ -79,6 +83,7 @@ export function SelectMenu({ id, value, options, placeholder, onChange, classNam
         aria-expanded={open}
         aria-controls={listId}
         aria-activedescendant={open ? `${listId}-${active}` : undefined}
+        aria-label={ariaLabel}
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={onKeyDown}
         className={`${className} flex items-center justify-between gap-3 text-left`}
@@ -92,7 +97,8 @@ export function SelectMenu({ id, value, options, placeholder, onChange, classNam
           ref={listRef}
           id={listId}
           role="listbox"
-          className={`absolute left-0 right-0 z-30 max-h-72 overflow-auto rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl shadow-stone-900/10 ${upward ? "bottom-full mb-2" : "top-full mt-2"}`}
+          className={`absolute z-30 max-h-72 min-w-full overflow-auto ${
+            !hints ? "left-0 right-0" : endAligned ? "right-0 w-64" : "left-0 w-64"} rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl shadow-stone-900/10 ${upward ? "bottom-full mb-2" : "top-full mt-2"}`}
         >
           {options.map((option, index) => {
             const selected = option === value;
@@ -109,8 +115,11 @@ export function SelectMenu({ id, value, options, placeholder, onChange, classNam
                   index === active ? "bg-[#f7f5ed]" : ""
                 } ${selected ? "font-semibold text-maroon-800" : "text-stone-700"}`}
               >
-                {option}
-                {selected && <Check className="h-4 w-4 text-maroon-800" />}
+                <span className="min-w-0">
+                  {option}
+                  {hints?.[option] && <span className="block text-xs font-normal text-stone-500">{hints[option]}</span>}
+                </span>
+                {selected && <Check className="h-4 w-4 shrink-0 text-maroon-800" />}
               </li>
             );
           })}
