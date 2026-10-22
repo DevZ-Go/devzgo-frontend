@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
+  Activity,
   Loader2,
   FolderKanban,
   Trash2,
@@ -23,7 +24,7 @@ import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject } from "../api/projects";
 import { accessLabel, fetchUserCollaborations } from "../api/collaborations";
-import { fetchMyProfile, fetchProfileProjects, fetchUserProfile, PROFILE_ROLES, updateMyProfile } from "../api/profiles";
+import { fetchMyProfile, fetchProfileProjects, fetchUserProfile, MEMBER_ROLES, updateMyProfile } from "../api/profiles";
 import { fetchFeed } from "../api/network";
 import { ConnectButton } from "../components/ConnectButton";
 import { ProfileCompletion } from "../components/ProfileCompletion";
@@ -35,6 +36,8 @@ import { getApiErrorMessage } from "../utils/apiError";
 import type { ApiProject, Project } from "../types/project";
 import type { DeveloperProfile, FeedActivity } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
+import { useAccount } from "../auth/account";
+import { openRecruiterTour } from "../components/tour/events";
 
 const TABS = ["projects", "collaborations", "portfolio", "activity"] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -62,6 +65,7 @@ export function ProfilePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, token, refreshUser } = useAuth();
+  const { recruiter } = useAccount();
   const clearedState = useRef(false);
 
   const isOwnProfile = useMemo(() => {
@@ -199,8 +203,8 @@ export function ProfilePage() {
       const updated = await updateMyProfile({
         fullName: editFullName,
         headline: editHeadline,
-        role: editRole,
-        company: editCompany,
+        role: recruiter ? undefined : editRole,
+        company: recruiter ? editCompany : undefined,
         bio: editBio,
         skills: editSkills,
         location: editLocation,
@@ -385,42 +389,71 @@ export function ProfilePage() {
                         <Pencil className="w-3.5 h-3.5" />
                         Edit Profile
                       </button>
-                      <Link
-                        to="/add-project"
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-maroon-800/20 hover:shadow-lg transition"
-                      >
-                        New project
-                      </Link>
-                      <Link
-                        to="/import/github"
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
-                      >
-                        <Github className="w-3.5 h-3.5 text-stone-700" /> Import from GitHub
-                      </Link>
+                      {!recruiter && (
+                        <>
+                          <Link
+                            to="/add-project"
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-maroon-800/20 hover:shadow-lg transition"
+                          >
+                            New project
+                          </Link>
+                          <Link
+                            to="/import/github"
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                          >
+                            <Github className="w-3.5 h-3.5 text-stone-700" /> Import from GitHub
+                          </Link>
+                        </>
+                      )}
+                      {!recruiter && (
+                        <Link
+                          to={`/profile/${devProfile?.userId || devProfile?.id || user?.id}/activity`}
+                          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                        >
+                          <Activity className="w-3.5 h-3.5 text-maroon-800" /> Activity log
+                        </Link>
+                      )}
                       <Link
                         to="/network/connections"
                         className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
                       >
                         <Users className="w-3.5 h-3.5 text-forest-700" /> Connections
                       </Link>
-                      <Link
-                        to="/wrap"
-                        className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
-                      >
-                        <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
-                      </Link>
-                      {devProfile?.role === "Recruiter" && (
-                        <button
-                          type="button"
-                          onClick={() => window.dispatchEvent(new Event("devzgo:recruiting-guide"))}
-                          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                      {recruiter ? (
+                        <>
+                          <Link
+                            to="/recruit"
+                            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
+                          >
+                            Recruiting dashboard
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={openRecruiterTour}
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                          >
+                            Recruiter tour
+                          </button>
+                        </>
+                      ) : (
+                        <Link
+                          to="/wrap"
+                          className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
                         >
-                          Recruiting guide
-                        </button>
+                          <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
+                        </Link>
                       )}
                     </>
                   ) : (
                     <>
+                      {recruiter && devProfile && devProfile.accountType !== "recruiter" && (
+                        <Link
+                          to={`/recruit/candidates/${devProfile.userId || devProfile.id}`}
+                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-maroon-800/20 transition hover:from-maroon-900 hover:to-autumn-amber"
+                        >
+                          Evaluate as candidate
+                        </Link>
+                      )}
                       {devProfile && (devProfile.acceptsConnections === false && !devProfile.connectionStatus ? (
                         <span className="inline-flex items-center rounded-xl border border-stone-200 px-5 py-2.5 text-xs font-semibold text-stone-500">
                           Not accepting requests
@@ -428,6 +461,15 @@ export function ProfilePage() {
                       ) : (
                         <ConnectButton userId={devProfile.userId || devProfile.id} />
                       ))}
+
+                      {devProfile && devProfile.accountType !== "recruiter" && (
+                        <Link
+                          to={`/profile/${devProfile.userId || devProfile.id}/activity`}
+                          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                        >
+                          <Activity className="w-3.5 h-3.5 text-maroon-800" /> Activity log
+                        </Link>
+                      )}
 
                       {devProfile?.canMessage !== false && (
                         <button
@@ -603,10 +645,12 @@ export function ProfilePage() {
               <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-20 text-center shadow-sm">
                 <p className="text-stone-600 mb-6 max-w-md mx-auto text-sm">
                   {isOwnProfile
-                    ? "You haven't uploaded any projects yet. Showcase your stack by adding a project!"
+                    ? recruiter
+                      ? "Recruiter accounts review work rather than publish it. Find candidates from your dashboard."
+                      : "You haven't uploaded any projects yet. Showcase your stack by adding a project!"
                     : "No projects are visible to you. Private work stays hidden, and a connections-only profile hides its public projects too."}
                 </p>
-                {isOwnProfile && (
+                {isOwnProfile && !recruiter && (
                   <Link
                     to="/add-project"
                     className="inline-flex px-6 py-2.5 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white text-xs font-semibold hover:shadow-lg transition"
@@ -614,7 +658,7 @@ export function ProfilePage() {
                     Add your first project
                   </Link>
                 )}
-                {isOwnProfile && (
+                {isOwnProfile && !recruiter && (
                   <Link
                     to="/import/github"
                     className="mx-auto mt-4 flex w-fit items-center gap-1.5 text-xs font-semibold text-forest-700 hover:underline"
@@ -785,22 +829,24 @@ export function ProfilePage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                  Role
-                </label>
-                <select
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                >
-                  <option value="">Choose a role</option>
-                  {PROFILE_ROLES.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-              </div>
-              {editRole === "Recruiter" && (
+              {!recruiter && (
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  >
+                    <option value="">Choose a role</option>
+                    {MEMBER_ROLES.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {recruiter && (
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                     Company or agency
