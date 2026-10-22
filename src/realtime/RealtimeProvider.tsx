@@ -36,11 +36,25 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     let retryTimer: ReturnType<typeof setTimeout>;
 
     const connect = () => {
-      ws = new WebSocket(`${API_BASE_URL.replace(/\/$/, "").replace(/^http/, "ws")}/ws`);
-      ws.onopen = () => ws?.send(JSON.stringify({ token }));
-      ws.onmessage = (e) => {
+      if (stopped) return;
+      const socket = new WebSocket(`${API_BASE_URL.replace(/\/$/, "").replace(/^http/, "ws")}/ws`);
+      ws = socket;
+      socket.onopen = () => {
+        if (stopped) {
+          socket.close();
+          return;
+        }
+        socket.send(JSON.stringify({ token }));
+      };
+      socket.onerror = () => undefined;
+      socket.onmessage = (e) => {
         if (e.data === "pong") return;
-        const event = JSON.parse(e.data) as RealtimeEvent;
+        let event: RealtimeEvent;
+        try {
+          event = JSON.parse(e.data) as RealtimeEvent;
+        } catch {
+          return;
+        }
         if (event.type === "ready") {
           attempt = 0;
           setConnected(true);
@@ -49,7 +63,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           emit(event);
         }
       };
-      ws.onclose = (e) => {
+      socket.onclose = (e) => {
         setConnected(false);
         if (stopped || e.code === 4401) return; // 4401: token rejected, polling still covers updates
         retryTimer = setTimeout(connect, Math.min(30_000, 1000 * 2 ** attempt++));
@@ -57,12 +71,20 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     };
 
     connect();
-    const ping = setInterval(() => ws?.readyState === WebSocket.OPEN && ws.send("ping"), PING_MS);
+    const ping = setInterval(() => {
+      if (ws?.readyState === WebSocket.OPEN) {
+        try {
+          ws.send("ping");
+        } catch {
+          /* the close handler reconnects */
+        }
+      }
+    }, PING_MS);
     return () => {
       stopped = true;
       clearTimeout(retryTimer);
       clearInterval(ping);
-      ws?.close();
+      if (ws?.readyState === WebSocket.OPEN) ws.close();
     };
   }, [token]);
 

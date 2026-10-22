@@ -12,6 +12,8 @@ export interface RegisterPayload {
   email: string;
   password: string;
   username: string;
+  role?: string;
+  company?: string;
 }
 
 /**
@@ -53,15 +55,20 @@ export async function resetPassword(token: string, newPassword: string): Promise
 }
 
 export async function checkUsername(username: string, signal?: AbortSignal) {
-  const { data } = await axios.get<{ username: string; available: boolean; reason: string | null }>(
-    `${API_BASE_URL}/auth/username-available`, { params: { username }, signal });
+  const { data } = await api.get<{ username: string; available: boolean; reason: string | null }>(
+    "/auth/username-available", { params: { username }, signal });
   return data;
 }
 
 /** Creates the account for a first-time GitHub sign-in and returns its login token. */
-export async function completeGitHubSignup(onboardingToken: string, username: string): Promise<string> {
+export async function completeGitHubSignup(
+  onboardingToken: string,
+  username: string,
+  role?: string,
+  company?: string,
+): Promise<string> {
   const { data } = await axios.post<LoginTokenResponse>(`${API_BASE_URL}/auth/github/complete`,
-    { onboarding_token: onboardingToken, username });
+    { onboarding_token: onboardingToken, username, role: role || undefined, company: company || undefined });
   return data.access_token;
 }
 
@@ -73,6 +80,11 @@ export async function changePassword(newPassword: string, currentPassword?: stri
 }
 
 /** Requires Bearer token (uses `api` client). */
+export async function changeUsername(username: string): Promise<AuthUser> {
+  const { data } = await api.put<AuthUser>("/auth/username", { username });
+  return data;
+}
+
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>("/auth/me");
   return data;

@@ -7,6 +7,7 @@ import {
   deleteActivityComment,
   deletePost,
   fetchActivityComments,
+  shareActivity,
   toggleActivityLike,
   updatePost,
 } from "../../api/network";
@@ -104,8 +105,11 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
   }
 
   function share() {
-    void navigator.clipboard?.writeText(`${window.location.origin}/network/post/${activity.id}`);
-    notify("Link copied to clipboard");
+    void run(async () => {
+      await shareActivity(activity.id);
+      await navigator.clipboard?.writeText(`${window.location.origin}/network/post/${activity.id}`);
+      notify("Shared. Link copied.");
+    }, "Could not share post");
   }
 
   const iconButton = "p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition";
@@ -237,7 +241,7 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
           <button type="button" onClick={() => navigate(`/messages?user=${activity.userId || activity.authorUsername}`)}
             className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#14532D] px-3.5 py-1.5 rounded-lg bg-[#DCFCE7] hover:bg-[#BBF7D0] border border-[#15803D] shadow-2xs transition">
             <Send className="w-3 h-3" />
-            <span>Say Hi 💌</span>
+            <span>Message</span>
           </button>
         </div>
       </div>

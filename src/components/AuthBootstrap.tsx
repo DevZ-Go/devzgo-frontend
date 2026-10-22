@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../auth/AuthContext";
+import { UsernameGate } from "./UsernameGate";
 import { syncTimezone } from "../api/wraps";
 
 /**
@@ -24,5 +25,10 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
     if (userId) void syncTimezone(userId).catch(() => undefined);
   }, [userId]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <UsernameGate />
+    </>
+  );
 }

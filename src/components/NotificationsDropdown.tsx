@@ -1,44 +1,80 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import {
-  Bell,
-  Heart,
-  MessageSquare,
-  UserPlus,
-  Users,
-  Check,
-  CheckCheck,
-} from "lucide-react";
+import { Bell, CheckCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
-import {
-  fetchNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "../api/notifications";
+import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
+
+const HOURS = 48;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function formatTimeAgo(isoString: string): string {
-  try {
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return "";
-  }
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (!Number.isFinite(mins) || mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
 }
 
-export function NotificationsDropdown() {
+function isRecent(iso: string): boolean {
+  const then = new Date(iso).getTime();
+  return Number.isFinite(then) && Date.now() - then <= HOURS * 60 * 60 * 1000;
+}
+
+const LABELS: Record<string, string> = {
+  like: "Like",
+  project_like: "Like",
+  comment: "Comment",
+  project_comment: "Comment",
+  share: "Share",
+  project_share: "Share",
+  achievement: "Achievement",
+  connection_request: "Connection",
+  connection_accepted: "Connection",
+  new_message: "Message",
+  collaboration_request: "Collaboration",
+  collaboration_accepted: "Collaboration",
+  collaboration_invitation: "Collaboration",
+  collaboration_joined: "Collaboration",
+  collaboration_left: "Collaboration",
+  collaboration_removed: "Collaboration",
+};
+
+function TypeIcon({ type }: { type: string }) {
+  const cls = "h-3.5 w-3.5";
+  if (type === "achievement") return <Trophy className={`${cls} text-amber-700`} />;
+  if (type === "share" || type === "project_share") return <Share2 className={`${cls} text-maroon-800`} />;
+  if (type === "like" || type === "project_like") return <Heart className={`${cls} text-rose-700`} />;
+  if (type.includes("comment") || type === "new_message") return <MessageSquare className={`${cls} text-forest-800`} />;
+  if (type.startsWith("connection")) return <UserPlus className={`${cls} text-forest-800`} />;
+  if (type.startsWith("collaboration")) return <Users className={`${cls} text-maroon-800`} />;
+  return <Sparkles className={`${cls} text-stone-600`} />;
+}
+
+function destination(notif: NotificationItem): string {
+  const related = (notif.relatedId || "").split(":")[0];
+  if (notif.type === "connection_request" || notif.type === "connection_accepted") {
+    return `/profile/${notif.actorId || notif.actorUsername}`;
+  }
+  if (notif.type === "new_message") return `/messages?user=${notif.actorId}`;
+  if (
+    ["project_like", "project_comment", "project_share", "collaboration_request", "collaboration_accepted", "collaboration_invitation", "collaboration_joined"].includes(notif.type)
+    && UUID.test(related)
+  ) {
+    return `/project/${related}`;
+  }
+  if (UUID.test(related)) return `/network/post/${related}`;
+  return "/network";
+}
+
+export function NotificationsDropdown({ className = "text-stone-800 hover:bg-stone-200/80 hover:text-stone-950" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const recent = notifications.filter((n) => isRecent(n.createdAt));
+  const unreadCount = recent.filter((n) => !n.read).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -47,14 +83,11 @@ export function NotificationsDropdown() {
         const list = await fetchNotifications();
         if (!cancelled) setNotifications(list);
       } catch {
-        // Ignore
+        // The bell stays quiet when the list cannot load.
       }
     }
-    load();
-
-    const handleUpdate = () => {
-      load();
-    };
+    void load();
+    const handleUpdate = () => void load();
     window.addEventListener("devzgo:notifications-updated", handleUpdate);
     return () => {
       cancelled = true;
@@ -62,19 +95,13 @@ export function NotificationsDropdown() {
     };
   }, []);
 
-  // Close when clicked outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
     }
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
   async function handleMarkAllRead() {
@@ -83,7 +110,7 @@ export function NotificationsDropdown() {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch {
-      // Ignore
+      // Leave the dots in place if the request fails.
     } finally {
       setLoading(false);
     }
@@ -92,142 +119,90 @@ export function NotificationsDropdown() {
   async function handleItemClick(notif: NotificationItem) {
     if (!notif.read) {
       await markNotificationRead(notif.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
     }
     setOpen(false);
-
-    // Route based on type
-    if (notif.type === "connection_request" || notif.type === "connection_accepted") {
-      navigate(`/profile/${notif.actorId || notif.actorUsername}`);
-    } else if (notif.type === "new_message") {
-      navigate(`/messages?user=${notif.actorId}`);
-    } else if (
-      (notif.type === "collaboration_request" ||
-        notif.type === "collaboration_accepted" ||
-        notif.type === "project_like") &&
-      notif.relatedId
-    ) {
-      navigate(`/project/${notif.relatedId}`);
-    } else {
-      navigate("/network");
-    }
+    navigate(destination(notif));
   }
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "like":
-      case "project_like":
-        return <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />;
-      case "comment":
-        return <MessageSquare className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20" />;
-      case "new_message":
-        return <MessageSquare className="w-3.5 h-3.5 text-purple-500 fill-purple-500/20" />;
-      case "connection_request":
-        return <UserPlus className="w-3.5 h-3.5 text-emerald-500" />;
-      case "connection_accepted":
-        return <Check className="w-3.5 h-3.5 text-emerald-600" />;
-      case "collaboration_request":
-      case "collaboration_accepted":
-        return <Users className="w-3.5 h-3.5 text-amber-500" />;
-      default:
-        return <Bell className="w-3.5 h-3.5 text-blue-500" />;
-    }
-  };
+  const panel = open ? createPortal(
+    <div className="fixed inset-0 z-[80]">
+      <button type="button" aria-label="Close notifications" className="absolute inset-0 bg-stone-950/40" onClick={() => setOpen(false)} />
+      <aside className="absolute inset-y-0 right-0 flex w-[min(100%,24rem)] flex-col border-l border-stone-200 bg-[#f7f5ed] text-stone-900 shadow-2xl">
+        <header className="flex items-start justify-between gap-3 border-b border-stone-200 px-5 py-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-maroon-800">Last 48 hours</p>
+            <h2 className="font-serif text-3xl text-stone-900">Notifications</h2>
+          </div>
+          <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 text-stone-600 hover:bg-white" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        {unreadCount > 0 && (
+          <div className="flex justify-end px-5 py-2">
+            <button type="button" disabled={loading} onClick={() => void handleMarkAllRead()} className="inline-flex items-center gap-1 text-xs font-semibold text-maroon-800 hover:text-maroon-900">
+              <CheckCheck className="h-3.5 w-3.5" />
+              Mark all read
+            </button>
+          </div>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6">
+          {recent.length === 0 ? (
+            <p className="px-3 py-16 text-center font-serif text-lg text-stone-500">Nothing new in the last 48 hours.</p>
+          ) : (
+            <ul className="space-y-2">
+              {recent.map((notif) => (
+                <li key={notif.id}>
+                  <button
+                    type="button"
+                    onClick={() => void handleItemClick(notif)}
+                    className={`flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left ${notif.read ? "bg-white/70" : "bg-[#fced96]"}`}
+                  >
+                    <span className="relative shrink-0">
+                      {notif.actorAvatar ? (
+                        <img src={notif.actorAvatar} alt="" className="h-10 w-10 rounded-xl object-cover" />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-maroon-800 font-serif text-sm text-amber-100">
+                          {(notif.actorName || "DV").slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="absolute -bottom-1 -right-1 rounded-full bg-[#f7f5ed] p-0.5">
+                        <TypeIcon type={notif.type} />
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-stone-500">{LABELS[notif.type] || "Update"}</span>
+                      <span className="mt-0.5 block text-sm leading-snug text-stone-800">{notif.message}</span>
+                      <span className="mt-1 block text-[11px] text-stone-500">{formatTimeAgo(notif.createdAt)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </aside>
+    </div>,
+    document.body,
+  ) : null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all focus:outline-none"
+        onClick={() => setOpen(true)}
+        className={`relative rounded-xl p-2 transition focus:outline-none ${className}`}
         aria-label="Notifications"
+        aria-expanded={open}
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white animate-pulse">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-maroon-800 px-1 text-[10px] font-bold text-amber-100">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
-
-      {open && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 border border-gray-100 py-2 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900 text-sm">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                  {unreadCount} new
-                </span>
-              )}
-            </div>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={handleMarkAllRead}
-                className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 transition"
-              >
-                <CheckCheck className="w-3.5 h-3.5" />
-                Mark all read
-              </button>
-            )}
-          </div>
-
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-50">
-            {notifications.length === 0 ? (
-              <div className="py-12 text-center text-gray-500 text-sm">
-                <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-50" />
-                No notifications yet
-              </div>
-            ) : (
-              notifications.map((notif) => (
-                <button
-                  key={notif.id}
-                  type="button"
-                  onClick={() => handleItemClick(notif)}
-                  className={`w-full text-left px-4 py-3 flex items-start gap-3 transition hover:bg-gray-50/80 ${
-                    !notif.read ? "bg-blue-50/40" : ""
-                  }`}
-                >
-                  <div className="relative shrink-0 mt-0.5">
-                    {notif.actorAvatar ? (
-                      <img
-                        src={notif.actorAvatar}
-                        alt={notif.actorName}
-                        className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-semibold flex items-center justify-center text-xs">
-                        {notif.actorName?.slice(0, 2).toUpperCase() || "DV"}
-                      </div>
-                    )}
-                    <span className="absolute -bottom-1 -right-1 p-0.5 bg-white rounded-full shadow-sm ring-1 ring-gray-100">
-                      {getIcon(notif.type)}
-                    </span>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-800 leading-snug line-clamp-2">
-                      <span className="font-semibold text-gray-900">{notif.actorName}</span>{" "}
-                      {notif.message.replace(notif.actorName, "").trim()}
-                    </p>
-                    <span className="text-[11px] text-gray-400 mt-1 block">
-                      {formatTimeAgo(notif.createdAt)}
-                    </span>
-                  </div>
-
-                  {!notif.read && (
-                    <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-2" />
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+      {panel}
+    </>
   );
 }

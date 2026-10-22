@@ -86,6 +86,7 @@ export function toTvProject(api: ApiProject, index: number): TvProject {
     techStack: ui.techStack,
     category,
     author: ui.author.username,
+    ownerId: api.owner_id ? String(api.owner_id) : null,
     authorAvatar: api.owner?.avatar ? resolveApiAssetUrl(api.owner.avatar) : null,
     createdAt: api.created_at ?? null,
     isOwner: api.is_owner === true,

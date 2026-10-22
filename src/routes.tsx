@@ -14,12 +14,15 @@ import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ExplorePage } from "./pages/ExplorePage";
 import { ThemeSelectPage } from "./pages/ThemeSelectPage";
 import { CardsWorldPage } from "./pages/CardsWorldPage";
+import { StudioWallPage } from "./pages/StudioWallPage";
+import { CatalogPage } from "./pages/CatalogPage";
 import { DevelopersPage } from "./pages/DevelopersPage";
 import { WrapPage } from "./pages/WrapPage";
 import { NetworkPage } from "./pages/NetworkPage";
 import { ConnectionsPage } from "./pages/ConnectionsPage";
 import { PostPage } from "./pages/PostPage";
 import { MessagesPage } from "./pages/MessagesPage";
+import { GitHubImportPage } from "./pages/GitHubImportPage";
 
 export const router = createBrowserRouter([
   {
@@ -93,6 +96,30 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/explore/studio",
+        element: (
+          <ProtectedRoute>
+            <StudioWallPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/explore/folio",
+        element: <Navigate to="/explore/catalog" replace />,
+      },
+      {
+        path: "/explore/lanterns",
+        element: <Navigate to="/explore/catalog" replace />,
+      },
+      {
+        path: "/explore/catalog",
+        element: (
+          <ProtectedRoute>
+            <CatalogPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/explore/developers",
         element: (
           <ProtectedRoute>
@@ -105,6 +132,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ProjectFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/import/github",
+        element: (
+          <ProtectedRoute>
+            <GitHubImportPage />
           </ProtectedRoute>
         ),
       },

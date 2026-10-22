@@ -111,7 +111,7 @@ export const PixelTV = memo(function PixelTV({ tv, focused, onSelect }: Props) {
       <div className="tv-label">
         <b>{project.title}</b>
         <small>
-          {num} · ♥ {project.likes}
+          {num} · {project.likes}
         </small>
       </div>
     </div>

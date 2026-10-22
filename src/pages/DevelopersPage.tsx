@@ -1,27 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Users, Loader2, Search, Send, UserPlus, Check, MapPin } from "lucide-react";
+import { Check, Loader2, MapPin, Search, Send, UserPlus, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
-import type { DeveloperProfile } from "../types/network";
-import { searchDevelopers } from "../api/profiles";
+import { fetchMyProfile, fetchTalent, TALENT_SORTS, type TalentCard } from "../api/profiles";
+import { fetchTechStacks } from "../api/projects";
 import { sendConnectionRequest } from "../api/connections";
+import { useAuth } from "../auth/AuthContext";
+import { ui } from "../styles/editorial";
 
+function Stat({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div className="min-w-0">
+      <p className="font-serif text-lg tabular-nums text-stone-900">{value == null ? "—" : value}</p>
+      <p className="text-[10px] uppercase tracking-wide text-stone-400">{value == null ? "Hidden" : label}</p>
+    </div>
+  );
+}
+
+/** Search discoverable people by tech and rank them by the work a viewer is allowed to see. */
 export function DevelopersPage() {
   const navigate = useNavigate();
-  const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
-  const [devSearch, setDevSearch] = useState("");
+  const { user } = useAuth();
+  const meId = user?.id ? String(user.id) : "";
+  const [people, setPeople] = useState<TalentCard[]>([]);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("projects");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [stacks, setStacks] = useState<string[]>([]);
+  const [techQuery, setTechQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [requestedUsers, setRequestedUsers] = useState<Record<string, boolean>>({});
+  const [recruiter, setRecruiter] = useState(false);
+  const [requested, setRequested] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchTechStacks().then((items) => setStacks(items.map((item) => item.name))).catch(() => undefined);
+    fetchMyProfile().then((profile) => setRecruiter(profile.role === "Recruiter")).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     const timer = window.setTimeout(async () => {
       try {
-        const devs = await searchDevelopers(devSearch);
-        if (!cancelled) setDevelopers(devs);
+        const rows = await fetchTalent({ q: query, tech: selected, sort });
+        if (!cancelled) setPeople(rows.filter((person) => person.id !== meId));
       } catch {
-        if (!cancelled) setDevelopers([]);
+        if (!cancelled) setPeople([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -30,188 +54,149 @@ export function DevelopersPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [devSearch]);
+  }, [query, selected, sort, meId]);
 
-  async function handleConnect(devId: string) {
-    setRequestedUsers((prev) => ({ ...prev, [devId]: true }));
+  const suggestions = useMemo(() => {
+    const term = techQuery.trim().toLowerCase();
+    return stacks.filter((name) => !selected.includes(name) && (!term || name.toLowerCase().includes(term))).slice(0, 8);
+  }, [stacks, selected, techQuery]);
+
+  function addTech(name: string) {
+    setSelected((prev) => (prev.includes(name) ? prev : [...prev, name]));
+    setTechQuery("");
+  }
+
+  async function connect(id: string) {
+    setRequested((prev) => ({ ...prev, [id]: true }));
     try {
-      await sendConnectionRequest(devId);
+      await sendConnectionRequest(id);
     } catch {
-      // Ignore
+      setRequested((prev) => ({ ...prev, [id]: false }));
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
+    <div className={ui.page}>
       <Navbar />
-
-      <main className="max-w-[1440px] mx-auto px-6 sm:px-8 pt-28 pb-16">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <main className={`${ui.main} max-w-6xl`}>
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 text-maroon-700 mb-2 font-semibold uppercase tracking-wider text-xs">
-              <Users className="w-4 h-4" />
-              Talent Discovery
-            </div>
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight">
-              Find Developers
-            </h1>
-            <p className="text-stone-600 max-w-2xl mt-1 font-sans">
-              Search student developers by name, skill or title, then connect or send a message.
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-maroon-800">Talent</p>
+            <h1 className="mt-1 font-serif text-4xl text-stone-900 sm:text-5xl">Find developers</h1>
+            <p className="mt-2 max-w-2xl text-sm text-stone-600">
+              Filter by the tech you need, then rank by projects, commits, pushes, connections, or overall activity.
             </p>
           </div>
+          {recruiter && (
+            <button type="button" onClick={() => window.dispatchEvent(new Event("devzgo:recruiting-guide"))}
+              className={`${ui.btn} ${ui.neutral}`}>
+              Recruiting guide
+            </button>
+          )}
+        </header>
 
-          <Link
-            to="/explore"
-            className="text-sm font-medium text-stone-600 hover:text-maroon-800 transition-colors shrink-0"
-          >
-            ← Back to Explore
-          </Link>
-        </div>
-
-        <div className="mb-8 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, skill (Python, React...), or title..."
-              value={devSearch}
-              onChange={(e) => setDevSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm"
-            />
+        <div className="mb-6 space-y-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, skill, or company"
+                aria-label="Search people" className={`${ui.input} pl-9`} />
+            </label>
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort people" className={`${ui.input} sm:w-56`}>
+              {TALENT_SORTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
           </div>
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+              Needed tech
+              <input value={techQuery} onChange={(e) => setTechQuery(e.target.value)} placeholder="Python, React…"
+                className={`${ui.input} mt-1`} />
+            </label>
+            {suggestions.length > 0 && techQuery.trim() && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {suggestions.map((name) => (
+                  <button key={name} type="button" onClick={() => addTech(name)} className={`${ui.btn} ${ui.neutral}`}>{name}</button>
+                ))}
+              </div>
+            )}
+            {selected.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {selected.map((name) => (
+                  <li key={name}>
+                    <button type="button" onClick={() => setSelected((prev) => prev.filter((item) => item !== name))}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#fced96] px-3 py-1 text-xs font-semibold text-stone-800">
+                      {name} <X className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <p className="text-xs leading-relaxed text-stone-500">
+            A person must match every technology. Commits and pushes come from imported GitHub repositories.
+            Connections and activity that someone has set to private are left out of the ranking.
+          </p>
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-600">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-            <p className="text-sm">Finding developers…</p>
-          </div>
-        ) : developers.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-gray-200 bg-white/80 px-8 py-16 text-center text-gray-500 text-sm">
-            No developers match your query.
-          </div>
+          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-maroon-700" /></div>
+        ) : people.length === 0 ? (
+          <p className={ui.empty}>No one matches that search.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {developers.map((dev) => {
-              const hasRequested = requestedUsers[dev.userId || dev.id];
-              const skills = dev.skills
-                ? dev.skills.split(",").map((s) => s.trim()).filter(Boolean)
-                : [];
-
-              return (
-                <div
-                  key={dev.id}
-                  className="rounded-3xl border border-gray-200/90 bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <Link to={`/profile/${dev.userId || dev.id || dev.username}`}>
-                        {dev.avatarUrl ? (
-                          <img
-                            src={dev.avatarUrl}
-                            alt={dev.fullName || dev.username}
-                            className="w-14 h-14 rounded-2xl object-cover ring-2 ring-gray-100 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center text-base shrink-0 shadow-sm">
-                            {dev.username.slice(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                      </Link>
-
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/profile/${dev.userId || dev.id || dev.username}`}
-                          className="font-bold text-gray-900 text-base hover:text-blue-600 truncate block"
-                        >
-                          {dev.fullName || dev.username}
-                        </Link>
-                        <span className="text-xs text-gray-400 font-mono">@{dev.username}</span>
-                        {dev.headline && (
-                          <p className="text-xs text-gray-600 font-medium line-clamp-1 mt-1">
-                            {dev.headline}
-                          </p>
-                        )}
-                        {dev.location && (
-                          <div className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{dev.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {dev.bio && (
-                      <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-4">
-                        {dev.bio}
-                      </p>
-                    )}
-
-                    {skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-6">
-                        {skills.slice(0, 4).map((skill) => (
-                          <span
-                            key={skill}
-                            className="text-[11px] px-2.5 py-0.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 font-medium"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                        {skills.length > 4 && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-lg text-gray-400">
-                            +{skills.length - 4}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-2">
-                    <Link
-                      to={`/profile/${dev.userId || dev.id || dev.username}`}
-                      className="text-xs font-semibold text-gray-700 hover:text-blue-600 transition"
-                    >
-                      View Profile
+          <ul className="grid gap-4 md:grid-cols-2">
+            {people.map((person) => (
+              <li key={person.id} className="flex flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <Link to={`/profile/${person.id}`} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-maroon-800 font-serif text-lg text-amber-50">
+                    {person.avatar_url ? (
+                      <img src={person.avatar_url} alt="" className="h-full w-full rounded-2xl object-cover" />
+                    ) : person.username.slice(0, 2).toUpperCase()}
+                  </Link>
+                  <div className="min-w-0">
+                    <Link to={`/profile/${person.id}`} className="block truncate font-semibold text-stone-900 hover:text-maroon-800">
+                      {person.full_name || person.username}
                     </Link>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/messages?user=${dev.userId || dev.id || dev.username}`)
-                        }
-                        className="p-2 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition"
-                        title="Direct Message"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={hasRequested}
-                        onClick={() => handleConnect(dev.userId || dev.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                          hasRequested
-                            ? "bg-gray-100 text-gray-500"
-                            : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm hover:shadow"
-                        }`}
-                      >
-                        {hasRequested ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" /> Pending
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-3.5 h-3.5" /> Connect
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    <p className="text-xs text-stone-500">@{person.username}</p>
+                    {person.role === "Recruiter" ? (
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-maroon-800">
+                        Recruiter{person.company ? ` · ${person.company}` : ""}
+                      </p>
+                    ) : person.headline ? (
+                      <p className="mt-1 line-clamp-1 text-xs text-stone-600">{person.headline}</p>
+                    ) : null}
+                    {person.location && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-stone-400"><MapPin className="h-3 w-3" /> {person.location}</p>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                {person.tech.length > 0 && (
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {person.tech.slice(0, 5).map((name) => (
+                      <li key={name} className="rounded-full border border-stone-200 px-2 py-0.5 text-[11px] text-stone-600">{name}</li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-4 grid grid-cols-3 gap-x-2 gap-y-3 border-t border-stone-100 pt-3 sm:grid-cols-5">
+                  <Stat label="Projects" value={person.projects} />
+                  <Stat label="Commits" value={person.commits} />
+                  <Stat label="Pushes" value={person.pushes} />
+                  <Stat label="Connections" value={person.connections} />
+                  <Stat label="Activity" value={person.activity} />
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Link to={`/profile/${person.id}?tab=portfolio&view=graphic`} className={`${ui.btn} ${ui.primary}`}>Graphic portfolio</Link>
+                  <Link to={`/profile/${person.id}`} className={`${ui.btn} ${ui.neutral}`}>Profile</Link>
+                  <button type="button" onClick={() => navigate(`/messages?user=${person.id}`)} className={`${ui.btn} ${ui.neutral}`} aria-label={`Message ${person.username}`}>
+                    <Send className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" disabled={requested[person.id]} onClick={() => void connect(person.id)}
+                    className={`${ui.btn} ${requested[person.id] ? ui.neutral : ui.positive}`}>
+                    {requested[person.id] ? <><Check className="h-3.5 w-3.5" /> Pending</> : <><UserPlus className="h-3.5 w-3.5" /> Connect</>}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </main>
     </div>

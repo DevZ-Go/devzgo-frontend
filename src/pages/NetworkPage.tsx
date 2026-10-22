@@ -55,7 +55,7 @@ export function NetworkPage() {
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextPage,
   });
-  const feed = feedQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const feed = (feedQuery.data?.pages.flatMap((p) => p.items) ?? []).filter((item) => !item.isDemo);
   const loading = feedQuery.isPending;
   const moreRef = useRef<HTMLDivElement>(null);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = feedQuery;
@@ -130,7 +130,7 @@ export function NetworkPage() {
         activity_type: postType,
       });
       setPostContent("");
-      showToast("Spark pinned to the network! 🌿");
+      showToast("Posted");
       await client.invalidateQueries({ queryKey: queryKeys.feed });
     } catch (err) {
       showToast(getApiErrorMessage(err));
@@ -142,7 +142,7 @@ export function NetworkPage() {
   async function handleAcceptConnection(connId: string) {
     try {
       await acceptConnection(connId);
-      showToast("Connection accepted! 🌿");
+      showToast("Connection accepted");
       await loadSidebar();
     } catch {
       showToast("Failed to accept connection");
@@ -159,11 +159,14 @@ export function NetworkPage() {
     }
   }
 
+  const meId = user?.id ? String(user.id) : "";
+
   async function handleSendConnect(targetUserId: string) {
+    if (!targetUserId || targetUserId === meId) return;
     setRequestedUsers((prev) => ({ ...prev, [targetUserId]: true }));
     try {
       await sendConnectionRequest(targetUserId);
-      showToast("Connection request sent! 💌");
+      showToast("Connection request sent");
       await loadSidebar();
     } catch {
       setRequestedUsers((prev) => ({ ...prev, [targetUserId]: false }));
@@ -202,10 +205,7 @@ export function NetworkPage() {
                 </span>
               </h1>
               <p className="font-sans text-sm sm:text-base text-stone-600 mt-1 max-w-xl leading-relaxed">
-                A cozy community feed where student builders share milestones, sparks, and code.{" "}
-                <span className="font-cursive text-xl text-forest-700 font-bold ml-0.5">
-                  “grow and connect together” 🌿
-                </span>
+                Posts, projects, and people from the live network.
               </p>
             </div>
 
@@ -260,11 +260,11 @@ export function NetworkPage() {
           {/* Filter Pills with Clean Straight Typography */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {[
-              { id: "all", label: "🌿 All Activity" },
-              { id: "projects", label: "🚀 Projects & Milestones" },
-              { id: "developers", label: "👩‍💻 Creators" },
-              { id: "collaboration", label: "🤝 Collab Calls" },
-              { id: "following", label: "🌱 My Connections" },
+              { id: "all", label: "All" },
+              { id: "projects", label: "Projects" },
+              { id: "developers", label: "People" },
+              { id: "collaboration", label: "Collaboration" },
+              { id: "following", label: "Connections" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -286,8 +286,10 @@ export function NetworkPage() {
         {viewMode === "constellation" ? (
           <div>
             <ConstellationGraph
-              creators={suggested}
-              activities={feed}
+              meId={meId}
+              creators={suggested.filter((person) => person.id !== meId)}
+              connections={connections.accepted.filter((c) => c.partner.id !== meId)}
+              activities={feed.filter((item) => item.userId !== meId)}
               onConnect={handleSendConnect}
               requestedUsers={requestedUsers}
             />
@@ -297,7 +299,10 @@ export function NetworkPage() {
         {/* Hanging Cards Gallery at the top of the Feed */}
         {viewMode === "feed" && (
           <HangingCardsHeader
-            creators={suggested}
+            creators={[
+              ...connections.accepted.map((c) => c.partner),
+              ...suggested.filter((s) => !connections.accepted.some((c) => c.partner.id === s.id)),
+            ].filter((person) => person.id && person.id !== meId)}
             onSelectCreator={(username) => setSearchQuery(username)}
           />
         )}
@@ -315,7 +320,7 @@ export function NetworkPage() {
 
               <div className="flex gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-[#DCFCE7] text-[#14532D] font-sans font-bold flex items-center justify-center shrink-0 shadow-xs text-base border border-[#15803D]">
-                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "🌱"}
+                  {user?.username ? user.username.slice(0, 2).toUpperCase() : "ME"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="bg-[#FAF7EE] p-3 rounded-xl border border-forest-600/20">
@@ -451,7 +456,7 @@ export function NetworkPage() {
                   Connection Requests ({(connections?.pendingIncoming?.length || 0)})
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-64 overflow-y-auto overscroll-contain pr-1">
                   {(connections?.pendingIncoming || []).map((conn) => (
                     <div
                       key={conn.id}
@@ -472,12 +477,13 @@ export function NetworkPage() {
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${conn.partner?.id || conn.partner?.username}`}
-                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-crimson-700 truncate block leading-tight"
+                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-crimson-700 break-words block leading-tight"
                           >
                             {conn.partner.fullName || conn.partner.username}
                           </Link>
+                          <p className="font-sans text-[11px] text-stone-500 break-all">@{conn.partner.username}</p>
                           {conn.partner.headline && (
-                            <p className="font-sans text-[11px] text-stone-500 truncate">
+                            <p className="font-sans text-[11px] text-stone-500 line-clamp-2">
                               {conn.partner.headline}
                             </p>
                           )}
@@ -515,8 +521,9 @@ export function NetworkPage() {
                 <span className="font-sans text-xs text-forest-700 font-semibold">explore</span>
               </div>
 
-              <div className="space-y-3">
-                {suggested.map((dev) => {
+              <div className="space-y-3 max-h-72 overflow-y-auto overscroll-contain pr-1">
+                {suggested.filter((dev) => dev.id !== meId).length === 0 && <p className="text-xs text-stone-500">No suggestions yet.</p>}
+                {suggested.filter((dev) => dev.id !== meId).map((dev) => {
                   const hasRequested = requestedUsers[dev.id];
                   return (
                     <div
@@ -540,12 +547,13 @@ export function NetworkPage() {
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/profile/${dev.id || dev.username}`}
-                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-forest-700 truncate block leading-tight"
+                            className="font-cursive text-xl font-bold text-[#1C1917] hover:text-forest-700 break-words block leading-tight"
                           >
                             {dev.fullName || dev.username}
                           </Link>
+                          <p className="font-sans text-[11px] text-stone-500 break-all">@{dev.username}</p>
                           {dev.headline && (
-                            <p className="font-sans text-[11px] text-stone-500 truncate">
+                            <p className="font-sans text-[11px] text-stone-500 line-clamp-2">
                               {dev.headline}
                             </p>
                           )}

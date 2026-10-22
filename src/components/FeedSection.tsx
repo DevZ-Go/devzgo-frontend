@@ -14,7 +14,7 @@ const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
 export function FeedSection({
   projects,
-  title = "Projects Making Waves 🌊",
+  title = "Projects making waves",
   subtitle = "Trending Now",
 }: FeedSectionProps) {
   const [featuredProject, ...smallerProjects] = projects;

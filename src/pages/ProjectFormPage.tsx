@@ -449,7 +449,7 @@ export function ProjectFormPage() {
   }
 
   const fieldClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition";
+    "w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-900 shadow-sm focus:ring-2 focus:ring-amber-200 focus:border-maroon-700 outline-none transition";
 
   const coverHeroSrc = coverPreviewUrl ?? existingCoverDisplayUrl;
 
@@ -462,7 +462,7 @@ export function ProjectFormPage() {
 
   if (forbidden) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-50">
+      <div className="min-h-screen bg-gradient-to-b from-stone-100 to-stone-50">
         <Navbar />
         <main className="relative z-10 max-w-2xl mx-auto px-6 sm:px-8 pt-28 pb-20">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5 text-amber-900">
@@ -470,7 +470,7 @@ export function ProjectFormPage() {
           </div>
           <Link
             to="/home"
-            className="inline-block mt-6 text-indigo-600 font-medium hover:underline"
+            className="inline-block mt-6 text-maroon-600 font-medium hover:underline"
           >
             Back to home
           </Link>
@@ -495,19 +495,19 @@ export function ProjectFormPage() {
         </div>
 
         {loadingProject ? (
-          <div className="flex items-center gap-3 text-slate-600 py-16 justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <div className="flex items-center gap-3 text-stone-600 py-16 justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-maroon-600" />
             Loading project…
           </div>
         ) : verifyingOwner ? (
-          <div className="flex items-center gap-3 text-slate-600 py-16 justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <div className="flex items-center gap-3 text-stone-600 py-16 justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-maroon-600" />
             Verifying access…
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 p-6 sm:p-8 shadow-sm shadow-slate-200/50 ring-1 ring-slate-100">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
+            <div className="rounded-2xl border border-stone-200/80 bg-gradient-to-b from-white to-stone-50/80 p-6 sm:p-8 shadow-sm shadow-stone-200/50 ring-1 ring-stone-100">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-stone-400">
                 Your progress
               </p>
               <div className="mt-6 flex w-full items-start justify-between gap-0 sm:gap-1">
@@ -523,10 +523,10 @@ export function ProjectFormPage() {
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-11 sm:w-11 ${
                             active
-                              ? "border-indigo-500 bg-white text-indigo-600 shadow-lg shadow-indigo-500/20 ring-[3px] ring-indigo-100"
+                              ? "border-maroon-500 bg-white text-maroon-600 shadow-lg shadow-maroon-500/20 ring-[3px] ring-maroon-100"
                               : done
-                                ? "border-transparent bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md"
-                                : "border-slate-200 bg-white text-slate-400"
+                                ? "border-transparent bg-gradient-to-br from-forest-700 to-forest-800 text-white shadow-md"
+                                : "border-stone-200 bg-white text-stone-400"
                           }`}
                         >
                           {done ? (
@@ -537,10 +537,10 @@ export function ProjectFormPage() {
                             <Icon className="h-[18px] w-[18px]" aria-hidden />
                           )}
                         </div>
-                        <p className="mt-3 max-w-[100px] text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:max-w-none sm:text-[11px]">
+                        <p className="mt-3 max-w-[100px] text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-stone-500 sm:max-w-none sm:text-[11px]">
                           {s.title}
                         </p>
-                        <p className="mt-1 hidden max-w-[120px] text-center text-[10px] leading-snug text-slate-500 sm:block">
+                        <p className="mt-1 hidden max-w-[120px] text-center text-[10px] leading-snug text-stone-500 sm:block">
                           {s.subtitle}
                         </p>
                       </div>
@@ -549,9 +549,9 @@ export function ProjectFormPage() {
                           className="relative mx-0.5 mt-[18px] h-[3px] min-w-[1rem] flex-[1.15] shrink self-start sm:mx-1 sm:min-w-[1.5rem]"
                           aria-hidden
                         >
-                          <div className="absolute inset-0 rounded-full bg-slate-100" />
+                          <div className="absolute inset-0 rounded-full bg-stone-100" />
                           <div
-                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-400 via-violet-500 to-fuchsia-500 transition-[width] duration-500 ease-out"
+                            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-maroon-800 to-autumn-rust transition-[width] duration-500 ease-out"
                             style={{
                               width: segmentComplete ? "100%" : "0%",
                             }}
@@ -563,19 +563,19 @@ export function ProjectFormPage() {
                 })}
               </div>
               <div className="mx-auto mt-8 max-w-lg px-1">
-                <div className="relative h-2 overflow-hidden rounded-full bg-slate-100/90 shadow-inner">
+                <div className="relative h-2 overflow-hidden rounded-full bg-stone-100/90 shadow-inner">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 shadow-[0_0_12px_-2px_rgba(99,102,241,0.5)] transition-[width] duration-500 ease-out"
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-maroon-800 to-autumn-rust transition-[width] duration-500 ease-out"
                     style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                   />
                 </div>
               </div>
-              <p className="mt-5 text-center text-sm text-slate-600">
-                <span className="font-semibold text-slate-800">
+              <p className="mt-5 text-center text-sm text-stone-600">
+                <span className="font-semibold text-stone-800">
                   Step {step} of {TOTAL_STEPS}
                 </span>
-                <span className="text-slate-300"> · </span>
-                <span className="text-slate-500">
+                <span className="text-stone-300"> · </span>
+                <span className="text-stone-500">
                   {STEP_META[step - 1]?.subtitle ?? ""}
                 </span>
               </p>
@@ -587,18 +587,18 @@ export function ProjectFormPage() {
             </div>
 
             <section
-              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
+              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
                 step === 1 ? "" : "hidden"
               }`}
               aria-hidden={step !== 1}
             >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                 Project details
               </h2>
               <div>
                 <label
                   htmlFor="title"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                  className="block text-sm font-medium text-stone-700 mb-1.5"
                 >
                   Title
                 </label>
@@ -613,7 +613,7 @@ export function ProjectFormPage() {
               <div>
                 <label
                   htmlFor="short_description"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                  className="block text-sm font-medium text-stone-700 mb-1.5"
                 >
                   Short description
                 </label>
@@ -629,7 +629,7 @@ export function ProjectFormPage() {
               <div>
                 <label
                   htmlFor="full_description"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                  className="block text-sm font-medium text-stone-700 mb-1.5"
                 >
                   Full description
                 </label>
@@ -646,7 +646,7 @@ export function ProjectFormPage() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -655,15 +655,15 @@ export function ProjectFormPage() {
             </section>
 
             <section
-              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
+              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
                 step === 2 ? "" : "hidden"
               }`}
               aria-hidden={step !== 2}
             >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                 Category & visibility
               </h2>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-stone-600">
                 Categories match the platform taxonomy. If you pick{" "}
                 <span className="font-medium">Other</span>, add a short custom label (one or two
                 words).
@@ -672,7 +672,7 @@ export function ProjectFormPage() {
                 <div>
                   <label
                     htmlFor="category"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
                   >
                     Category
                   </label>
@@ -696,7 +696,7 @@ export function ProjectFormPage() {
                 <div>
                   <label
                     htmlFor="visibility"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
                   >
                     Visibility
                   </label>
@@ -717,9 +717,9 @@ export function ProjectFormPage() {
                 </div>
               </div>
               {isEdit && (
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex items-center gap-2 text-sm text-stone-700">
                   <input type="checkbox" checked={commentsEnabled} onChange={(e) => setCommentsEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300" />
+                    className="h-4 w-4 rounded border-stone-300" />
                   Allow comments on this project
                 </label>
               )}
@@ -727,9 +727,9 @@ export function ProjectFormPage() {
                 <div>
                   <label
                     htmlFor="category_other"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
                   >
-                    Custom label <span className="text-slate-400 font-normal">(optional)</span>
+                    Custom label <span className="text-stone-400 font-normal">(optional)</span>
                   </label>
                   <input
                     id="category_other"
@@ -739,24 +739,24 @@ export function ProjectFormPage() {
                     placeholder="e.g. IoT, Blockchain, DevOps"
                     maxLength={64}
                   />
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-xs text-stone-500">
                     Shown as “Other — your label” on the project page.
                   </p>
                 </div>
               )}
               {!isEdit ? (
-                <p className="text-sm text-slate-500 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                <p className="text-sm text-stone-500 rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
                   After you upload a workspace ZIP, tech stacks are set from your files (catalog matches only).
                 </p>
               ) : (
                 <div>
-                  <span className="block text-sm font-medium text-slate-700 mb-2">
+                  <span className="block text-sm font-medium text-stone-700 mb-2">
                     Tech stacks (manual override on edit)
                   </span>
                   {loadingStacks ? (
-                    <p className="text-sm text-slate-500">Loading…</p>
+                    <p className="text-sm text-stone-500">Loading…</p>
                   ) : stackOptions.length === 0 ? (
-                    <p className="text-sm text-slate-500">No options available.</p>
+                    <p className="text-sm text-stone-500">No options available.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {stackOptions.map((t) => {
@@ -776,7 +776,7 @@ export function ProjectFormPage() {
                       })}
                     </div>
                   )}
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-stone-500 mt-2">
                     Uploading a new ZIP re-indexes files and updates stacks from file types when you save.
                   </p>
                 </div>
@@ -785,7 +785,7 @@ export function ProjectFormPage() {
                 <button
                   type="button"
                   onClick={goBack}
-                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-stone-200 bg-white text-stone-800 font-medium hover:bg-stone-50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
@@ -793,7 +793,7 @@ export function ProjectFormPage() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -802,19 +802,19 @@ export function ProjectFormPage() {
             </section>
 
             <section
-              className={`rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6 ${
+              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6 ${
                 step === 3 ? "" : "hidden"
               }`}
               aria-hidden={step !== 3}
             >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                 Media
               </h2>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                    <ImagePlus className="w-4 h-4 text-indigo-600" />
+                  <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <ImagePlus className="w-4 h-4 text-maroon-600" />
                     Cover image
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
@@ -831,7 +831,7 @@ export function ProjectFormPage() {
                     <button
                       type="button"
                       onClick={() => coverInputRef.current?.click()}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
+                      className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
                     >
                       {coverFile || existingCoverDisplayUrl ? "Replace" : "Choose"}
                     </button>
@@ -849,7 +849,7 @@ export function ProjectFormPage() {
                   }}
                 />
                 {coverHeroSrc ? (
-                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video max-h-56">
+                  <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-video max-h-56">
                     <ImageWithFallback
                       src={coverHeroSrc}
                       alt="Cover preview"
@@ -860,17 +860,17 @@ export function ProjectFormPage() {
                   <button
                     type="button"
                     onClick={() => coverInputRef.current?.click()}
-                    className="w-full rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 py-10 text-sm text-slate-500 transition"
+                    className="w-full rounded-xl border-2 border-dashed border-stone-200 hover:border-maroon-300 hover:bg-maroon-50/30 py-10 text-sm text-stone-500 transition"
                   >
                     Click to add a cover preview
                   </button>
                 )}
               </div>
 
-              <div className="border-t border-slate-100 pt-6 space-y-3">
+              <div className="border-t border-stone-100 pt-6 space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                    <Video className="w-4 h-4 text-indigo-600" />
+                  <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <Video className="w-4 h-4 text-maroon-600" />
                     Demo video
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
@@ -888,7 +888,7 @@ export function ProjectFormPage() {
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
-                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
+                      className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
                     >
                       {demoVideoFile ? "Replace" : "Choose"}
                     </button>
@@ -906,26 +906,26 @@ export function ProjectFormPage() {
                   }}
                 />
                 {demoVideoFile ? (
-                  <p className="text-sm text-slate-600 truncate pl-1">
+                  <p className="text-sm text-stone-600 truncate pl-1">
                     {demoVideoFile.name}
                   </p>
                 ) : isEdit && savedDemoUrl && !demoRemoved ? (
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-stone-600">
                     Current demo is kept unless you replace or remove it.
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-500">Optional.</p>
+                  <p className="text-xs text-stone-500">Optional.</p>
                 )}
               </div>
 
-              <div className="border-t border-slate-100 pt-6 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <div className="border-t border-stone-100 pt-6 space-y-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                   Workspace
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                      <FileArchive className="w-4 h-4 text-maroon-600" />
                       Project folder (.zip)
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
@@ -942,7 +942,7 @@ export function ProjectFormPage() {
                       <button
                         type="button"
                         onClick={() => zipInputRef.current?.click()}
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
+                        className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
                       >
                         {workspaceZip ? "Replace" : "Choose"}
                       </button>
@@ -956,9 +956,9 @@ export function ProjectFormPage() {
                     onChange={(e) => setWorkspaceZip(e.target.files?.[0] ?? null)}
                   />
                   {workspaceZip ? (
-                    <p className="text-sm text-slate-600 truncate">{workspaceZip.name}</p>
+                    <p className="text-sm text-stone-600 truncate">{workspaceZip.name}</p>
                   ) : (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-500">
                       {isEdit
                         ? "Optional. Upload a new ZIP to replace the indexed workspace."
                         : "Optional. Zip your project root — files are indexed and known tech stacks are set from file types."}
@@ -968,21 +968,21 @@ export function ProjectFormPage() {
               </div>
 
               {detectingStacks && (
-                <div className="rounded-xl border border-indigo-200/70 bg-indigo-50/70 p-4">
-                  <p className="text-sm font-medium text-indigo-900 mb-2">
+                <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-4">
+                  <p className="text-sm font-medium text-maroon-900 mb-2">
                     Detecting technologies from workspace files…
                   </p>
-                  <div className="h-2 rounded-full bg-indigo-100 overflow-hidden">
-                    <div className="h-full w-2/3 bg-indigo-500 animate-pulse" />
+                  <div className="h-2 rounded-full bg-maroon-100 overflow-hidden">
+                    <div className="h-full w-2/3 bg-maroon-500 animate-pulse" />
                   </div>
                 </div>
               )}
 
-              <div className="flex flex-wrap justify-between gap-3 pt-4 border-t border-slate-100">
+              <div className="flex flex-wrap justify-between gap-3 pt-4 border-t border-stone-100">
                 <button
                   type="button"
                   onClick={goBack}
-                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-800 font-medium hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 min-h-[44px] px-5 rounded-xl border border-stone-200 bg-white text-stone-800 font-medium hover:bg-stone-50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
@@ -990,7 +990,7 @@ export function ProjectFormPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     to={isEdit && editProjectId ? `/project/${editProjectId}` : "/profile"}
-                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50"
+                    className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl border border-stone-200 bg-white text-stone-700 font-medium hover:bg-stone-50"
                   >
                     Cancel
                   </Link>
@@ -1026,24 +1026,24 @@ export function ProjectFormPage() {
       {showTechConfirmModal && techConfirmContext && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 backdrop-blur-[1px]">
           <div
-            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:max-w-2xl sm:p-8"
+            className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl sm:max-w-2xl sm:p-8"
             role="dialog"
             aria-labelledby="tech-confirm-title"
             aria-modal="true"
           >
             <h3
               id="tech-confirm-title"
-              className="text-lg font-semibold text-slate-900 sm:text-xl"
+              className="text-lg font-semibold text-stone-900 sm:text-xl"
             >
               Confirm tech stacks
             </h3>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-stone-600">
               We detected stacks from your workspace (extensions + dependency files). Toggle to
               confirm what should appear on the project. Re-uploading later will not wipe these
               until you save here again.
             </p>
             {loadingStacks ? (
-              <p className="mt-6 text-sm text-slate-500">Loading options…</p>
+              <p className="mt-6 text-sm text-stone-500">Loading options…</p>
             ) : stackOptions.length === 0 ? (
               <p className="mt-6 text-sm text-amber-800">
                 Tech stack list could not be loaded. You can set stacks later from the project edit
@@ -1069,7 +1069,7 @@ export function ProjectFormPage() {
               </div>
             )}
             {!loadingStacks && stackOptions.length > 0 && selectedStackIds.length === 0 && (
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-xs text-stone-500">
                 None selected — you can add stacks above, or continue with no stacks (they will be
                 cleared on save).
               </p>
@@ -1079,7 +1079,7 @@ export function ProjectFormPage() {
                 type="button"
                 onClick={dismissTechModalAndFinish}
                 disabled={confirmingTechStacks}
-                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-lg border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
               >
                 Skip for now
               </button>
@@ -1087,7 +1087,7 @@ export function ProjectFormPage() {
                 type="button"
                 onClick={confirmTechStacksAndFinish}
                 disabled={confirmingTechStacks}
-                className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                className="rounded-lg bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-60"
               >
                 {confirmingTechStacks ? "Saving…" : "Save & continue"}
               </button>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
+import { ArrowLeft, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
 import { useProjectLike } from "../hooks/useProjectLike";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
@@ -47,6 +47,8 @@ import {
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
+
+const PROJECT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function escapeHtml(text: string): string {
   return text
@@ -154,9 +156,10 @@ export function ProjectDetailPage() {
   }, [token, user, refreshUser]);
 
   useEffect(() => {
-    if (!id) {
+    if (!id || !PROJECT_UUID.test(id)) {
       setLoading(false);
-      setError("Missing project id.");
+      setProject(null);
+      setError(id ? "This project isn't available." : "Missing project id.");
       return;
     }
     let cancelled = false;
@@ -340,6 +343,16 @@ export function ProjectDetailPage() {
                       <span className="text-slate-400">· {project.visibility}</span>
                     )}
                   </div>
+                  {project.github_url && (
+                    <a
+                      href={project.github_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 font-medium text-stone-700 hover:text-maroon-800"
+                    >
+                      <Github className="w-4 h-4 shrink-0" /> View on GitHub
+                    </a>
+                  )}
                   {id && (
                     <ProjectLikeButton
                       projectId={id}
@@ -374,7 +387,7 @@ export function ProjectDetailPage() {
                     {project.short_description}
                   </p>
                 )}
-                {project.full_description && (
+                {project.full_description && project.full_description !== project.short_description && (
                   <div className="prose prose-slate max-w-none">
                     <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
                       {project.full_description}

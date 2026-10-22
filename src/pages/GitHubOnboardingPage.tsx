@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components/AuthLayout";
 import { UsernameField } from "../components/UsernameField";
 import { completeGitHubSignup } from "../api/auth";
+import { SignupRoleFields } from "../components/SignupRoleFields";
 import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 
@@ -20,6 +21,8 @@ export function GitHubOnboardingPage() {
   const { login, refreshUser } = useAuth();
   const [{ token, suggested }] = useState(readFragment);
   const [username, setUsername] = useState(suggested);
+  const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
   const [available, setAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(token ? null : "This sign-up link is incomplete. Sign in with GitHub again.");
@@ -30,7 +33,7 @@ export function GitHubOnboardingPage() {
     setBusy(true);
     setError(null);
     try {
-      login(await completeGitHubSignup(token, username));
+      login(await completeGitHubSignup(token, username, role, role === "Recruiter" ? company.trim() : undefined));
       await refreshUser();
       navigate("/home", { replace: true });
     } catch (err) {
@@ -44,8 +47,9 @@ export function GitHubOnboardingPage() {
     <AuthLayout title="Choose your username" subtitle="This is how other developers find you. It can't be changed later.">
       <form onSubmit={submit} className="w-full max-w-[420px] rounded-3xl border border-gray-200/50 bg-white shadow-xl p-8 space-y-5">
         <UsernameField value={username} onChange={setUsername} onAvailable={setAvailable} className={inputClass} />
+        <SignupRoleFields role={role} company={company} onRole={setRole} onCompany={setCompany} inputClass={inputClass} />
         {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-        <button type="submit" disabled={busy || !token || !available}
+        <button type="submit" disabled={busy || !token || !available || !role || (role === "Recruiter" && company.trim().length < 2)}
           className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 font-semibold text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60">
           {busy ? "Creating account…" : "Create account"}
         </button>
