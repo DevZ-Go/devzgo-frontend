@@ -175,6 +175,7 @@ export function AssessmentsPage() {
                     <li key={c.id}>
                       <Link to={`/assessments/${c.id}`} className="block h-full rounded-3xl border border-stone-200 bg-white p-5 shadow-sm transition hover:border-maroon-300">
                         <Summary challenge={c} />
+                        <span className={`${ui.btn} ${ui.primary} mt-3`}>Submit your work</span>
                       </Link>
                     </li>
                   ))}
@@ -282,17 +283,9 @@ export function AssessmentChallengePage() {
               )}
               <p className="mt-4 text-sm leading-relaxed text-stone-700">{c.description}</p>
             </header>
-            <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="font-serif text-2xl text-stone-900">Instructions</h2>
-              <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-relaxed text-stone-700">{c.instructions}</pre>
-              <h3 className="mt-6 text-[11px] font-semibold uppercase tracking-wider text-stone-500">How it is reviewed</h3>
-              <ul className="mt-2 space-y-1 text-sm text-stone-700">
-                {c.criteria.map((k) => <li key={k.key}><span className="font-semibold">{k.label}</span>{k.description ? `: ${k.description}` : ""}</li>)}
-              </ul>
-              <p className="mt-2 text-xs text-stone-500">Each criterion is rated Needs improvement, Meets expectations or Strong, with written feedback.</p>
-            </section>
-            <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="font-serif text-2xl text-stone-900">Your submission</h2>
+            <section id="submit" className="scroll-mt-24 rounded-3xl border border-maroon-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="font-serif text-2xl text-stone-900">Submit your work</h2>
+              <p className="mt-1 text-sm text-stone-500">Use a GitHub repository link or one of your DevZ-Go projects, and explain the approach.</p>
               {submission && submission.status !== "withdrawn" && (
                 <p className="mt-1 text-xs text-stone-500">
                   {SUBMISSION_STATUS[submission.status]} · last sent {shortDate(submission.updated_at ?? submission.submitted_at)}
@@ -311,6 +304,15 @@ export function AssessmentChallengePage() {
                   <SubmitForm key={`${submission?.id ?? "new"}-${submission?.status ?? ""}`} challengeId={id} current={submission} />
                 )}
               </div>
+            </section>
+            <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="font-serif text-2xl text-stone-900">Instructions</h2>
+              <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-relaxed text-stone-700">{c.instructions}</pre>
+              <h3 className="mt-6 text-[11px] font-semibold uppercase tracking-wider text-stone-500">How it is reviewed</h3>
+              <ul className="mt-2 space-y-1 text-sm text-stone-700">
+                {c.criteria.map((k) => <li key={k.key}><span className="font-semibold">{k.label}</span>{k.description ? `: ${k.description}` : ""}</li>)}
+              </ul>
+              <p className="mt-2 text-xs text-stone-500">Each criterion is rated Needs improvement, Meets expectations or Strong, with written feedback.</p>
             </section>
           </div>
         )}

@@ -43,6 +43,7 @@ const LABELS: Record<string, string> = {
   recruitment_accepted: "Recruiter",
   recruitment_declined: "Recruiter",
   challenge_invitation: "Challenge",
+  challenge_posted: "Challenge",
   challenge_submission: "Challenge",
   challenge_feedback: "Challenge",
   workspace_commit: "Commit",
@@ -72,7 +73,7 @@ function destination(notif: NotificationItem): string {
   if (notif.type === "recruitment_request") return "/opportunities";
   if (notif.type === "recruitment_accepted") return `/messages?user=${notif.actorId}`;
   if (notif.type === "recruitment_declined") return "/recruit/inbox";
-  if (notif.type === "challenge_invitation") return UUID.test(related) ? `/assessments/${related}` : "/assessments";
+  if (notif.type === "challenge_invitation" || notif.type === "challenge_posted") return UUID.test(related) ? `/assessments/${related}` : "/assessments";
   if (notif.type === "challenge_feedback") return "/assessments";
   if (notif.type === "challenge_submission") return UUID.test(related) ? `/recruit/challenges/${related}` : "/recruit/challenges";
   if ((notif.type === "workspace_commit" || notif.type === "workspace_pr") && UUID.test(related)) {

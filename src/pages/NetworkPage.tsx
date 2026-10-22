@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, Search, Users, Send, Loader2, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { NetworkPlaces } from "../components/network/NetworkPlaces";
 import { createPost, fetchFeedPage } from "../api/network";
 import {
   fetchConnections,
@@ -187,6 +188,7 @@ export function NetworkPage() {
       )}
 
       <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+        <NetworkPlaces current="feed" />
         {/* Whimsical Header Hero: Cursive Headings & Clean Straight Body */}
         <div className="mb-8 pt-2">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">

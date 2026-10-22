@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CalendarDays,
@@ -67,7 +67,6 @@ function UnreadBadge({ count, className = "" }: { count: number; className?: str
 }
 
 export function Navbar({ variant = "default" }: NavbarProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
   const { recruiter } = useAccount();
@@ -142,7 +141,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   function handleLogout() {
     setMobileOpen(false);
     logout();
-    navigate("/login", { replace: true });
+    window.location.replace("/login");
   }
 
   const isActive = (path: string) => {

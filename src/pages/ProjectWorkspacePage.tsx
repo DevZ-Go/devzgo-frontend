@@ -182,6 +182,7 @@ export function ProjectWorkspacePage() {
         </Link>
         <h1 className={`${ui.title} mt-4 text-4xl`}>Code</h1>
         {status.isLoading && <p className="mt-6 flex items-center gap-2 text-sm text-stone-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading workspace…</p>}
+        {status.isError && <p className="mt-6 text-sm text-stone-600">Only the owner and teammates who can edit files can open the code workspace. The GitHub link on the project page stays available.</p>}
         {info && (
           <div className="mt-6 space-y-4">
             <WorkspaceBanner info={info} onRefresh={(kind) => void refreshWorkspace(id, kind).then(() => status.refetch()).catch((err: unknown) => setError(getApiErrorMessage(err)))} />

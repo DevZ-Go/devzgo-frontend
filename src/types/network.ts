@@ -47,6 +47,8 @@ export interface DeveloperProfile {
   notifyConnections?: boolean | null;
   notifyMessages?: boolean | null;
   notifyCollaborations?: boolean | null;
+  notifyChallenges?: boolean | null;
+  startPage?: "home" | "resume" | null;
   accountType?: "developer" | "recruiter";
   tourVersion?: number | null;
   tourState?: string | null;
@@ -97,6 +99,7 @@ export interface FeedActivity {
     | "milestone"
     | "collab_call"
     | "project_update"
+    | "project_share"
     | "project_added"
     | "project_analyzed"
     | "profile_updated"
@@ -222,6 +225,7 @@ export interface NotificationItem {
     | "recruitment_accepted"
     | "recruitment_declined"
     | "challenge_invitation"
+    | "challenge_posted"
     | "challenge_submission"
     | "challenge_feedback"
     | "workspace_commit"

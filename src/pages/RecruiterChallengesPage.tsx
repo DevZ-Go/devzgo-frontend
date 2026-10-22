@@ -11,7 +11,7 @@ import {
 import { queryKeys } from "../api/queryKeys";
 import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
-import { RATINGS, deadlineText, difficultyLabel, minutesText, typeLabel } from "../utils/challenges";
+import { RATINGS, deadlineText, difficultyLabel, minutesText, ratingLabel, typeLabel } from "../utils/challenges";
 import { shortDate } from "../utils/evidence";
 
 const MINE = [...queryKeys.challenges, "mine"];
@@ -155,6 +155,29 @@ function ReviewPanel({ challenge, submission }: { challenge: RecruiterChallenge;
   );
 }
 
+function ComparePane({ challenge, submission }: { challenge: RecruiterChallenge; submission: Submission }) {
+  const name = submission.developer.full_name || submission.developer.username;
+  return (
+    <article className="rounded-2xl border border-stone-200 p-4">
+      <h3 className="font-serif text-xl text-stone-900">{name}</h3>
+      <p className="text-xs text-stone-500">Submitted {shortDate(submission.submitted_at)}{submission.revision > 1 ? ` · revision ${submission.revision}` : ""}</p>
+      <div className="mt-2 flex flex-wrap gap-2 text-sm">
+        {submission.repo_url && <a href={submission.repo_url} target="_blank" rel="noopener noreferrer" className={ui.link}>Repository</a>}
+        {submission.project && <Link to={`/project/${submission.project.id}`} className={ui.link}>{submission.project.title}</Link>}
+      </div>
+      <p className="mt-3 whitespace-pre-line text-sm text-stone-700">{submission.explanation}</p>
+      <dl className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-sm">
+        {challenge.criteria.map((c) => (
+          <div key={c.key} className="flex items-center justify-between gap-2">
+            <dt className="text-stone-600">{c.label}</dt>
+            <dd className="font-semibold text-maroon-800">{submission.review?.ratings[c.key] ? ratingLabel(submission.review.ratings[c.key]) : "Not rated"}</dd>
+          </div>
+        ))}
+      </dl>
+    </article>
+  );
+}
+
 function SubmissionRow({ challenge, submission }: { challenge: RecruiterChallenge; submission: Submission }) {
   const [open, setOpen] = useState(false);
   const name = submission.developer.full_name || submission.developer.username;
@@ -195,6 +218,8 @@ export function RecruiterChallengePage() {
   const remove = useMutation({ mutationFn: () => deleteChallenge(id), onSuccess: () => { refresh(); navigate("/recruit/challenges", { replace: true }); } });
   const withdraw = useMutation({ mutationFn: (invitationId: string) => withdrawInvitation(id, invitationId), onSuccess: refresh });
   const error = state.error ?? remove.error ?? withdraw.error;
+  const [leftId, setLeftId] = useState("");
+  const [rightId, setRightId] = useState("");
 
   if (mine.isLoading) {
     return <div className={ui.page}><Navbar /><div className="flex justify-center pt-40"><Loader2 className="h-6 w-6 animate-spin text-maroon-700" /></div></div>;
@@ -207,6 +232,9 @@ export function RecruiterChallengePage() {
     );
   }
   const received = challenge.counts.submitted + challenge.counts.in_review + challenge.counts.reviewed;
+  const rows = submissions.data ?? [];
+  const left = rows.find((row) => row.id === (leftId || rows[0]?.id));
+  const right = rows.find((row) => row.id === (rightId || rows[1]?.id));
 
   return (
     <div className={ui.page}>
@@ -263,12 +291,30 @@ export function RecruiterChallengePage() {
           <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="subs-title">
             <h2 id="subs-title" className="font-serif text-2xl text-stone-900">Submissions</h2>
             <p className="text-xs text-stone-500">Ratings use {RATINGS.map(([, t]) => t).join(", ")}. A review stays private until you release it.</p>
-            {submissions.isLoading ? <Loader2 className="mt-4 h-5 w-5 animate-spin text-maroon-700" /> : !submissions.data?.length ? (
+            {submissions.isLoading ? <Loader2 className="mt-4 h-5 w-5 animate-spin text-maroon-700" /> : rows.length === 0 ? (
               <p className="mt-4 text-sm text-stone-500">No submissions yet.</p>
             ) : (
-              <ul className="mt-4 space-y-3">
-                {submissions.data.map((s) => <SubmissionRow key={s.id} challenge={challenge} submission={s} />)}
-              </ul>
+              <>
+                {rows.length > 1 && left && right && (
+                  <div className="mt-4 rounded-2xl bg-[#f7f5ed] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Compare</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {[leftId || rows[0]?.id, rightId || rows[1]?.id].map((value, index) => (
+                        <select key={index} value={value} onChange={(e) => (index === 0 ? setLeftId : setRightId)(e.target.value)} className={ui.input} aria-label={index === 0 ? "First submission" : "Second submission"}>
+                          {rows.map((row) => <option key={row.id} value={row.id}>{row.developer.full_name || row.developer.username}</option>)}
+                        </select>
+                      ))}
+                    </div>
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      <ComparePane challenge={challenge} submission={left} />
+                      <ComparePane challenge={challenge} submission={right} />
+                    </div>
+                  </div>
+                )}
+                <ul className="mt-4 space-y-3">
+                  {rows.map((s) => <SubmissionRow key={s.id} challenge={challenge} submission={s} />)}
+                </ul>
+              </>
             )}
           </section>
 

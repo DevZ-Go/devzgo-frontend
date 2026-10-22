@@ -34,7 +34,7 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
   };
 
   return (
-    <section className="rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 font-sans">
+    <section id="project-comments" className="scroll-mt-24 rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 font-sans">
       <h2 className="mb-4 flex items-center gap-2 font-serif text-2xl text-stone-900">
         <MessageCircle className="w-5 h-5 text-forest-700" /> Comments
       </h2>

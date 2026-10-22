@@ -5,6 +5,7 @@ import { UsernameField } from "../components/UsernameField";
 import { completeGitHubSignup } from "../api/auth";
 import { SignupRoleFields } from "../components/SignupRoleFields";
 import { useAuth } from "../auth/AuthContext";
+import { destinationAfterLogin } from "../auth/session";
 import { getApiErrorMessage } from "../utils/apiError";
 
 const inputClass =
@@ -34,8 +35,7 @@ export function GitHubOnboardingPage() {
     setError(null);
     try {
       login(await completeGitHubSignup(token, username, role, role === "Recruiter" ? company.trim() : undefined));
-      await refreshUser();
-      navigate("/home", { replace: true });
+      navigate(await destinationAfterLogin(await refreshUser()), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
