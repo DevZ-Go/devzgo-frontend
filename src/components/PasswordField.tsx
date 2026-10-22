@@ -1,5 +1,6 @@
 import { Check, X } from "lucide-react";
 import { PASSWORD_RULES } from "../utils/passwordPolicy";
+import { PasswordInput } from "./PasswordInput";
 
 export function PasswordField({ id, value, onChange, placeholder = "New password", className }: {
   id?: string;
@@ -10,7 +11,7 @@ export function PasswordField({ id, value, onChange, placeholder = "New password
 }) {
   return (
     <div>
-      <input id={id} aria-label={id ? undefined : placeholder} type="password" required maxLength={128} value={value} onChange={(e) => onChange(e.target.value)}
+      <PasswordInput id={id} aria-label={id ? undefined : placeholder} required maxLength={128} value={value} onChange={(e) => onChange(e.target.value)}
         autoComplete="new-password" placeholder={placeholder} className={className} />
       <ul className="mt-2 space-y-0.5 text-xs">
         {PASSWORD_RULES.map((r) => {

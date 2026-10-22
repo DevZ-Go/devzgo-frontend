@@ -307,9 +307,11 @@ export async function uploadProjectMedia(
 
 export async function uploadProjectWorkspace(
   _projectId: string,
-  _zipFile: File
+  _zipFile: File,
+  onProgress?: (percent: number) => void
 ): Promise<WorkspaceUploadResponse> {
   await delay(500);
+  onProgress?.(100);
   return { message: "Workspace uploaded successfully", total_files: 12 };
 }
 
