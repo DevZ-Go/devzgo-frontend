@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Loader2,
   FolderKanban,
@@ -20,17 +20,22 @@ import {
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
-import { deleteProject, fetchMyProjects, fetchProjects } from "../api/projects";
-import { fetchMyProfile, fetchUserProfile, updateMyProfile } from "../api/profiles";
+import { deleteProject } from "../api/projects";
+import { fetchMyProfile, fetchProfileProjects, fetchUserProfile, PROFILE_ROLES, updateMyProfile } from "../api/profiles";
 import { fetchFeed } from "../api/network";
 import { ConnectButton } from "../components/ConnectButton";
-import { CollaboratingOn } from "../components/CollaboratingOn";
-
+import { ProfileCompletion } from "../components/ProfileCompletion";
+import { ProfilePortfolio } from "../components/ProfilePortfolio";
+import { ProfileTeams } from "../components/ProfileTeams";
+import { CandidateStanding } from "../components/CandidateStanding";
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
-import type { Project } from "../types/project";
+import type { ApiProject, Project } from "../types/project";
 import type { DeveloperProfile, FeedActivity } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
+
+const TABS = ["projects", "collaborations", "portfolio", "activity"] as const;
+type ProfileTab = (typeof TABS)[number];
 
 function formatMemberSince(iso: string | undefined): string | null {
   if (!iso) return null;
@@ -66,20 +71,43 @@ export function ProfilePage() {
 
   const [devProfile, setDevProfile] = useState<DeveloperProfile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [rawProjects, setRawProjects] = useState<ApiProject[]>([]);
   const [activities, setActivities] = useState<FeedActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"projects" | "network" | "activity">("projects");
+  const [params, setParams] = useSearchParams();
+  const activeTab = TABS.find((t) => t === params.get("tab")) ?? "projects";
+  const graphic = activeTab === "portfolio" && params.get("view") === "graphic";
+  const setActiveTab = (tab: ProfileTab) => {
+    const next = new URLSearchParams();
+    if (tab !== "projects") next.set("tab", tab);
+    if (tab === "portfolio" && params.get("view") === "graphic") next.set("view", "graphic");
+    setParams(next, { replace: true });
+  };
+  const openWork = (tab: "projects" | "collaborations") => {
+    setActiveTab(tab);
+    requestAnimationFrame(() => document.getElementById("profile-work")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+  const setGraphic = (on: boolean) => {
+    const next = new URLSearchParams(params);
+    next.set("tab", "portfolio");
+    if (on) next.set("view", "graphic");
+    else next.delete("view");
+    setParams(next, { replace: true });
+  };
 
   // Edit profile modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editFullName, setEditFullName] = useState("");
   const [editHeadline, setEditHeadline] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editCompany, setEditCompany] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editSkills, setEditSkills] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [editGithub, setEditGithub] = useState("");
   const [editWebsite, setEditWebsite] = useState("");
+  const [editLinkedin, setEditLinkedin] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Delete project state
@@ -118,19 +146,10 @@ export function ProfilePage() {
         setDevProfile(profileData);
 
         // Projects
-        if (isOwnProfile) {
-          const list = await fetchMyProjects();
-          if (!cancelled) setProjects(list.map((api, i) => transformApiProject(api, i)));
-        } else {
-          const allProjects = await fetchProjects();
-          const filtered = allProjects
-            .filter(
-              (p) =>
-                p.owner_username?.toLowerCase() === profileData.username.toLowerCase() ||
-                p.owner?.username?.toLowerCase() === profileData.username.toLowerCase()
-            )
-            .map((api, i) => transformApiProject(api, i));
-          if (!cancelled) setProjects(filtered);
+        const list = await fetchProfileProjects(profileData.userId);
+        if (!cancelled) {
+          setRawProjects(list);
+          setProjects(list.map((api, i) => transformApiProject(api, i)));
         }
 
         // Recent feed activities for this user
@@ -160,11 +179,14 @@ export function ProfilePage() {
     if (!devProfile) return;
     setEditFullName(devProfile.fullName || "");
     setEditHeadline(devProfile.headline || "");
+    setEditRole(devProfile.role || "");
+    setEditCompany(devProfile.company || "");
     setEditBio(devProfile.bio || "");
     setEditSkills(devProfile.skills || "");
     setEditLocation(devProfile.location || "");
     setEditGithub(devProfile.githubUrl || "");
     setEditWebsite(devProfile.websiteUrl || "");
+    setEditLinkedin(devProfile.linkedinUrl || "");
     setEditModalOpen(true);
   }
 
@@ -175,11 +197,14 @@ export function ProfilePage() {
       const updated = await updateMyProfile({
         fullName: editFullName,
         headline: editHeadline,
+        role: editRole,
+        company: editCompany,
         bio: editBio,
         skills: editSkills,
         location: editLocation,
         githubUrl: editGithub,
         websiteUrl: editWebsite,
+        linkedinUrl: editLinkedin,
       });
       setDevProfile(updated);
       setEditModalOpen(false);
@@ -200,6 +225,7 @@ export function ProfilePage() {
     try {
       await deleteProject(projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setRawProjects((prev) => prev.filter((p) => String(p.id) !== projectId));
       setDeleteDialog(null);
     } catch (err) {
       setDeleteError(getApiErrorMessage(err));
@@ -210,17 +236,19 @@ export function ProfilePage() {
 
   const displayName =
     devProfile?.fullName || devProfile?.username || user?.username || "Developer";
-  const displayEmail = devProfile?.email || (typeof user?.email === "string" ? user.email : null);
+  const displayEmail = isOwnProfile
+    ? devProfile?.email || (typeof user?.email === "string" ? user.email : null)
+    : devProfile?.email || null;
   const skillsList = useMemo(() => {
     if (!devProfile?.skills) return [];
     return devProfile.skills.split(",").map((s) => s.trim()).filter(Boolean);
   }, [devProfile?.skills]);
 
   return (
-    <div className="min-h-screen bg-[#f8f6f0] dark:bg-[#0c0d10] text-stone-900">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
 
-      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 pt-28 pb-20">
+      <main className="mx-auto w-full max-w-6xl px-5 pt-24 pb-16 sm:px-8">
         {error && (
           <div className="mb-8 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 text-sm">
             {error}
@@ -248,7 +276,7 @@ export function ProfilePage() {
         )}
 
         {/* Profile Header Card */}
-        <header className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_minmax(0,1fr)] items-start">
+        <header className="mb-8 grid gap-4">
           <div className="rounded-3xl border border-stone-200/90 bg-white/90 p-8 sm:p-10 shadow-sm relative overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-start gap-6">
               {devProfile?.avatarUrl ? (
@@ -264,39 +292,46 @@ export function ProfilePage() {
               )}
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xs text-stone-400 font-mono">
+                <div className="mb-2">
+                  <span className="break-all font-mono text-sm text-stone-500">
                     @{devProfile?.username || "user"}
                   </span>
                 </div>
 
-                <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight mb-1">
+                <h1 className="mb-1 break-words font-serif text-3xl font-normal tracking-tight text-stone-900 sm:text-4xl">
                   {displayName}
                 </h1>
 
+                {devProfile?.role === "Recruiter" ? (
+                  <p className="mb-2 inline-flex items-center rounded-full bg-[#fced96] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-stone-900">
+                    Recruiter{devProfile.company ? ` · ${devProfile.company}` : ""}
+                  </p>
+                ) : devProfile?.role ? (
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-maroon-800">{devProfile.role}</p>
+                ) : null}
                 {devProfile?.headline && (
-                  <p className="text-sm font-medium text-gray-600 mb-3">
+                  <p className="text-sm font-medium text-stone-600 mb-3">
                     {devProfile.headline}
                   </p>
                 )}
 
                 {devProfile?.bio && (
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-4">
+                  <p className="text-xs sm:text-sm text-stone-700 leading-relaxed mb-4">
                     {devProfile.bio}
                   </p>
                 )}
 
                 {/* Metadata row */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-stone-500">
                   {displayEmail && (
                     <div className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      <span>{displayEmail}</span>
+                      <Mail className="w-3.5 h-3.5 text-stone-400" />
+                      <span className="break-all">{displayEmail}</span>
                     </div>
                   )}
                   {devProfile?.location && (
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      <MapPin className="w-3.5 h-3.5 text-stone-400" />
                       <span>{devProfile.location}</span>
                     </div>
                   )}
@@ -305,7 +340,7 @@ export function ProfilePage() {
                       href={devProfile.githubUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium"
+                      className="flex items-center gap-1 text-stone-600 hover:text-stone-900 font-medium"
                     >
                       <Github className="w-3.5 h-3.5" />
                       <span>GitHub</span>
@@ -313,7 +348,7 @@ export function ProfilePage() {
                   )}
                   {memberSince && (
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                      <Calendar className="w-3.5 h-3.5 text-stone-400" />
                       <span>Joined {memberSince}</span>
                     </div>
                   )}
@@ -326,7 +361,7 @@ export function ProfilePage() {
                       <button
                         type="button"
                         onClick={handleOpenEdit}
-                        className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-gray-800 transition"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust px-5 py-2.5 text-xs font-semibold text-white shadow-md shadow-maroon-800/20 hover:from-maroon-900 hover:to-autumn-amber transition"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         Edit Profile
@@ -338,28 +373,57 @@ export function ProfilePage() {
                         New project
                       </Link>
                       <Link
+                        to="/import/github"
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                      >
+                        <Github className="w-3.5 h-3.5 text-stone-700" /> Import from GitHub
+                      </Link>
+                      <Link
+                        to="/network/connections"
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                      >
+                        <Users className="w-3.5 h-3.5 text-forest-700" /> Connections
+                      </Link>
+                      <Link
                         to="/wrap"
                         className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
                       >
                         <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
                       </Link>
+                      {devProfile?.role === "Recruiter" && (
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new Event("devzgo:recruiting-guide"))}
+                          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                        >
+                          Recruiting guide
+                        </button>
+                      )}
                     </>
                   ) : (
                     <>
-                      {devProfile && <ConnectButton userId={devProfile.userId || devProfile.id} />}
+                      {devProfile && (devProfile.acceptsConnections === false && !devProfile.connectionStatus ? (
+                        <span className="inline-flex items-center rounded-xl border border-stone-200 px-5 py-2.5 text-xs font-semibold text-stone-500">
+                          Not accepting requests
+                        </span>
+                      ) : (
+                        <ConnectButton userId={devProfile.userId || devProfile.id} />
+                      ))}
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/messages?user=${devProfile?.userId || devProfile?.id || routeId}`
-                          )
-                        }
-                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
-                      >
-                        <Send className="w-3.5 h-3.5 text-maroon-700" />
-                        Message
-                      </button>
+                      {devProfile?.canMessage !== false && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/messages?user=${devProfile?.userId || devProfile?.id || routeId}`
+                            )
+                          }
+                          className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                        >
+                          <Send className="w-3.5 h-3.5 text-maroon-700" />
+                          Message
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -368,54 +432,86 @@ export function ProfilePage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
-                <FolderKanban className="w-4 h-4 text-blue-600" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => openWork("projects")}
+              disabled={Boolean(devProfile?.restricted)}
+              className="rounded-2xl border border-stone-200 bg-white p-5 text-left shadow-sm transition hover:border-maroon-800 disabled:cursor-default disabled:hover:border-stone-200"
+            >
+              <div className="flex items-center gap-2 text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">
+                <FolderKanban className="w-4 h-4 shrink-0 text-maroon-700" />
                 Projects
               </div>
-              <p className="text-3xl font-black text-gray-900 tabular-nums">
+              <p className="text-3xl font-serif font-normal text-stone-900 tabular-nums">
                 {loading ? "—" : projects.length}
               </p>
-              <p className="text-xs text-gray-400 mt-1">Published in portfolio</p>
-            </div>
+              <p className="text-xs text-stone-400 mt-1">Visible to you</p>
+            </button>
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
-                <Users className="w-4 h-4 text-emerald-600" />
-                Connections
+            {isOwnProfile ? (
+              <Link to="/network/connections" className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:border-maroon-800">
+                <div className="flex items-center gap-2 text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">
+                  <Users className="w-4 h-4 shrink-0 text-forest-700" />
+                  Connections
+                </div>
+                <p className="text-3xl font-serif font-normal text-stone-900 tabular-nums">
+                  {loading ? "—" : devProfile?.connectionsCount || 0}
+                </p>
+                <p className="text-xs text-stone-400 mt-1">Accepted connections</p>
+              </Link>
+            ) : (
+              <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-2 text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">
+                  <Users className="w-4 h-4 shrink-0 text-forest-700" />
+                  Connections
+                </div>
+                <p className="text-3xl font-serif font-normal text-stone-900 tabular-nums">
+                  {loading || devProfile?.connectionsVisible === false ? "—" : devProfile?.connectionsCount || 0}
+                </p>
+                <p className="text-xs text-stone-400 mt-1">{devProfile?.connectionsVisible === false ? "Hidden" : "Accepted connections"}</p>
               </div>
-              <p className="text-3xl font-black text-gray-900 tabular-nums">
-                {loading ? "—" : devProfile?.connectionsCount || 0}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Network peers</p>
-            </div>
+            )}
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-gray-500 text-xs font-semibold uppercase tracking-wide mb-2">
-                <Handshake className="w-4 h-4 text-purple-600" />
+            <button
+              type="button"
+              onClick={() => openWork("collaborations")}
+              disabled={Boolean(devProfile?.restricted)}
+              className="rounded-2xl border border-stone-200 bg-white p-5 text-left shadow-sm transition hover:border-maroon-800 disabled:cursor-default disabled:hover:border-stone-200"
+            >
+              <div className="flex items-center gap-2 text-stone-500 text-xs font-semibold uppercase tracking-wide mb-2">
+                <Handshake className="w-4 h-4 shrink-0 text-maroon-700" />
                 Collaborations
               </div>
-              <p className="text-3xl font-black text-gray-900 tabular-nums">
+              <p className="text-3xl font-serif font-normal text-stone-900 tabular-nums">
                 {loading ? "—" : devProfile?.collaborationsCount || 0}
               </p>
-              <p className="text-xs text-gray-400 mt-1">Team projects joined</p>
-            </div>
+              <p className="text-xs text-stone-400 mt-1">Teams and joined projects</p>
+            </button>
           </div>
         </header>
 
+        {isOwnProfile && devProfile && <ProfileCompletion profile={devProfile} onEdit={handleOpenEdit} />}
+
+        {devProfile?.restricted && (
+          <p className="mb-8 rounded-3xl border border-stone-200 bg-white px-6 py-5 text-sm text-stone-600">
+            This profile and its projects are visible to connections.
+          </p>
+        )}
+
+        {!devProfile?.restricted && <>
         {/* Skills & Technologies Pills */}
         {skillsList.length > 0 && (
-          <div className="mb-10 p-6 rounded-3xl border border-gray-200/80 bg-white shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              <Code2 className="w-4 h-4 text-blue-600" />
+          <div className="mb-10 p-6 rounded-3xl border border-stone-200/80 bg-white shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
+              <Code2 className="w-4 h-4 text-maroon-700" />
               Verified Skills & Tech Stack
             </div>
             <div className="flex flex-wrap gap-2">
               {skillsList.map((skill) => (
                 <span
                   key={skill}
-                  className="px-3 py-1 rounded-xl bg-gray-50 border border-gray-200 text-xs font-medium text-gray-800"
+                  className="px-3 py-1 rounded-xl bg-stone-50 border border-stone-200 text-xs font-medium text-stone-800"
                 >
                   {skill}
                 </span>
@@ -424,10 +520,8 @@ export function ProfilePage() {
           </div>
         )}
 
-        {devProfile && <CollaboratingOn userId={devProfile.userId || devProfile.id} />}
-
         {/* Tab Navigation */}
-        <div className="flex border-b border-stone-200 mb-8 gap-6 font-serif">
+        <div id="profile-work" className="mb-8 flex gap-6 overflow-x-auto whitespace-nowrap border-b border-stone-200 font-serif">
           <button
             type="button"
             onClick={() => setActiveTab("projects")}
@@ -437,7 +531,29 @@ export function ProfilePage() {
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
-            Portfolio Projects ({projects.length})
+            Projects ({projects.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("collaborations")}
+            className={`shrink-0 pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+              activeTab === "collaborations"
+                ? "border-maroon-700 text-maroon-800 font-medium"
+                : "border-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            Collaborations ({devProfile?.collaborationsCount || 0})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("portfolio")}
+            className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+              activeTab === "portfolio"
+                ? "border-maroon-700 text-maroon-800 font-medium"
+                : "border-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            Portfolio
           </button>
           <button
             type="button"
@@ -456,25 +572,33 @@ export function ProfilePage() {
         {activeTab === "projects" && (
           <section>
             {loading && (
-              <div className="flex flex-col items-center justify-center gap-4 py-24 text-gray-500">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <div className="flex flex-col items-center justify-center gap-4 py-24 text-stone-500">
+                <Loader2 className="w-8 h-8 text-maroon-700 animate-spin" />
                 <p className="text-sm">Loading projects…</p>
               </div>
             )}
 
             {!loading && projects.length === 0 && (
-              <div className="rounded-3xl border border-dashed border-gray-200 bg-white/80 px-8 py-20 text-center shadow-sm">
-                <p className="text-gray-600 mb-6 max-w-md mx-auto text-sm">
+              <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-20 text-center shadow-sm">
+                <p className="text-stone-600 mb-6 max-w-md mx-auto text-sm">
                   {isOwnProfile
                     ? "You haven't uploaded any projects yet. Showcase your stack by adding a project!"
-                    : "This developer hasn't published any public projects yet."}
+                    : "No projects are visible to you. Private work stays hidden, and a connections-only profile hides its public projects too."}
                 </p>
                 {isOwnProfile && (
                   <Link
                     to="/add-project"
-                    className="inline-flex px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold hover:shadow-lg transition"
+                    className="inline-flex px-6 py-2.5 rounded-xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white text-xs font-semibold hover:shadow-lg transition"
                   >
                     Add your first project
+                  </Link>
+                )}
+                {isOwnProfile && (
+                  <Link
+                    to="/import/github"
+                    className="mx-auto mt-4 flex w-fit items-center gap-1.5 text-xs font-semibold text-forest-700 hover:underline"
+                  >
+                    <Github className="w-3.5 h-3.5" /> or import them from GitHub
                   </Link>
                 )}
               </div>
@@ -489,18 +613,18 @@ export function ProfilePage() {
                       <div className="flex flex-wrap items-center gap-3 px-1 text-xs">
                         <Link
                           to={`/project/${project.id}/edit`}
-                          className="font-semibold text-blue-600 hover:text-blue-700"
+                          className="font-semibold text-maroon-700 hover:text-maroon-800"
                         >
                           Edit project
                         </Link>
-                        <span className="text-gray-300">·</span>
+                        <span className="text-stone-300">·</span>
                         <Link
                           to={`/project/${project.id}`}
-                          className="font-medium text-gray-600 hover:text-gray-900"
+                          className="font-medium text-stone-600 hover:text-stone-900"
                         >
                           View details
                         </Link>
-                        <span className="text-gray-300">·</span>
+                        <span className="text-stone-300">·</span>
                         <button
                           type="button"
                           disabled={deletingId === project.id}
@@ -521,36 +645,60 @@ export function ProfilePage() {
           </section>
         )}
 
+        {activeTab === "collaborations" && devProfile && (
+          <ProfileTeams userId={devProfile.userId || devProfile.id} own={isOwnProfile} />
+        )}
+
+        {activeTab === "portfolio" && devProfile && (
+          <div>
+            <div className="mb-4 flex gap-2">
+              <button type="button" onClick={() => setGraphic(false)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${graphic ? "border border-stone-200 bg-white text-stone-600" : "bg-maroon-800 text-amber-50"}`}>
+                Write-up
+              </button>
+              <button type="button" onClick={() => setGraphic(true)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${graphic ? "bg-maroon-800 text-amber-50" : "border border-stone-200 bg-white text-stone-600"}`}>
+                Graphic
+              </button>
+            </div>
+            {graphic ? (
+              <CandidateStanding userId={devProfile.userId || devProfile.id} />
+            ) : (
+              <ProfilePortfolio profile={devProfile} projects={projects} raw={rawProjects} own={isOwnProfile} onUpdated={setDevProfile} />
+            )}
+          </div>
+        )}
+
         {/* Activity Tab */}
         {activeTab === "activity" && (
           <section className="space-y-4">
             {activities.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-gray-200 bg-white/80 px-8 py-16 text-center text-gray-500 text-sm">
+              <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-16 text-center text-stone-500 text-sm">
                 No recent activity recorded for this developer.
               </div>
             ) : (
               activities.map((act) => (
                 <div
                   key={act.id}
-                  className="p-5 rounded-2xl border border-gray-200/80 bg-white shadow-sm flex items-start justify-between gap-4"
+                  className="p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm flex items-start justify-between gap-4"
                 >
                   <div>
-                    <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wider block mb-1">
+                    <span className="text-[11px] font-semibold text-maroon-700 uppercase tracking-wider block mb-1">
                       {act.activityType.replace(/_/g, " ")}
                     </span>
                     {act.title && (
-                      <h4 className="font-bold text-gray-900 text-sm mb-1">
+                      <h4 className="font-bold text-stone-900 text-sm mb-1">
                         {act.title}
                       </h4>
                     )}
                     {act.content && (
-                      <p className="text-xs text-gray-600 line-clamp-2">
+                      <p className="text-xs text-stone-600 line-clamp-2">
                         {act.content}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                  <div className="flex items-center gap-3 text-xs text-stone-400 shrink-0">
                     <span className="flex items-center gap-1">
                       <Heart className="w-3.5 h-3.5" />
                       {act.likesCount}
@@ -565,18 +713,19 @@ export function ProfilePage() {
             )}
           </section>
         )}
+        </>}
       </main>
 
       {/* Edit Profile Modal */}
       {editModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Edit Developer Profile</h3>
+              <h3 className="font-serif text-2xl font-normal text-stone-900">Edit profile</h3>
               <button
                 type="button"
                 onClick={() => setEditModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -584,19 +733,50 @@ export function ProfilePage() {
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                  Role
+                </label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                >
+                  <option value="">Choose a role</option>
+                  {PROFILE_ROLES.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+              {editRole === "Recruiter" && (
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    Company or agency
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editCompany}
+                    onChange={(e) => setEditCompany(e.target.value)}
+                    placeholder="Where you recruit from"
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                   Headline
                 </label>
                 <input
@@ -604,24 +784,24 @@ export function ProfilePage() {
                   placeholder="e.g. Backend Lead | Distributed Systems"
                   value={editHeadline}
                   onChange={(e) => setEditHeadline(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                   Bio
                 </label>
                 <textarea
                   rows={3}
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                   Skills (comma separated)
                 </label>
                 <input
@@ -629,47 +809,69 @@ export function ProfilePage() {
                   placeholder="Python, FastAPI, PostgreSQL, Docker, TypeScript"
                   value={editSkills}
                   onChange={(e) => setEditSkills(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                     Location
                   </label>
                   <input
                     type="text"
                     value={editLocation}
                     onChange={(e) => setEditLocation(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                     GitHub URL
                   </label>
                   <input
                     type="text"
                     value={editGithub}
                     onChange={(e) => setEditGithub(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    LinkedIn URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editLinkedin}
+                    onChange={(e) => setEditLinkedin(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    Website
+                  </label>
+                  <input
+                    type="text"
+                    value={editWebsite}
+                    onChange={(e) => setEditWebsite(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-700 hover:bg-stone-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-maroon-800 text-white text-xs font-semibold hover:bg-maroon-900 transition disabled:opacity-50"
                 >
                   {savingProfile ? "Saving..." : "Save changes"}
                 </button>
@@ -682,9 +884,9 @@ export function ProfilePage() {
       {/* Delete Project Confirmation Dialog */}
       {deleteDialog && (
         <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete project?</h3>
-            <p className="text-sm text-slate-600 mb-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-stone-200 shadow-2xl p-6">
+            <h3 className="text-lg font-semibold text-stone-900 mb-2">Delete project?</h3>
+            <p className="text-sm text-stone-600 mb-4">
               Delete “{deleteDialog.title}”? This cannot be undone.
             </p>
             {deleteError && (
@@ -697,7 +899,7 @@ export function ProfilePage() {
                   setDeleteDialog(null);
                   setDeleteError(null);
                 }}
-                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                className="px-4 py-2 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50"
                 disabled={deletingId === deleteDialog.id}
               >
                 Cancel

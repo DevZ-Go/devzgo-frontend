@@ -177,12 +177,12 @@ export async function removeConnection(connectionId: string): Promise<void> {
 }
 
 export async function fetchConnectionStatus(targetUserId: string): Promise<{
-  status: "none" | "pending_sent" | "pending_received" | "connected";
+  status: "none" | "pending_sent" | "pending_received" | "connected" | "self";
   connectionId?: string;
 }> {
   try {
     const { data } = await api.get(`/connections/status/${targetUserId}`);
-    const status = data.status === "accepted" ? "connected" : data.status === "pending_sent" || data.status === "pending_received" ? data.status : "none";
+    const status = data.status === "self" ? "self" : data.status === "accepted" ? "connected" : data.status === "pending_sent" || data.status === "pending_received" ? data.status : "none";
     return { status, connectionId: data.connection_id ? String(data.connection_id) : undefined };
   } catch (err) {
     demoFallback(err);
@@ -203,9 +203,9 @@ export async function fetchConnectionStatus(targetUserId: string): Promise<{
   return { status: "pending_received", connectionId: match.id };
 }
 
-export async function fetchSuggestedDevelopers(): Promise<ConnectionUserSummary[]> {
+export async function fetchSuggestedDevelopers(limit?: number): Promise<ConnectionUserSummary[]> {
   try {
-    const res = await api.get("/connections/suggested");
+    const res = await api.get("/connections/suggested", { params: { limit } });
     if (Array.isArray(res.data)) {
       return (res.data as Record<string, unknown>[]).map((u) => ({
         id: String(u.id),

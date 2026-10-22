@@ -142,7 +142,7 @@ export function WrapPage() {
         )}
       </AnimatePresence>
 
-      <main ref={scrollRef} className="h-screen overflow-y-scroll snap-y snap-mandatory bg-stone-950 scroll-smooth">
+      <main ref={scrollRef} className="relative h-dvh overflow-y-scroll snap-y snap-mandatory bg-stone-950 scroll-smooth">
         {wrap.isPending ? (
           <Center>
             <div className="h-10 w-64 animate-pulse rounded bg-stone-800" />
