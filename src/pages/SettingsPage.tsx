@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Navbar } from "../components/Navbar";
 import { PasswordField } from "../components/PasswordField";
 import { PasswordInput } from "../components/PasswordInput";
+import { PhotoCropper } from "../components/PhotoCropper";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { UsernameField } from "../components/UsernameField";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -80,6 +81,7 @@ export function SettingsPage() {
   const section: Section = SECTIONS.some(([id]) => id === requested) ? requested as Section : "account";
   const hasPassword = user?.has_password !== false;
   const [ready, setReady] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("");
   const [company, setCompany] = useState("");
@@ -217,8 +219,8 @@ export function SettingsPage() {
     });
   }
 
-  async function onPhoto(file: File | undefined) {
-    if (!file) return;
+  async function savePhoto(file: File) {
+    setPendingPhoto(null);
     await run(async () => {
       const saved = await uploadAvatar(file);
       setAvatarUrl(saved.avatarUrl || null);
@@ -263,8 +265,14 @@ export function SettingsPage() {
           )}
           <label className="cursor-pointer rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 hover:bg-stone-50">
             {avatarUrl ? "Change photo" : "Add a photo"}
-            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only" onChange={(e) => void onPhoto(e.target.files?.[0])} />
+            <input
+              type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only"
+              onChange={(e) => { setPendingPhoto(e.target.files?.[0] ?? null); e.target.value = ""; }}
+            />
           </label>
+          {pendingPhoto && (
+            <PhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onDone={savePhoto} />
+          )}
         </div>
         <form onSubmit={saveUsername} className="space-y-3">
           <h2 className="font-serif text-2xl text-stone-900">Username</h2>
