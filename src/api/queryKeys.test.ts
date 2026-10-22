@@ -16,6 +16,8 @@ describe("keysForEvent", () => {
       .toEqual([queryKeys.feed, queryKeys.notifications]);
     expect(keysForEvent({ type: "notification.new", notification_type: "collaboration_request" }))
       .toEqual([queryKeys.collab, queryKeys.notifications]);
+    expect(keysForEvent({ type: "notification.new", notification_type: "challenge_feedback" }))
+      .toEqual([queryKeys.challenges, queryKeys.notifications]);
     expect(keysForEvent({ type: "unknown.thing" })).toEqual([]);
   });
 });
