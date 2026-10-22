@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Bell, Briefcase, CheckCheck, ClipboardCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
+import { Bell, Briefcase, CheckCheck, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
 
@@ -45,6 +45,8 @@ const LABELS: Record<string, string> = {
   challenge_invitation: "Challenge",
   challenge_submission: "Challenge",
   challenge_feedback: "Challenge",
+  workspace_commit: "Commit",
+  workspace_pr: "Pull request",
 };
 
 function TypeIcon({ type }: { type: string }) {
@@ -57,6 +59,7 @@ function TypeIcon({ type }: { type: string }) {
   if (type.startsWith("collaboration")) return <Users className={`${cls} text-maroon-800`} />;
   if (type.startsWith("recruitment")) return <Briefcase className={`${cls} text-maroon-800`} />;
   if (type.startsWith("challenge")) return <ClipboardCheck className={`${cls} text-maroon-800`} />;
+  if (type === "workspace_commit" || type === "workspace_pr") return <GitCommit className={`${cls} text-maroon-800`} />;
   return <Sparkles className={`${cls} text-stone-600`} />;
 }
 
@@ -72,6 +75,9 @@ function destination(notif: NotificationItem): string {
   if (notif.type === "challenge_invitation") return UUID.test(related) ? `/assessments/${related}` : "/assessments";
   if (notif.type === "challenge_feedback") return "/assessments";
   if (notif.type === "challenge_submission") return UUID.test(related) ? `/recruit/challenges/${related}` : "/recruit/challenges";
+  if ((notif.type === "workspace_commit" || notif.type === "workspace_pr") && UUID.test(related)) {
+    return `/project/${related}/workspace`;
+  }
   if (
     ["project_like", "project_comment", "project_share", "collaboration_request", "collaboration_accepted", "collaboration_invitation", "collaboration_joined"].includes(notif.type)
     && UUID.test(related)

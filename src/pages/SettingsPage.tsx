@@ -10,6 +10,7 @@ import { Navbar } from "../components/Navbar";
 import { PasswordField } from "../components/PasswordField";
 import { PasswordInput } from "../components/PasswordInput";
 import { PhotoCropper } from "../components/PhotoCropper";
+import { GitHubEditing } from "../components/settings/GitHubEditing";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { UsernameField } from "../components/UsernameField";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -24,6 +25,7 @@ const SECTIONS = [
   ["availability", "Availability"],
   ["privacy", "Privacy"],
   ["notifications", "Notifications"],
+  ["github", "GitHub"],
   ["appearance", "Appearance"],
 ] as const;
 type Section = (typeof SECTIONS)[number][0];
@@ -462,6 +464,8 @@ export function SettingsPage() {
         <Save busy={busy} disabled={!ready}>Save notifications</Save>
       </form>
     );
+  } else if (section === "github") {
+    panel = <GitHubEditing />;
   } else {
     panel = (
       <div>
