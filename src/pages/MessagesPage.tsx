@@ -8,7 +8,6 @@ import {
   CheckCheck,
   Check,
   ArrowLeft,
-  Sparkles,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import {
@@ -375,7 +374,7 @@ export function MessagesPage() {
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="py-24 text-center text-gray-400">
-                      <Sparkles className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                      <MessageSquare className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                       <p className="text-sm font-semibold text-gray-700">
                         Start a conversation with {selectedUser.fullName || selectedUser.username}
                       </p>

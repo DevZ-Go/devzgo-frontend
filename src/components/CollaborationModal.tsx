@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, X, Loader2, Sparkles, CheckCircle } from "lucide-react";
+import { Users, X, Loader2, CheckCircle } from "lucide-react";
 import { requestCollaboration } from "../api/collaborations";
 import { getApiErrorMessage } from "../utils/apiError";
 
@@ -91,8 +91,7 @@ export function CollaborationModal({
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest-700 uppercase tracking-wide">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="text-xs font-semibold text-forest-700 uppercase tracking-wide">
                   Developer Collaboration
                 </div>
                 <h3 className="font-cursive text-3xl font-bold text-[#1C1917]">
