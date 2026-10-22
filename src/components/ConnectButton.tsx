@@ -9,6 +9,7 @@ import {
   sendConnectionRequest,
 } from "../api/connections";
 import { queryKeys } from "../api/queryKeys";
+import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import { ui } from "../styles/editorial";
 
@@ -18,6 +19,7 @@ const quiet = `${base} ${ui.neutral}`;
 
 /** Every connection action for one person, driven by the server's view of the pair. */
 export function ConnectButton({ userId, onChange }: { userId: string; onChange?: () => void }) {
+  const { user } = useAuth();
   const client = useQueryClient();
   const { data } = useQuery({
     queryKey: [...queryKeys.connections, "status", userId],
@@ -35,6 +37,8 @@ export function ConnectButton({ userId, onChange }: { userId: string; onChange?:
   });
   const id = data?.connectionId ?? "";
   const busy = act.isPending || !data;
+  if (user?.id && String(user.id) === userId) return null;
+  if (data?.status === "self") return null;
 
   return (
     <div className="flex flex-wrap items-center gap-2">

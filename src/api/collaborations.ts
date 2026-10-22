@@ -128,6 +128,14 @@ function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
   };
 }
 
+export async function fetchIncomingCollabRequests(): Promise<CollaborationRequest[]> {
+  return (await get<Record<string, unknown>[]>("/collaborations/requests/incoming")).map(mapCollabRequest);
+}
+
+export async function fetchMyCollabRequests(): Promise<CollaborationRequest[]> {
+  return (await get<Record<string, unknown>[]>("/collaborations/requests/mine")).map(mapCollabRequest);
+}
+
 export async function fetchProjectCollaborators(projectId: string): Promise<ProjectCollaborator[]> {
   try {
     const res = await api.get(`/collaborations/projects/${projectId}/collaborators`);

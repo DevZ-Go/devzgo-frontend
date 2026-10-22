@@ -24,6 +24,7 @@ export interface ApiProject {
   image_url?: string;
   cover_image_url?: string | null;
   demo_video_url?: string | null;
+  github_url?: string | null;
   /** Backend may return plural `tech_stacks` as string[] */
   tech_stack?: Array<string | { name?: string }>;
   tech_stacks?: string[];

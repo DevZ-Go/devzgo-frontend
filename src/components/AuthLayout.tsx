@@ -83,17 +83,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             className="text-center mb-8"
           >
             <h1 className="font-serif text-3xl md:text-5xl font-normal text-stone-900 leading-tight mb-3 tracking-tight">
-              <span>
-                {title}
-              </span>
-              {" "}
-              <motion.span
-                className="inline-block"
-                animate={{ rotate: [0, 14, -8, 14, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4 }}
-              >
-                👋
-              </motion.span>
+              {title}
             </h1>
             <p className="text-base text-stone-500 font-sans">{subtitle}</p>
           </motion.div>

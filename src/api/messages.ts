@@ -36,7 +36,52 @@ export function mapMessage(m: Record<string, unknown>): Message {
     read: Boolean(m.read),
     createdAt: (m.created_at || m.createdAt || new Date().toISOString()) as string,
     isOutgoing: Boolean(m.is_outgoing ?? m.isOutgoing ?? false),
+    senderUsername: (m.sender_username || m.senderUsername || undefined) as string | undefined,
+    senderName: (m.sender_name || m.senderName || undefined) as string | undefined,
+    roomId: (m.room_id || m.roomId || undefined) as string | undefined,
   };
+}
+
+export interface ChatRoomSummary {
+  id: string;
+  title: string;
+  projectId: string | null;
+  memberCount: number;
+  unreadCount: number;
+  lastMessage: string | null;
+  lastAt: string | null;
+}
+
+function mapRoom(raw: Record<string, unknown>): ChatRoomSummary {
+  return {
+    id: String(raw.id),
+    title: String(raw.title || "Group"),
+    projectId: raw.project_id ? String(raw.project_id) : raw.projectId ? String(raw.projectId) : null,
+    memberCount: Number(raw.member_count ?? raw.memberCount ?? 0),
+    unreadCount: Number(raw.unread_count ?? raw.unreadCount ?? 0),
+    lastMessage: (raw.last_message || raw.lastMessage || null) as string | null,
+    lastAt: (raw.last_at || raw.lastAt || null) as string | null,
+  };
+}
+
+export async function fetchGroups(): Promise<ChatRoomSummary[]> {
+  const res = await api.get("/messages/groups");
+  return Array.isArray(res.data) ? res.data.map(mapRoom) : [];
+}
+
+export async function createGroup(title: string, memberIds: string[]): Promise<ChatRoomSummary> {
+  const res = await api.post("/messages/groups", { title, member_ids: memberIds });
+  return mapRoom(res.data);
+}
+
+export async function fetchGroupThread(roomId: string): Promise<Message[]> {
+  const res = await api.get(`/messages/groups/${roomId}`);
+  return Array.isArray(res.data) ? res.data.map(mapMessage) : [];
+}
+
+export async function sendGroupMessage(roomId: string, content: string): Promise<Message> {
+  const res = await api.post(`/messages/groups/${roomId}`, { content });
+  return mapMessage(res.data);
 }
 
 function mapConversation(c: Record<string, unknown>): Conversation {

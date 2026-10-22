@@ -10,6 +10,7 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton } from "../components/GitHubButton";
 import { UsernameField } from "../components/UsernameField";
 import { PasswordField } from "../components/PasswordField";
+import { SignupRoleFields } from "../components/SignupRoleFields";
 import { passwordValid } from "../utils/passwordPolicy";
 
 const inputClass =
@@ -22,6 +23,8 @@ export function RegisterPage() {
   const [usernameOk, setUsernameOk] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +34,7 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      await registerUser({ username, email, password });
+      await registerUser({ username, email, password, role, company: role === "Recruiter" ? company.trim() : undefined });
       login((await loginWithPassword(email, password)).access_token);
       await refreshUser();
       navigate("/home", { replace: true });
@@ -53,7 +56,7 @@ export function RegisterPage() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="w-full max-w-[420px]"
       >
-        <div className="rounded-3xl border border-gray-200/50 bg-white shadow-xl overflow-hidden">
+        <div className="rounded-3xl border border-gray-200/50 bg-white shadow-xl">
           <div className="px-8 pt-8 pb-2">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-600/10 rounded-full border border-blue-500/20 mb-6">
               <Zap className="w-4 h-4 text-blue-600" />
@@ -103,6 +106,8 @@ export function RegisterPage() {
               <PasswordField id="password" value={password} onChange={setPassword} placeholder="••••••••" className={inputClass} />
             </div>
 
+            <SignupRoleFields role={role} company={company} onRole={setRole} onCompany={setCompany} inputClass={inputClass} />
+
             {error && (
               <div
                 role="alert"
@@ -114,7 +119,7 @@ export function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading || !usernameOk || !passwordValid(password)}
+              disabled={loading || !usernameOk || !passwordValid(password) || !role || (role === "Recruiter" && company.trim().length < 2)}
               className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-base font-semibold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 disabled:pointer-events-none"
             >
               {loading ? "Creating account..." : "Create account"}

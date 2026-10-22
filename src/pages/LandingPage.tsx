@@ -11,40 +11,6 @@ import dreamBigApples from "../assets/editorial/dream_big_apples.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
-// High-quality fallback student projects in case the API is offline or returns empty
-const FALLBACK_PROJECTS: ApiProject[] = [
-  {
-    id: "1",
-    title: "DevZ-Go Platform",
-    short_description: "A vibrant showcase platform for student developers to share work.",
-    category: "Web App",
-    tech_stacks: ["React", "TypeScript", "FastAPI"],
-    cover_image_url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
-    likes: 142,
-    owner_username: "DevZGoTeam",
-  },
-  {
-    id: "2",
-    title: "CloudNotes",
-    short_description: "Real-time collaborative note-taking app with live Markdown preview.",
-    category: "Productivity",
-    tech_stacks: ["Next.js", "PostgreSQL", "Tailwind"],
-    cover_image_url: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80",
-    likes: 89,
-    owner_username: "coder_jane",
-  },
-  {
-    id: "3",
-    title: "PixelForge",
-    short_description: "Browser-based pixel art editor with layers and frame animations.",
-    category: "Creative Tool",
-    tech_stacks: ["Canvas", "React", "TypeScript"],
-    cover_image_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-    likes: 210,
-    owner_username: "alex_dev",
-  },
-];
-
 // Decorative corner gingham / washi tape accent for the media card
 function CornerTape() {
   return (
@@ -62,8 +28,8 @@ function CornerTape() {
 }
 
 export function LandingPage() {
-  const [useVideoBg, setUseVideoBg] = useState(false);
-  const [projects, setProjects] = useState<ApiProject[]>(FALLBACK_PROJECTS);
+  const [useVideoBg, setUseVideoBg] = useState(true);
+  const [projects, setProjects] = useState<ApiProject[]>([]);
   const [, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,22 +37,11 @@ export function LandingPage() {
     fetchProjects()
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
-          // Merge API projects with fallbacks to guarantee 3 beautiful cards
-          const combined = [...data, ...FALLBACK_PROJECTS];
-          const seen = new Set<string | number>();
-          const unique: ApiProject[] = [];
-          for (const p of combined) {
-            if (!seen.has(p.id)) {
-              seen.add(p.id);
-              unique.push(p);
-            }
-            if (unique.length === 3) break;
-          }
-          setProjects(unique);
+          setProjects(data.slice(0, 3));
         }
       })
-      .catch((err) => {
-        console.warn("Could not fetch projects, using curated projects:", err);
+      .catch(() => {
+        if (isMounted) setProjects([]);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -98,12 +53,12 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f7f5ed] text-stone-800 selection:bg-amber-200">
+    <div className="min-h-screen bg-[#f7f5ed] text-stone-800 selection:bg-amber-200 lg:h-dvh lg:overflow-y-auto lg:snap-y lg:snap-mandatory">
       {/* ── Top Editorial Navigation ── */}
       <Navbar variant="editorial" />
 
       {/* ── SECTION 1: HERO (Pasture Landscape, "Where coders code. Like, Really.", "EXPLORE", & Badges) ── */}
-      <section className="relative w-full h-[88vh] min-h-[620px] flex items-center justify-center overflow-hidden bg-[#8ca88d]">
+      <section className="relative w-full h-dvh snap-start flex items-center justify-center overflow-hidden bg-[#2a211c]">
         {/* Pastoral Hero Background Image / Video Container */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {useVideoBg ? (
@@ -142,32 +97,38 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}
-            className="mt-8 flex items-center gap-3"
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
           >
             <ExploreLink
               className="inline-block px-8 py-3 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
             >
               EXPLORE PROJECTS
             </ExploreLink>
+            <Link
+              to="/add-project"
+              className="inline-block px-8 py-3 rounded-full bg-white/90 hover:bg-white text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm"
+            >
+              Add project
+            </Link>
 
             {/* Optional subtle background switcher button */}
             <button
               type="button"
               onClick={() => setUseVideoBg((v) => !v)}
               className="px-3 py-2 rounded-full bg-white/40 hover:bg-white/60 backdrop-blur-xs text-[10px] font-sans uppercase tracking-wider text-stone-800 transition-colors shadow-xs"
-              title="Toggle between Pasture photo and Pixelcat video"
+              title="Switch the home background"
             >
-              {useVideoBg ? "Photo Bg" : "Pixelcat Bg"}
+              {useVideoBg ? "Photo" : "Pixelcat"}
             </button>
           </motion.div>
         </div>
       </section>
 
       {/* ── SECTION 2: OVERLAPPING SHEET & FEATURED PROJECTS CARDS ── */}
-      <section className="relative z-10 -mt-14 md:-mt-20 rounded-t-[2.5rem] md:rounded-t-[3.5rem] bg-[#f8f6f0] px-6 md:px-14 pt-14 pb-24 border-t border-stone-200/50 shadow-2xl">
+      <section className="relative z-10 -mt-10 rounded-t-[2.5rem] bg-[#f8f6f0] px-6 md:px-14 py-10 border-t border-stone-200/50 shadow-2xl lg:mt-0 lg:rounded-none lg:min-h-dvh lg:snap-start lg:flex lg:items-center lg:py-8">
         <div className="max-w-[1360px] mx-auto">
           {/* Section Header */}
-          <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="mb-8 lg:mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <h2 className="font-serif text-3xl sm:text-4xl text-stone-900 font-normal tracking-tight">
                 Featured Projects
@@ -187,7 +148,7 @@ export function LandingPage() {
           {/* Cards Grid: 1 Special Promo Card + 3 Dynamic Project Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {/* 1. Feature / Promo Card (Brown package style with "TOP PROJECTS" & "EXPLORE ALL") */}
-            <div className="group relative rounded-2xl bg-[#eee8db] border border-[#dfd6c5] p-6 flex flex-col justify-between overflow-hidden min-h-[360px] shadow-sm hover:shadow-md transition-shadow">
+            <div className="group relative rounded-2xl bg-[#eee8db] border border-[#dfd6c5] p-6 flex flex-col justify-between overflow-hidden min-h-[280px] lg:min-h-0 lg:h-full shadow-sm hover:shadow-md transition-shadow">
               {/* Top Tag */}
               <div className="flex items-center justify-between z-10">
                 <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded bg-[#a79479] text-white shadow-xs">
@@ -200,7 +161,7 @@ export function LandingPage() {
                 <img
                   src={bestSellersBoxes}
                   alt="Curated student projects and community kits"
-                  className="w-44 h-44 object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
+                  className="w-36 h-36 lg:w-32 lg:h-32 object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
 
@@ -217,6 +178,8 @@ export function LandingPage() {
 
             {/* 2, 3, 4. The 3 Featured Developer Project Cards */}
             {projects.slice(0, 3).map((project, idx) => {
+              const projectId = String(project.id);
+              const linked = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId);
               const coverUrl = resolveApiAssetUrl(project.cover_image_url || project.image_url);
               const stackLabel =
                 project.tech_stacks && project.tech_stacks.length > 0
@@ -226,11 +189,11 @@ export function LandingPage() {
               return (
                 <Link
                   key={project.id ?? idx}
-                  to={`/project/${project.id}`}
+                  to={linked ? `/project/${projectId}` : "/explore"}
                   className="group flex flex-col text-left focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-2xl"
                 >
                   {/* Project Image Square (matching the editorial pedestal aspect) */}
-                  <div className="aspect-square rounded-2xl bg-[#dbe6df] border border-[#cbdbd0] overflow-hidden flex items-center justify-center relative shadow-xs transition-transform duration-300 group-hover:-translate-y-1">
+                  <div className="aspect-[4/3] lg:aspect-[5/4] lg:max-h-[34vh] rounded-2xl bg-[#dbe6df] border border-[#cbdbd0] overflow-hidden flex items-center justify-center relative shadow-xs transition-transform duration-300 group-hover:-translate-y-1">
                     {coverUrl ? (
                       <ImageWithFallback
                         src={coverUrl}
@@ -271,9 +234,11 @@ export function LandingPage() {
               );
             })}
           </div>
+        </div>
+      </section>
 
-          {/* ── SECTION 3: SPLIT EDITORIAL SECTION (Soft Blue Quote Box + Photo with Gingham Tape) ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-20 items-stretch">
+      <section className="bg-[#f8f6f0] px-6 md:px-14 py-12 lg:min-h-dvh lg:snap-start lg:flex lg:items-center lg:py-10">
+        <div className="max-w-[1360px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             {/* Left Column: Soft Pastel Blue Story Card */}
             <div className="rounded-3xl bg-[#cde1f2] p-8 sm:p-12 md:p-14 flex flex-col justify-center text-center shadow-xs">
               <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 mb-6 block">
@@ -288,7 +253,7 @@ export function LandingPage() {
             </div>
 
             {/* Right Column: Photo Box with Corner Gingham Tape */}
-            <div className="relative rounded-3xl bg-stone-200/60 border border-stone-300/40 overflow-hidden min-h-[380px] flex items-center justify-center shadow-xs group">
+            <div className="relative rounded-3xl bg-stone-200/60 border border-stone-300/40 overflow-hidden min-h-[280px] lg:min-h-[46vh] lg:max-h-[62vh] flex items-center justify-center shadow-xs group">
               {/* Decorative Corner Washi/Gingham Tape */}
               <CornerTape />
 
@@ -296,10 +261,9 @@ export function LandingPage() {
               <img
                 src={dreamBigApples}
                 alt="dream BIG apple artwork"
-                className="w-full h-full object-cover min-h-[380px] group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover min-h-[280px] lg:min-h-0 lg:max-h-[62vh] group-hover:scale-105 transition-transform duration-500"
               />
             </div>
-          </div>
         </div>
       </section>
     </div>
