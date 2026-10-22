@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
+import { Bell, Briefcase, CheckCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
 
@@ -39,6 +39,9 @@ const LABELS: Record<string, string> = {
   collaboration_joined: "Collaboration",
   collaboration_left: "Collaboration",
   collaboration_removed: "Collaboration",
+  recruitment_request: "Recruiter",
+  recruitment_accepted: "Recruiter",
+  recruitment_declined: "Recruiter",
 };
 
 function TypeIcon({ type }: { type: string }) {
@@ -49,6 +52,7 @@ function TypeIcon({ type }: { type: string }) {
   if (type.includes("comment") || type === "new_message") return <MessageSquare className={`${cls} text-forest-800`} />;
   if (type.startsWith("connection")) return <UserPlus className={`${cls} text-forest-800`} />;
   if (type.startsWith("collaboration")) return <Users className={`${cls} text-maroon-800`} />;
+  if (type.startsWith("recruitment")) return <Briefcase className={`${cls} text-maroon-800`} />;
   return <Sparkles className={`${cls} text-stone-600`} />;
 }
 
@@ -58,6 +62,9 @@ function destination(notif: NotificationItem): string {
     return `/profile/${notif.actorId || notif.actorUsername}`;
   }
   if (notif.type === "new_message") return `/messages?user=${notif.actorId}`;
+  if (notif.type === "recruitment_request") return "/opportunities";
+  if (notif.type === "recruitment_accepted") return `/messages?user=${notif.actorId}`;
+  if (notif.type === "recruitment_declined") return "/recruit/inbox";
   if (
     ["project_like", "project_comment", "project_share", "collaboration_request", "collaboration_accepted", "collaboration_invitation", "collaboration_joined"].includes(notif.type)
     && UUID.test(related)
