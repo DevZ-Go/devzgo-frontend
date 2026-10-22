@@ -88,6 +88,7 @@ export function ProjectFormPage() {
   const [techConfirmContext, setTechConfirmContext] = useState<{
     projectId: string;
     warnings: string[];
+    detected: number[];
   } | null>(null);
   const [confirmingTechStacks, setConfirmingTechStacks] = useState(false);
 
@@ -363,7 +364,8 @@ export function ProjectFormPage() {
           setSubmitPhase("Uploading workspace & detecting tech…");
           setDetectingStacks(true);
           const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip);
-          const fresh = await fetchProject(projectId);
+          const [fresh, options] = await Promise.all([fetchProject(projectId), fetchTechStacks().catch(() => null)]);
+          if (options) setStackOptions(options);
           const detectedIds = Array.isArray(uploadRes.detected_tech_stack_ids)
             ? uploadRes.detected_tech_stack_ids
             : Array.isArray(fresh.detected_tech_stack_ids)
@@ -384,7 +386,7 @@ export function ProjectFormPage() {
           if (fromServer.length > 0) {
             setSelectedStackIds(fromServer);
           }
-          setTechConfirmContext({ projectId, warnings: [...warnings] });
+          setTechConfirmContext({ projectId, warnings: [...warnings], detected: fromServer });
           setShowTechConfirmModal(true);
           setDetectingStacks(false);
           setLoading(false);
@@ -759,7 +761,7 @@ export function ProjectFormPage() {
               )}
               {!isEdit ? (
                 <p className="text-sm text-stone-500 rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
-                  After you upload a workspace ZIP, tech stacks are set from your files (catalog matches only).
+                  After you upload a workspace ZIP, languages and tech stacks are detected from your files, dependencies, and imports. You confirm them before they are saved.
                 </p>
               ) : (
                 <div>
@@ -1071,8 +1073,8 @@ export function ProjectFormPage() {
               Confirm tech stacks
             </h3>
             <p className="mt-2 text-sm text-stone-600">
-              We detected stacks from your workspace (extensions + dependency files). Toggle to
-              confirm what should appear on the project. Re-uploading later will not wipe these
+              We detected these from your workspace (file types, dependency files, and imports); they
+              are listed first. Toggle to confirm what should appear on the project. Re-uploading later will not wipe these
               until you save here again.
             </p>
             {loadingStacks ? (
@@ -1084,7 +1086,10 @@ export function ProjectFormPage() {
               </p>
             ) : (
               <div className="mt-6 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
-                {stackOptions.map((t) => {
+                {[...stackOptions].sort((a, b) => {
+                  const found = (t: TechStackItem) => techConfirmContext.detected.includes(stackNumericId(t) ?? -1);
+                  return Number(found(b)) - Number(found(a));
+                }).map((t) => {
                   const id = stackNumericId(t);
                   if (id === null) return null;
                   const active = selectedStackIds.includes(id);
