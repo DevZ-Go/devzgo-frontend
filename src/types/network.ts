@@ -220,7 +220,10 @@ export interface NotificationItem {
     | "collaboration_removed"
     | "recruitment_request"
     | "recruitment_accepted"
-    | "recruitment_declined";
+    | "recruitment_declined"
+    | "challenge_invitation"
+    | "challenge_submission"
+    | "challenge_feedback";
   relatedId?: string | null;
   message: string;
   read: boolean;

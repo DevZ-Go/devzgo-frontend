@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ExternalLink, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
+import { ProjectQualityReport } from "../components/evidence/ProjectQualityReport";
 import { useProjectLike } from "../hooks/useProjectLike";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
@@ -100,6 +101,8 @@ function prismLanguage(apiLanguage: string | null | undefined, path: string | nu
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "report" ? "report" : "overview";
   const { user, token, refreshUser } = useAuth();
   const [project, setProject] = useState<ApiProject | null>(null);
   const [files, setFiles] = useState<ProjectFileEntry[]>([]);
@@ -185,7 +188,10 @@ export function ProjectDetailPage() {
         setProject(p);
         try {
           const fileList = await fetchProjectFiles(id);
-          if (!cancelled) setFiles(fileList);
+          if (cancelled) return;
+          setFiles(fileList);
+          const linked = new URLSearchParams(window.location.search).get("file");
+          if (linked && fileList.some((f) => f.file_path === linked && !f.is_directory)) void openFile(id, linked);
         } catch (fe) {
           if (!cancelled) {
             setFilesError(getApiErrorMessage(fe));
@@ -234,9 +240,24 @@ export function ProjectDetailPage() {
     }
   }
 
-  async function handleFileClick(node: FileTreeNode) {
-    if (!id || node.is_directory) return;
-    setActiveFilePath(node.path);
+  function handleFileClick(node: FileTreeNode) {
+    if (id && !node.is_directory) void openFile(id, node.path);
+  }
+
+  /** Report evidence opens the file in the Overview viewer, scrolled into view. */
+  function openFromReport(path: string) {
+    if (!id) return;
+    setSearchParams((params) => {
+      params.delete("tab");
+      params.set("file", path);
+      return params;
+    }, { replace: true });
+    void openFile(id, path);
+    requestAnimationFrame(() => document.getElementById("project-files")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  async function openFile(projectId: string, path: string) {
+    setActiveFilePath(path);
     setFileContentError(null);
     setFileStatusMessage(null);
     setActiveFileContent("");
@@ -248,7 +269,7 @@ export function ProjectDetailPage() {
     setLoadingFileContent(true);
 
     try {
-      const res = await fetchProjectFileContent(id, node.path);
+      const res = await fetchProjectFileContent(projectId, path);
       setActiveFileLanguage(res.language ?? null);
 
       if (res.is_secret && !res.content) {
@@ -260,7 +281,7 @@ export function ProjectDetailPage() {
       }
 
       if (res.is_image) {
-        const blob = await fetchProjectFileBlob(id, node.path);
+        const blob = await fetchProjectFileBlob(projectId, path);
         setActiveImageUrl(URL.createObjectURL(blob));
         setFileStatusMessage(null);
         return;
@@ -354,6 +375,16 @@ export function ProjectDetailPage() {
                       <Github className="w-4 h-4 shrink-0" /> View on GitHub
                     </a>
                   )}
+                  {project.live_url && (
+                    <a
+                      href={project.live_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 font-medium text-stone-700 hover:text-maroon-800"
+                    >
+                      <ExternalLink className="w-4 h-4 shrink-0" /> Live demo
+                    </a>
+                  )}
                   {id && (
                     <ProjectLikeButton
                       projectId={id}
@@ -425,6 +456,30 @@ export function ProjectDetailPage() {
               </div>
             </div>
 
+            <div role="tablist" aria-label="Project sections" className="flex gap-1 rounded-full border border-stone-200 bg-white p-1 shadow-sm w-fit">
+              {(["overview", "report"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === key}
+                  onClick={() => setSearchParams((params) => {
+                    if (key === "report") params.set("tab", "report");
+                    else params.delete("tab");
+                    return params;
+                  }, { replace: true })}
+                  className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                    tab === key ? "bg-maroon-800 text-amber-50" : "text-stone-600 hover:text-maroon-800"
+                  }`}
+                >
+                  {key === "overview" ? "Overview" : "Project report"}
+                </button>
+              ))}
+            </div>
+
+            {tab === "report" && id && <ProjectQualityReport projectId={id} onOpenFile={openFromReport} />}
+
+            {tab === "overview" && <>
             {videoUrl && (
               <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Demo video</h2>
@@ -440,7 +495,7 @@ export function ProjectDetailPage() {
 
             {id && project.github_url && <GitHubInsights projectId={id} />}
 
-            <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
+            <section id="project-files" className="scroll-mt-24 rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Project files</h2>
               {filesError && (
                 <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
@@ -509,6 +564,7 @@ export function ProjectDetailPage() {
 
             {id && <ProjectComments projectId={id} enabled={project.comments_enabled !== false} signedIn={Boolean(token)}
               readOnly={Boolean(project.access?.member && project.access.comment === false)} />}
+            </>}
           </article>
         )}
       </main>

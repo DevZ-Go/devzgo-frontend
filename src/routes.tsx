@@ -54,6 +54,12 @@ const CandidatePage = page(() => import("./pages/CandidatePage"), "CandidatePage
 const ShortlistsPage = page(() => import("./pages/ShortlistsPage"), "ShortlistsPage");
 const RecruiterInboxPage = page(() => import("./pages/RecruiterInboxPage"), "RecruiterInboxPage");
 const OpportunitiesPage = page(() => import("./pages/OpportunitiesPage"), "OpportunitiesPage");
+const MatchPage = page(() => import("./pages/MatchPage"), "MatchPage");
+const RecruiterChallengesPage = page(() => import("./pages/RecruiterChallengesPage"), "RecruiterChallengesPage");
+const RecruiterChallengePage = page(() => import("./pages/RecruiterChallengesPage"), "RecruiterChallengePage");
+const ChallengeEditorPage = page(() => import("./pages/ChallengeEditorPage"), "ChallengeEditorPage");
+const AssessmentsPage = page(() => import("./pages/AssessmentsPage"), "AssessmentsPage");
+const AssessmentChallengePage = page(() => import("./pages/AssessmentsPage"), "AssessmentChallengePage");
 const PersonActivityPage = page(() => import("./pages/ActivityLogPage"), "PersonActivityPage");
 const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "ProjectActivityPage");
 
@@ -208,6 +214,13 @@ export const router = createBrowserRouter([
       { path: "/recruit/shortlists", element: recruiting(<ShortlistsPage />) },
       { path: "/recruit/shortlists/:id", element: recruiting(<ShortlistsPage />) },
       { path: "/recruit/inbox", element: recruiting(<RecruiterInboxPage />) },
+      { path: "/recruit/match", element: recruiting(<MatchPage />) },
+      { path: "/recruit/challenges", element: recruiting(<RecruiterChallengesPage />) },
+      { path: "/recruit/challenges/new", element: recruiting(<ChallengeEditorPage />) },
+      { path: "/recruit/challenges/:id", element: recruiting(<RecruiterChallengePage />) },
+      { path: "/recruit/challenges/:id/edit", element: recruiting(<ChallengeEditorPage />) },
+      { path: "/assessments", element: developer(<AssessmentsPage />) },
+      { path: "/assessments/:id", element: developer(<AssessmentChallengePage />) },
 
     ],
   },

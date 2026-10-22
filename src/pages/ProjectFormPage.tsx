@@ -68,6 +68,8 @@ export function ProjectFormPage() {
   const [categoryOther, setCategoryOther] = useState("");
   const [visibility, setVisibility] = useState<ProjectVisibility>("Public");
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [liveUrl, setLiveUrl] = useState("");
+  const [impactNote, setImpactNote] = useState("");
   const [step, setStep] = useState(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [submitPhase, setSubmitPhase] = useState<string | null>(null);
@@ -164,6 +166,8 @@ export function ProjectFormPage() {
           setVisibility(vis);
         }
         setCommentsEnabled(p.comments_enabled !== false);
+        setLiveUrl(p.live_url ?? "");
+        setImpactNote(p.impact_note ?? "");
         setSelectedStackIds(
           Array.isArray(p.tech_stack_ids) ? p.tech_stack_ids : []
         );
@@ -251,6 +255,8 @@ export function ProjectFormPage() {
       category_other: category === "Other" ? categoryOther.trim() || null : null,
       visibility,
       tech_stack_ids: selectedStackIds,
+      live_url: liveUrl.trim(),
+      impact_note: impactNote.trim(),
     };
   }
 
@@ -261,6 +267,10 @@ export function ProjectFormPage() {
   function validateStep1(): boolean {
     if (!title.trim() || !shortDescription.trim() || !fullDescription.trim()) {
       setStepError("Please fill in title, short description, and full description.");
+      return false;
+    }
+    if (liveUrl.trim() && !/^https?:\/\/\S+$/i.test(liveUrl.trim())) {
+      setStepError("Enter the live demo as a full link starting with http:// or https://.");
       return false;
     }
     setStepError(null);
@@ -661,6 +671,36 @@ export function ProjectFormPage() {
                   placeholder="What it does, what you learned, stack highlights…"
                   className={`${fieldClass} resize-y min-h-[160px]`}
                 />
+              </div>
+              <div>
+                <label htmlFor="live_url" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  Live demo link <span className="text-stone-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  id="live_url"
+                  type="url"
+                  inputMode="url"
+                  value={liveUrl}
+                  onChange={(e) => setLiveUrl(e.target.value)}
+                  maxLength={500}
+                  className={fieldClass}
+                  placeholder="https://your-project.example.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="impact_note" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  Outcomes <span className="text-stone-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  id="impact_note"
+                  value={impactNote}
+                  onChange={(e) => setImpactNote(e.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="Users, results or feedback you can report, e.g. “Used by 40 students during orientation week”"
+                  className={`${fieldClass} resize-y min-h-[88px]`}
+                />
+                <p className="mt-1.5 text-xs text-stone-500">Shown in the project report as reported by you.</p>
               </div>
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button
