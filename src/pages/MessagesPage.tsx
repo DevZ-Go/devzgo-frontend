@@ -334,7 +334,7 @@ export function MessagesPage() {
                     ))
                   )}
 
-                  <p className="px-4 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-stone-400">Connections</p>
+                  <p className="px-4 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-stone-400">Direct messages</p>
                   {shownPeople.length === 0 ? null : (
                     shownPeople.map((row) => (
                       <button

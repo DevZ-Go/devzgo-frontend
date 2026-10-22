@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
+import { useAccount } from "../auth/account";
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const { ready, recruiter } = useAccount();
 
   return (
     <footer className="mt-auto shrink-0 border-t border-amber-200/40 dark:border-stone-800 bg-[#f8f6f0] dark:bg-stone-950 transition-colors duration-300">
@@ -16,15 +18,17 @@ export function Footer() {
           className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-stone-500 dark:text-stone-400"
           aria-label="Footer"
         >
-          <Link to="/home" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
+          <Link to={recruiter ? "/recruit" : "/home"} className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Home
           </Link>
           <Link to="/explore" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Explore
           </Link>
-          <Link to="/add-project" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
-            Add project
-          </Link>
+          {ready && (
+            <Link to={recruiter ? "/recruit/talent" : "/add-project"} className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
+              {recruiter ? "Find talent" : "Add project"}
+            </Link>
+          )}
           <Link to="/profile" className="transition-colors hover:text-maroon-700 dark:hover:text-maroon-300">
             Profile
           </Link>

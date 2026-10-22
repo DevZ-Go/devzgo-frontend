@@ -3,9 +3,14 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CalendarDays,
+  CircleHelp,
   Compass,
   FolderPlus,
   Home,
+  Inbox,
+  LayoutDashboard,
+  ListChecks,
+  Search,
   User,
   LogOut,
   Menu,
@@ -20,6 +25,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { BrandMark } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
+import { useAccount } from "../auth/account";
+import { openRecruiterTour } from "./tour/events";
 
 interface NavbarProps {
   variant?: "default" | "editorial";
@@ -34,6 +41,17 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/profile", label: "Profile", icon: User },
 ];
 
+/** Recruiters review work: no project building, imports, or wraps. */
+const RECRUITER_NAV: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: "/recruit", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/recruit/talent", label: "Find talent", icon: Search },
+  { to: "/explore", label: "Explore projects", icon: Compass },
+  { to: "/recruit/shortlists", label: "Shortlists", icon: ListChecks },
+  { to: "/recruit/inbox", label: "Inbox", icon: Inbox },
+];
+
+const tourKey = (to: string) => `nav-${to.split("/").filter(Boolean).pop() ?? "home"}`;
+
 function UnreadBadge({ count, className = "" }: { count: number; className?: string }) {
   if (count <= 0) return null;
   return (
@@ -47,6 +65,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
+  const { recruiter } = useAccount();
+  const items = recruiter ? RECRUITER_NAV : NAV_ITEMS;
+  const homePath = recruiter ? "/recruit" : "/home";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -122,6 +143,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const isActive = (path: string) => {
     const here = location.pathname;
     if (path === "/home") return here === "/home" || here === "/";
+    if (path === "/recruit") return here === "/recruit";
     if (path === "/profile") return here === "/profile";
     return here === path || here.startsWith(`${path}/`);
   };
@@ -162,8 +184,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               </p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-              {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-                <Link key={to} to={to} onClick={close} aria-current={isActive(to) ? "page" : undefined} className={mobileLinkClass(to, dark)}>
+              {items.map(({ to, label, icon: Icon }) => (
+                <Link key={to} to={to} onClick={close} data-tour={`m-${tourKey(to)}`} aria-current={isActive(to) ? "page" : undefined} className={mobileLinkClass(to, dark)}>
                   <Icon className="w-4 h-4 shrink-0" /> {label}
                   {to === "/messages" && <UnreadBadge count={unreadMessages} className="ml-auto" />}
                 </Link>
@@ -172,13 +194,23 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 <Settings className="w-4 h-4 shrink-0" /> Settings
               </Link>
             </div>
-            <Link
-              to="/add-project"
-              onClick={close}
-              className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
-            >
-              <FolderPlus className="w-4 h-4" /> Add project
-            </Link>
+            {recruiter ? (
+              <button
+                type="button"
+                onClick={() => { close(); openRecruiterTour(); }}
+                className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
+              >
+                <CircleHelp className="w-4 h-4" /> Take the recruiter tour
+              </button>
+            ) : (
+              <Link
+                to="/add-project"
+                onClick={close}
+                className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
+              >
+                <FolderPlus className="w-4 h-4" /> Add project
+              </Link>
+            )}
             <div className={`mt-2 flex items-center justify-between gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-amber-100/60 dark:border-stone-800"}`}>
               <ThemeToggle variant="pill" />
               <button
@@ -257,14 +289,24 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
         <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3.5 flex items-center justify-between relative" aria-label="Main">
           <div className="hidden lg:flex items-center gap-6 font-medium">
-            {topLink("/network", "Network")}
-            {topLink("/explore", "Explore")}
-            {topLink("/messages", "Messages")}
+            {recruiter ? (
+              <>
+                {topLink("/recruit", "Dashboard")}
+                {topLink("/recruit/talent", "Find talent")}
+                {topLink("/recruit/shortlists", "Shortlists")}
+              </>
+            ) : (
+              <>
+                {topLink("/network", "Network")}
+                {topLink("/explore", "Explore")}
+                {topLink("/messages", "Messages")}
+              </>
+            )}
           </div>
 
           <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
             <Link
-              to="/home"
+              to={homePath}
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="font-serif text-2xl md:text-3xl text-white tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
             >
@@ -276,14 +318,16 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             <div className="hidden lg:block">
               <ThemeToggle variant="editorial" />
             </div>
-            <Link
-              to="/wrap"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold tracking-wide transition-all"
-              title="Monthly Wrap"
-            >
-              <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
-              <span>Wrap</span>
-            </Link>
+            {!recruiter && (
+              <Link
+                to="/wrap"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold tracking-wide transition-all"
+                title="Monthly Wrap"
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
+                <span>Wrap</span>
+              </Link>
+            )}
             {messagesButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white")}
             <NotificationsDropdown className="bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white" />
             <Link to="/profile" className={iconLink} title="My account" aria-label="My account">
@@ -318,7 +362,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       className="fixed top-0 left-0 right-0 z-50 bg-[#f8f6f0]/90 dark:bg-stone-900/90 backdrop-blur-xl border-b border-amber-200/40 dark:border-stone-800 transition-colors duration-300"
     >
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        <Link to="/home" className="flex items-center gap-2.5 group shrink-0">
+        <Link to={homePath} className="flex items-center gap-2.5 group shrink-0">
           <BrandMark />
           <span className="font-serif text-xl font-normal text-stone-900 dark:text-stone-100 tracking-tight group-hover:text-maroon-700 dark:group-hover:text-maroon-300 transition-colors">
             DevZ-Go
@@ -326,8 +370,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </Link>
 
         <div className="hidden lg:flex items-center gap-0.5 xl:gap-1">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} aria-current={isActive(to) ? "page" : undefined} className={linkClass(to)}>
+          {items.map(({ to, label, icon: Icon }) => (
+            <Link key={to} to={to} data-tour={tourKey(to)} aria-current={isActive(to) ? "page" : undefined} className={linkClass(to)}>
               <Icon className="hidden xl:block w-4 h-4" />
               <span>{label}</span>
               {to === "/messages" && <UnreadBadge count={unreadMessages} />}
@@ -337,13 +381,22 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
         <div className="hidden lg:flex items-center gap-1">
           {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
-          <Link
-            to="/add-project"
-            className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
-          >
-            <FolderPlus className="w-4 h-4" />
-            Add project
-          </Link>
+          {recruiter ? (
+            <>
+              {messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
+              <button type="button" onClick={openRecruiterTour} data-tour="nav-help" className={iconButton} aria-label="Help: recruiter tour" title="Help: recruiter tour">
+                <CircleHelp className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/add-project"
+              className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
+            >
+              <FolderPlus className="w-4 h-4" />
+              Add project
+            </Link>
+          )}
           <ThemeToggle variant="ghost" />
           <Link to="/settings" aria-label="Settings" title="Settings" aria-current={isActive("/settings") ? "page" : undefined} className={iconButton}>
             <Settings className="w-4 h-4" />
@@ -356,6 +409,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         <div className="lg:hidden flex items-center gap-1">
           {messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
           {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
+          {recruiter && (
+            <button type="button" onClick={openRecruiterTour} className="p-2 rounded-xl text-stone-800 hover:bg-stone-200/80 dark:text-stone-100 dark:hover:bg-stone-800" aria-label="Help: recruiter tour" title="Help: recruiter tour">
+              <CircleHelp className="w-5 h-5" />
+            </button>
+          )}
           {menuButton("text-stone-900 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-800")}
         </div>
       </div>
