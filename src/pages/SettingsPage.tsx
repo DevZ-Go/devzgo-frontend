@@ -5,6 +5,7 @@ import { fetchMyProfile, PROFILE_ROLES, updateMyProfile, uploadAvatar } from "..
 import { useAuth } from "../auth/AuthContext";
 import { Navbar } from "../components/Navbar";
 import { PasswordField } from "../components/PasswordField";
+import { PasswordInput } from "../components/PasswordInput";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { UsernameField } from "../components/UsernameField";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -279,7 +280,7 @@ export function SettingsPage() {
           <h2 className="font-serif text-2xl text-stone-900">{hasPassword ? "Password" : "Set a password"}</h2>
           {!hasPassword && <p className="text-sm text-stone-500">You sign in with GitHub. A password lets you sign in with email too.</p>}
           {hasPassword && (
-            <input type="password" required value={current} onChange={(e) => setCurrent(e.target.value)}
+            <PasswordInput required value={current} onChange={(e) => setCurrent(e.target.value)}
               autoComplete="current-password" placeholder="Current password" aria-label="Current password" className={inputClass} />
           )}
           <PasswordField value={next} onChange={setNext} className={inputClass} />

@@ -84,6 +84,7 @@ export function ProjectFormPage() {
   const [loadingStacks, setLoadingStacks] = useState(true);
   const [loadingProject, setLoadingProject] = useState(isEdit);
   const [detectingStacks, setDetectingStacks] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [showTechConfirmModal, setShowTechConfirmModal] = useState(false);
   const [techConfirmContext, setTechConfirmContext] = useState<{
     projectId: string;
@@ -361,9 +362,13 @@ export function ProjectFormPage() {
 
       try {
         if (workspaceZip) {
-          setSubmitPhase("Uploading workspace & detecting tech…");
+          setSubmitPhase("Uploading workspace…");
+          setUploadPercent(0);
           setDetectingStacks(true);
-          const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip);
+          const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip, (percent) => {
+            setUploadPercent(percent);
+            setSubmitPhase(percent < 100 ? "Uploading workspace…" : "Detecting tech…");
+          });
           const [fresh, options] = await Promise.all([fetchProject(projectId), fetchTechStacks().catch(() => null)]);
           if (options) setStackOptions(options);
           const detectedIds = Array.isArray(uploadRes.detected_tech_stack_ids)
@@ -1003,12 +1008,17 @@ export function ProjectFormPage() {
               </div>
 
               {detectingStacks && (
-                <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-4">
+                <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-4" role="status">
                   <p className="text-sm font-medium text-maroon-900 mb-2">
-                    Detecting technologies from workspace files…
+                    {uploadPercent < 100
+                      ? `Uploading your ZIP… ${uploadPercent}%`
+                      : "Reading your files and detecting languages and tech…"}
                   </p>
                   <div className="h-2 rounded-full bg-maroon-100 overflow-hidden">
-                    <div className="h-full w-2/3 bg-maroon-500 animate-pulse" />
+                    <div
+                      className={`h-full bg-maroon-500 transition-[width] ${uploadPercent < 100 ? "" : "animate-pulse"}`}
+                      style={{ width: `${uploadPercent}%` }}
+                    />
                   </div>
                 </div>
               )}
