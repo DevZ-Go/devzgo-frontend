@@ -83,6 +83,7 @@ export interface Project {
   commentsCount: number;
   featured: boolean;
   author: {
+    id?: string;
     name: string;
     username: string;
     avatar: string;

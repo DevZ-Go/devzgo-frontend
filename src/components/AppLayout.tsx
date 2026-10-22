@@ -1,6 +1,8 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "../auth/AuthContext";
+import { rememberPath } from "../auth/session";
 import { Footer } from "./Footer";
 import { RecruiterTour } from "./tour/RecruiterTour";
 
@@ -17,6 +19,11 @@ function PageLoading() {
  */
 export function AppLayout() {
   const location = useLocation();
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user?.id) return;
+    rememberPath(String(user.id), `${location.pathname}${location.search}`);
+  }, [user?.id, location.pathname, location.search]);
   const isHome = location.pathname === "/home" || location.pathname === "/";
   const fullScreen =
     isHome ||

@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { AtSign, Lock } from "lucide-react";
 import { loginWithPassword } from "../api";
 import { useAuth } from "../auth/AuthContext";
+import { destinationAfterLogin } from "../auth/session";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton, githubErrorMessage } from "../components/GitHubButton";
@@ -14,8 +15,7 @@ const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const locationState = useLocation().state as { from?: { pathname?: string; search?: string }; notice?: string } | null;
-  const from = locationState?.from;
+  const locationState = useLocation().state as { notice?: string } | null;
   const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -30,14 +30,15 @@ export function LoginPage() {
     try {
       const { access_token } = await loginWithPassword(identifier, password);
       setAuthToken(access_token);
+      let me;
       try {
-        await refreshUser();
+        me = await refreshUser();
       } catch {
         logout();
         setError("Signed in but could not verify your session. Try again.");
         return;
       }
-      navigate(from?.pathname ? from.pathname + (from.search ?? "") : "/home", { replace: true });
+      navigate(await destinationAfterLogin(me), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {

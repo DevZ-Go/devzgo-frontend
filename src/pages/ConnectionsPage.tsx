@@ -27,6 +27,7 @@ import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { Connection, ConnectionUserSummary } from "../types/network";
+import { NetworkPlaces } from "../components/network/NetworkPlaces";
 import { ui } from "../styles/editorial";
 
 type Tab = "connections" | "requests" | "collaboration" | "suggestions";
@@ -35,7 +36,7 @@ const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: "connections", label: "Connections", icon: Users },
   { id: "requests", label: "Requests", icon: Inbox },
   { id: "collaboration", label: "Collaboration", icon: Handshake },
-  { id: "suggestions", label: "Suggestions", icon: Compass },
+  { id: "suggestions", label: "People", icon: Compass },
 ];
 const OLD_TABS: Record<string, Tab> = { accepted: "connections", incoming: "requests", outgoing: "requests" };
 
@@ -210,6 +211,7 @@ export function ConnectionsPage() {
     <div className={ui.page}>
       <Navbar />
       <main className={`${ui.main} max-w-4xl`}>
+        <NetworkPlaces current={tab === "suggestions" ? "people" : tab === "requests" ? "requests" : "connections"} />
         <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-maroon-800">Your network</p>

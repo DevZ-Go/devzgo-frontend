@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Code2, ExternalLink, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
+import { ArrowLeft, Code2, ExternalLink, Github, Loader2, MessageSquare, Pencil, Share2, Trash2, User, Users, Heart } from "lucide-react";
 import { ProjectQualityReport } from "../components/evidence/ProjectQualityReport";
 import { FilePreview } from "../components/files/FilePreview";
 import { useProjectLike } from "../hooks/useProjectLike";
@@ -22,6 +22,8 @@ import { ImageWithFallback } from "../components/ImageWithFallback";
 import { ProjectFileTree } from "../components/ProjectFileTree";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
+import { CollaborationModal } from "../components/CollaborationModal";
+import { ShareProjectDialog } from "../components/ShareProjectDialog";
 import { isProjectOwner } from "../utils/projectOwnership";
 import type { FileTreeNode } from "../utils/buildFileTree";
 import {
@@ -47,6 +49,8 @@ export function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showCollab, setShowCollab] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const activeFilePath = searchParams.get("file");
 
@@ -60,6 +64,7 @@ export function ProjectDetailPage() {
     (project != null &&
       project.is_owner !== false &&
       isProjectOwner(project, user));
+  const canEditCode = Boolean(project?.access?.files || project?.access?.owner || isOwner);
 
   useEffect(() => {
     if (token && user == null) {
@@ -213,7 +218,9 @@ export function ProjectDetailPage() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-600 text-sm mb-6">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 shrink-0" />
-                    <span>@{owner}</span>
+                    <Link to={project.owner_id ? `/profile/${project.owner_id}` : `/profile/${owner}`} className="font-semibold text-stone-800 hover:text-maroon-800">
+                      @{owner}
+                    </Link>
                     {project.visibility && (
                       <span className="text-slate-400">· {project.visibility}</span>
                     )}
@@ -238,7 +245,7 @@ export function ProjectDetailPage() {
                       <ExternalLink className="w-4 h-4 shrink-0" /> Live demo
                     </a>
                   )}
-                  {id && (
+                  {id && canEditCode && (
                     <Link
                       to={`/project/${id}/workspace`}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
@@ -246,6 +253,34 @@ export function ProjectDetailPage() {
                       <Code2 className="w-3.5 h-3.5" />
                       Code
                     </Link>
+                  )}
+                  {id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchParams((params) => {
+                          params.delete("tab");
+                          return params;
+                        }, { replace: true });
+                        window.setTimeout(() => document.getElementById("project-comments")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Comment
+                    </button>
+                  )}
+                  {id && token && (
+                    <button type="button" onClick={() => setShowShare(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                      <Share2 className="w-3.5 h-3.5" />
+                      Share
+                    </button>
+                  )}
+                  {id && token && !isOwner && (
+                    <button type="button" onClick={() => setShowCollab(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                      <Users className="w-3.5 h-3.5" />
+                      Collaborate
+                    </button>
                   )}
                   {id && (
                     <ProjectLikeButton
@@ -390,6 +425,13 @@ export function ProjectDetailPage() {
           </article>
         )}
       </main>
+
+      {id && project && (
+        <>
+          <ShareProjectDialog projectId={id} title={project.title} open={showShare} onClose={() => setShowShare(false)} />
+          <CollaborationModal projectId={id} projectTitle={project.title} isOpen={showCollab} onClose={() => setShowCollab(false)} />
+        </>
+      )}
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center px-4">

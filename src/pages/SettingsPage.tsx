@@ -117,6 +117,8 @@ export function SettingsPage() {
   const [notifyConnections, setNotifyConnections] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
   const [notifyCollaborations, setNotifyCollaborations] = useState(true);
+  const [notifyChallenges, setNotifyChallenges] = useState(false);
+  const [startPage, setStartPage] = useState<"home" | "resume">("home");
   const [openToWork, setOpenToWork] = useState(false);
   const [workTypes, setWorkTypes] = useState<string[]>([]);
   const [workArrangements, setWorkArrangements] = useState<string[]>([]);
@@ -163,6 +165,8 @@ export function SettingsPage() {
         setNotifyConnections(profile.notifyConnections !== false);
         setNotifyMessages(profile.notifyMessages !== false);
         setNotifyCollaborations(profile.notifyCollaborations !== false);
+        setNotifyChallenges(profile.notifyChallenges === true);
+        setStartPage(profile.startPage === "resume" ? "resume" : "home");
         setOpenToWork(profile.openToWork === true);
         setWorkTypes(profile.workTypes ?? []);
         setWorkArrangements(profile.workArrangements ?? []);
@@ -242,7 +246,7 @@ export function SettingsPage() {
     e.preventDefault();
     await run(async () => {
       await updateMyProfile({
-        notifyLikes, notifyComments, notifyShares, notifyConnections, notifyMessages, notifyCollaborations,
+        notifyLikes, notifyComments, notifyShares, notifyConnections, notifyMessages, notifyCollaborations, notifyChallenges,
       });
       setMessage({ text: "Notifications saved.", ok: true });
     });
@@ -322,6 +326,17 @@ export function SettingsPage() {
           )}
           <PasswordField value={next} onChange={setNext} className={inputClass} />
           <Save busy={busy} disabled={!passwordValid(next)}>Save password</Save>
+        </form>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          void run(async () => {
+            await updateMyProfile({ startPage });
+            setMessage({ text: "Sign-in page saved.", ok: true });
+          });
+        }} className="space-y-3">
+          <h2 className="font-serif text-2xl text-stone-900">After you sign in</h2>
+          <SelectField label="Open" value={startPage} onChange={(value) => setStartPage(value === "resume" ? "resume" : "home")} options={[["home", recruiter ? "Recruiter home" : "Home"], ["resume", "The last page you had open"]]} />
+          <Save busy={busy} disabled={!ready}>Save</Save>
         </form>
       </div>
     );
@@ -461,6 +476,7 @@ export function SettingsPage() {
         <SwitchRow label="Connections" hint="Requests and acceptances" checked={notifyConnections} onChange={setNotifyConnections} />
         <SwitchRow label="Messages" checked={notifyMessages} onChange={setNotifyMessages} />
         <SwitchRow label="Collaboration" hint="Invites, requests, and people joining or leaving" checked={notifyCollaborations} onChange={setNotifyCollaborations} />
+        {!recruiter && <SwitchRow label="Technical challenges" hint="Off until you turn it on. You are notified when a recruiter posts a public challenge." checked={notifyChallenges} onChange={setNotifyChallenges} />}
         <Save busy={busy} disabled={!ready}>Save notifications</Save>
       </form>
     );

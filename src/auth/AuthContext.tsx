@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { fetchCurrentUser } from "../api";
+import { queryClient } from "../api/queryKeys";
 import type { AuthUser } from "../types/auth";
 import { getToken, removeToken, setToken } from "./token";
 
@@ -18,7 +19,7 @@ interface AuthContextValue {
   login: (token: string) => void;
   logout: () => void;
   /** Load /auth/me using the current token. Call after login or on app load. */
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -37,11 +38,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   const login = useCallback((newToken: string) => {
+    queryClient.clear();
+    setUser(null);
     setToken(newToken);
     setTokenState(newToken);
   }, []);
 
   const logout = useCallback(() => {
+    queryClient.clear();
     removeToken();
     setTokenState(null);
     setUser(null);
@@ -51,18 +55,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const onExpired = () => {
       logout();
     };
+    const onShow = (event: PageTransitionEvent) => {
+      // Back/forward can restore the previous account's page from memory. Reload uses the token that is stored now.
+      if (event.persisted) window.location.reload();
+    };
     window.addEventListener("devzgo:session-expired", onExpired);
-    return () => window.removeEventListener("devzgo:session-expired", onExpired);
+    window.addEventListener("pageshow", onShow);
+    return () => {
+      window.removeEventListener("devzgo:session-expired", onExpired);
+      window.removeEventListener("pageshow", onShow);
+    };
   }, [logout]);
 
   const refreshUser = useCallback(async () => {
     const t = getToken();
     if (!t) {
       setUser(null);
-      return;
+      return null;
     }
     const me = await fetchCurrentUser();
     setUser(me);
+    return me;
   }, []);
 
   const value = useMemo<AuthContextValue>(
