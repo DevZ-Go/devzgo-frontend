@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowUpFromLine, CalendarDays, ExternalLink, Flame, FolderGit2, GitBranch, GitCommitHorizontal, Github, Loader2,
   Lock, Search, Users, X,
@@ -171,12 +171,13 @@ export function ProjectActivityPage() {
 /** Every commit and push from repositories imported from GitHub, for one person or one project. */
 function ActivityLogPage({ mode }: { mode: "person" | "project" }) {
   const { id = "" } = useParams();
+  const [params] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [kind, setKind] = useState<ActivityKind>("all");
   const [scope, setScope] = useState<ActivityScope>("mine");
   const [search, setSearch] = useState("");
-  const [project, setProject] = useState<string | null>(null);
+  const [project, setProject] = useState<string | null>(() => (mode === "person" ? params.get("project") : null));
   const [day, setDay] = useState<string | null>(null);
   const q = useDeferredValue(search);
   const filters: ActivityFilters = { kind, q, project, day, scope };

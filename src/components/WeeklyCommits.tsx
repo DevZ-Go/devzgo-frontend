@@ -2,9 +2,10 @@ const WEEK = 7 * 86400;
 
 /** Bars for commits per GitHub week (Sunday start), ending at the latest week with data. */
 export function WeeklyCommits({ weekly, weeks: span = 26 }: { weekly: [number, number][]; weeks?: number }) {
-  if (weekly.length === 0) return null;
-  const counts = new Map(weekly.map(([week, count]) => [week, count]));
-  const latest = Math.max(...weekly.map(([week]) => week));
+  const active = weekly.filter(([, count]) => count > 0);
+  if (active.length === 0) return null;
+  const counts = new Map(active);
+  const latest = Math.max(...active.map(([week]) => week));
   const weeks = Array.from({ length: span }, (_, i) => latest - (span - 1 - i) * WEEK);
   const top = Math.max(1, ...weeks.map((week) => counts.get(week) ?? 0));
   const label = (week: number) => new Date(week * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
