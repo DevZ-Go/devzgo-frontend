@@ -17,14 +17,14 @@ export interface RegisterPayload {
 }
 
 /**
- * OAuth2 password flow: FastAPI expects form fields `username` (email) and `password`.
+ * OAuth2 password flow: FastAPI expects form fields `username` (email or username) and `password`.
  */
 export async function loginWithPassword(
-  email: string,
+  identifier: string,
   password: string
 ): Promise<LoginTokenResponse> {
   const body = new URLSearchParams();
-  body.set("username", email);
+  body.set("username", identifier);
   body.set("password", password);
 
   const { data } = await axios.post<LoginTokenResponse>(

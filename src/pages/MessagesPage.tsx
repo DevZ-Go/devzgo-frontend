@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Check, CheckCheck, Loader2, MessageSquare, Plus, Search, Send, Users, X } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Info, Loader2, MessageSquare, Plus, Search, Send, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { GroupDetails } from "../components/GroupDetails";
+import { MemberAvatar } from "../components/MemberAvatar";
 import {
   createGroup,
   fetchConversations,
   fetchConversationThread,
   fetchGroupThread,
   fetchGroups,
+  announceUnreadChange,
   mapMessage,
   markConversationRead,
+  markGroupRead,
   sendGroupMessage,
   sendMessage,
   type ChatRoomSummary,
@@ -19,6 +23,7 @@ import { fetchUserProfile } from "../api/profiles";
 import { useRealtimeEvent } from "../realtime/RealtimeProvider";
 import type { ConnectionUserSummary, Message } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
+import { assetUrlOrNull } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
 
 function formatMessageTime(isoString: string): string {
@@ -51,6 +56,8 @@ export function MessagesPage() {
   const [groupTitle, setGroupTitle] = useState("");
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [groupError, setGroupError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<ConnectionUserSummary[]>([]);
+  const [detailsFor, setDetailsFor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadLists = useCallback(async (openUserId?: string) => {
@@ -75,6 +82,7 @@ export function MessagesPage() {
       }
       const list = [...rows.values()].sort((a, b) => b.unread - a.unread || (a.person.username || "").localeCompare(b.person.username || ""));
       setPeople(list);
+      setContacts(connections.accepted.map((c) => c.partner));
       setRooms(groups);
 
       if (openUserId) {
@@ -121,6 +129,10 @@ export function MessagesPage() {
         if (cancelled) return;
         setMessages(thread);
         if (pane.kind === "dm") await markConversationRead(pane.person.id);
+        else {
+          announceUnreadChange();
+          setRooms((prev) => prev.map((r) => (r.id === pane.room.id ? { ...r, unreadCount: 0 } : r)));
+        }
       })
       .catch(() => undefined)
       .finally(() => {
@@ -142,6 +154,7 @@ export function MessagesPage() {
       const msg = mapMessage(event.message as Record<string, unknown>);
       if (msg.senderId === user?.id) return;
       setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      void markGroupRead(pane.room.id).catch(() => undefined);
     } else if (event.type === "message.read" && pane.kind === "dm" && event.by === pane.person.id) {
       setMessages((prev) => prev.map((m) => ({ ...m, read: true })));
     } else if (event.type === "resync" || event.type === "poll") {
@@ -201,12 +214,13 @@ export function MessagesPage() {
     [rooms, query]
   );
 
-  const title = pane?.kind === "dm" ? pane.person.fullName || pane.person.username : pane?.room.title;
+  const room = pane?.kind === "room" ? (rooms.find((r) => r.id === pane.room.id) ?? pane.room) : null;
+  const title = pane?.kind === "dm" ? pane.person.fullName || pane.person.username : room?.title;
   const subtitle =
     pane?.kind === "dm"
       ? `@${pane.person.username}`
-      : pane
-        ? `${pane.room.memberCount} people${pane.room.projectId ? " · project team" : ""}`
+      : room
+        ? `${room.memberCount} people${room.projectId ? " · project team" : ""}`
         : "";
 
   return (
@@ -299,12 +313,13 @@ export function MessagesPage() {
                       <button
                         key={room.id}
                         type="button"
-                        onClick={() => setPane({ kind: "room", room })}
+                        onClick={() => {
+                          setDetailsFor(null);
+                          setPane({ kind: "room", room });
+                        }}
                         className={`flex w-full items-start gap-3 px-4 py-3 text-left ${pane?.kind === "room" && pane.room.id === room.id ? "bg-amber-50" : "hover:bg-stone-50"}`}
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-800 text-amber-100">
-                          <Users className="h-4 w-4" />
-                        </span>
+                        <MemberAvatar name={room.title} src={room.avatarUrl} size="md" className="!h-10 !w-10" />
                         <span className="min-w-0 flex-1">
                           <span className="block break-words font-serif text-base text-stone-900">{room.title}</span>
                           <span className="block truncate text-xs text-stone-500">
@@ -325,7 +340,10 @@ export function MessagesPage() {
                       <button
                         key={row.person.id}
                         type="button"
-                        onClick={() => setPane({ kind: "dm", person: row.person })}
+                        onClick={() => {
+                          setDetailsFor(null);
+                          setPane({ kind: "dm", person: row.person });
+                        }}
                         className={`flex w-full items-start gap-3 px-4 py-3 text-left ${pane?.kind === "dm" && pane.person.id === row.person.id ? "bg-amber-50" : "hover:bg-stone-50"}`}
                       >
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#DCFCE7] text-xs font-bold text-[#14532D]">
@@ -347,7 +365,25 @@ export function MessagesPage() {
             </div>
           </div>
 
-          <div className={`flex h-full flex-col bg-[#faf7ee] ${pane ? "flex" : "hidden md:flex"}`}>
+          <div className={`relative flex h-full min-h-0 flex-col bg-[#faf7ee] ${pane ? "flex" : "hidden md:flex"}`}>
+            {room && detailsFor === room.id && (
+              <GroupDetails
+                roomId={room.id}
+                meId={user?.id ? String(user.id) : undefined}
+                connections={contacts}
+                onClose={() => setDetailsFor(null)}
+                onChanged={(details) => {
+                  const patch = { title: details.title, avatarUrl: assetUrlOrNull(details.avatar_url), memberCount: details.members.length };
+                  setRooms((prev) => prev.map((r) => (r.id === details.id ? { ...r, ...patch } : r)));
+                }}
+                onLeft={() => {
+                  const leftId = room.id;
+                  setDetailsFor(null);
+                  setPane(null);
+                  setRooms((prev) => prev.filter((r) => r.id !== leftId));
+                }}
+              />
+            )}
             {pane ? (
               <>
                 <div className="flex items-center justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3">
@@ -355,15 +391,33 @@ export function MessagesPage() {
                     <button type="button" onClick={() => setPane(null)} className="md:hidden" aria-label="Back to conversations">
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <div className="min-w-0">
-                      <h3 className="break-words font-serif text-lg text-stone-900">{title}</h3>
-                      <p className="break-all font-mono text-[11px] text-stone-500">{subtitle}</p>
-                    </div>
+                    {room ? (
+                      <button
+                        type="button" onClick={() => setDetailsFor(room.id)}
+                        className="flex min-w-0 items-center gap-3 rounded-xl text-left hover:opacity-80"
+                        aria-label={`Group details for ${room.title}`}
+                      >
+                        <MemberAvatar name={room.title} src={room.avatarUrl} size="sm" />
+                        <span className="min-w-0">
+                          <span className="block break-words font-serif text-lg text-stone-900">{title}</span>
+                          <span className="block break-all font-mono text-[11px] text-stone-500">{subtitle} · tap for info</span>
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="min-w-0">
+                        <h3 className="break-words font-serif text-lg text-stone-900">{title}</h3>
+                        <p className="break-all font-mono text-[11px] text-stone-500">{subtitle}</p>
+                      </div>
+                    )}
                   </div>
-                  {pane.kind === "dm" && (
+                  {pane.kind === "dm" ? (
                     <Link to={`/profile/${pane.person.id}`} className="shrink-0 text-xs font-semibold text-maroon-800">
                       Profile
                     </Link>
+                  ) : (
+                    <button type="button" onClick={() => setDetailsFor(pane.room.id)} aria-label="Group info" className="shrink-0 rounded-full p-1.5 text-stone-500 hover:bg-stone-100 hover:text-maroon-800">
+                      <Info className="h-5 w-5" />
+                    </button>
                   )}
                 </div>
                 <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
@@ -405,7 +459,7 @@ export function MessagesPage() {
                   <input
                     value={inputContent}
                     onChange={(e) => setInputContent(e.target.value)}
-                    placeholder={pane.kind === "dm" ? `Message @${pane.person.username}` : `Message ${pane.room.title}`}
+                    placeholder={pane.kind === "dm" ? `Message @${pane.person.username}` : `Message ${room?.title ?? pane.room.title}`}
                     aria-label="Message"
                     className="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-200"
                   />

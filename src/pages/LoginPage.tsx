@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
-import { Mail, Lock } from "lucide-react";
+import { AtSign, Lock } from "lucide-react";
 import { loginWithPassword } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
@@ -17,7 +17,7 @@ export function LoginPage() {
   const locationState = useLocation().state as { from?: { pathname?: string; search?: string }; notice?: string } | null;
   const from = locationState?.from;
   const { login: setAuthToken, refreshUser, logout } = useAuth();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(githubErrorMessage(useSearchParams()[0].get("error")));
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const { access_token } = await loginWithPassword(email, password);
+      const { access_token } = await loginWithPassword(identifier, password);
       setAuthToken(access_token);
       try {
         await refreshUser();
@@ -72,21 +72,23 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="mb-1.5 block text-sm font-medium text-gray-500"
               >
-                Email
+                Email or username
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="identifier"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  autoComplete="email"
-                  placeholder="you@example.com"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="you@example.com or yourname"
                   className="w-full rounded-2xl border-2 border-cream-200 bg-cream-50/50 pl-10 pr-4 py-3 text-gray-800 placeholder:text-gray-300 transition-all focus:border-lavender-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-lavender-200/40 text-sm"
                 />
               </div>
