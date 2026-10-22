@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import {
   AlertCircle,
@@ -21,6 +21,7 @@ import {
   startGitHubImport,
   type GitHubRepo,
 } from "../api/githubImport";
+import { REFRESH_KEY, refreshGitHubHistory } from "../api/githubHistory";
 import { queryClient, queryKeys } from "../api/queryKeys";
 import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -156,12 +157,17 @@ function ProgressRow({ repo, status }: { repo: GitHubRepo; status: RowStatus }) 
 /** Pick GitHub repositories and turn each into a project, with its code analysed. */
 export function GitHubImportPage() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [fragment] = useState(readFragment);
+  const [refreshing] = useState(() => sessionStorage.getItem(REFRESH_KEY));
+  useEffect(() => sessionStorage.removeItem(REFRESH_KEY), []);
   const exchanged = useRef(false);
   const sessionRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(Boolean(fragment.code));
   const [error, setError] = useState<string | null>(
-    params.get("error") === "denied" ? "GitHub access was not granted, so nothing was imported." : null,
+    params.get("error") === "denied"
+      ? refreshing ? "GitHub access was not granted, so the history was not refreshed." : "GitHub access was not granted, so nothing was imported."
+      : null,
   );
   const [login, setLogin] = useState("");
   const [repos, setRepos] = useState<GitHubRepo[] | null>(null);
@@ -175,6 +181,27 @@ export function GitHubImportPage() {
     window.history.replaceState(null, "", window.location.pathname);
     if (!fragment.code || exchanged.current) return;
     exchanged.current = true;
+    if (refreshing) {
+      let session: string | null = null;
+      openGitHubImportSession(fragment.code, fragment.state)
+        .then((data) => {
+          session = data.session;
+          return refreshGitHubHistory(refreshing, data.session);
+        })
+        .then(() => {
+          void queryClient.invalidateQueries({ queryKey: ["github-insights", refreshing] });
+          void queryClient.invalidateQueries({ queryKey: ["github-history", refreshing] });
+          navigate(`/project/${refreshing}`, { replace: true });
+        })
+        .catch((err) => {
+          setError(getApiErrorMessage(err));
+          setLoading(false);
+        })
+        .finally(() => {
+          if (session) void closeGitHubImportSession(session).catch(() => undefined);
+        });
+      return;
+    }
     openGitHubImportSession(fragment.code, fragment.state)
       .then((data) => {
         sessionRef.current = data.session;
@@ -183,7 +210,7 @@ export function GitHubImportPage() {
       })
       .catch((err) => setError(getApiErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [fragment]);
+  }, [fragment, refreshing, navigate]);
 
   useEffect(() => () => {
     if (sessionRef.current) void closeGitHubImportSession(sessionRef.current).catch(() => undefined);
@@ -280,8 +307,15 @@ export function GitHubImportPage() {
 
         {loading ? (
           <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-600 shadow-sm">
-            <Loader2 className="h-5 w-5 animate-spin text-maroon-700" /> Reading your repositories…
+            <Loader2 className="h-5 w-5 animate-spin text-maroon-700" />
+            {refreshing ? "Reading commits and pushes from GitHub…" : "Reading your repositories…"}
           </div>
+        ) : refreshing ? (
+          <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+            <h2 className="font-serif text-2xl text-stone-900">GitHub history</h2>
+            {error && <p role="alert" className={`mt-3 ${ui.error}`}>{error}</p>}
+            <Link to={`/project/${refreshing}`} className={`${ui.btn} ${ui.primary} mt-5 px-5 py-2.5 text-sm`}>Back to the project</Link>
+          </section>
         ) : !repos ? (
           <Intro error={error} />
         ) : statuses ? (

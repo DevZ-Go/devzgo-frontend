@@ -172,13 +172,19 @@ export interface ProjectCollaborator {
   role: string;
   createdAt: string;
   isOwner?: boolean;
+  access?: AccessLevel | "owner";
+  focus?: string | null;
   permissions?: CollabPermissions;
 }
+
+export type AccessLevel = "viewer" | "commenter" | "editor" | "manager";
 
 export interface CollabPermissions {
   can_edit_details: boolean;
   can_manage_files: boolean;
   can_view_secrets: boolean;
+  can_comment: boolean;
+  can_manage_team: boolean;
 }
 
 export interface NotificationItem {

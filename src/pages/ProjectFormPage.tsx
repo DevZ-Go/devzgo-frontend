@@ -36,6 +36,8 @@ import type { ApiProject } from "../types/project";
 import type { ProjectCategory } from "../data/projectFormOptions";
 import { isProjectOwner } from "../utils/projectOwnership";
 import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
+import { inviteCollaborator } from "../api/collaborations";
+import { TeammatePicker, type Teammate } from "../components/TeammatePicker";
 
 const TOTAL_STEPS = 3;
 const STEP_META = [
@@ -46,7 +48,7 @@ const STEP_META = [
     icon: LayoutList,
   },
   { n: 2, title: "Classification", subtitle: "Category & visibility", icon: Layers },
-  { n: 3, title: "Assets", subtitle: "Media & workspace", icon: UploadCloud },
+  { n: 3, title: "Assets", subtitle: "Media, workspace & team", icon: UploadCloud },
 ] as const;
 
 export function ProjectFormPage() {
@@ -75,6 +77,7 @@ export function ProjectFormPage() {
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [demoVideoFile, setDemoVideoFile] = useState<File | null>(null);
   const [workspaceZip, setWorkspaceZip] = useState<File | null>(null);
+  const [teammates, setTeammates] = useState<Teammate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -85,6 +88,7 @@ export function ProjectFormPage() {
   const [techConfirmContext, setTechConfirmContext] = useState<{
     projectId: string;
     warnings: string[];
+    detected: number[];
   } | null>(null);
   const [confirmingTechStacks, setConfirmingTechStacks] = useState(false);
 
@@ -333,6 +337,16 @@ export function ProjectFormPage() {
         if (!projectId) {
           throw new Error("Server did not return a project id. Try again.");
         }
+        if (teammates.length > 0) setSubmitPhase("Inviting teammates…");
+        for (const mate of teammates) {
+          try {
+            await inviteCollaborator(projectId, {
+              username: mate.username, role: mate.role.trim() || "Collaborator", access: mate.access,
+            });
+          } catch (err) {
+            warnings.push(`Invite for @${mate.username}: ${getApiErrorMessage(err)}`);
+          }
+        }
       }
 
       try {
@@ -350,7 +364,8 @@ export function ProjectFormPage() {
           setSubmitPhase("Uploading workspace & detecting tech…");
           setDetectingStacks(true);
           const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip);
-          const fresh = await fetchProject(projectId);
+          const [fresh, options] = await Promise.all([fetchProject(projectId), fetchTechStacks().catch(() => null)]);
+          if (options) setStackOptions(options);
           const detectedIds = Array.isArray(uploadRes.detected_tech_stack_ids)
             ? uploadRes.detected_tech_stack_ids
             : Array.isArray(fresh.detected_tech_stack_ids)
@@ -371,7 +386,7 @@ export function ProjectFormPage() {
           if (fromServer.length > 0) {
             setSelectedStackIds(fromServer);
           }
-          setTechConfirmContext({ projectId, warnings: [...warnings] });
+          setTechConfirmContext({ projectId, warnings: [...warnings], detected: fromServer });
           setShowTechConfirmModal(true);
           setDetectingStacks(false);
           setLoading(false);
@@ -746,7 +761,7 @@ export function ProjectFormPage() {
               )}
               {!isEdit ? (
                 <p className="text-sm text-stone-500 rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
-                  After you upload a workspace ZIP, tech stacks are set from your files (catalog matches only).
+                  After you upload a workspace ZIP, languages and tech stacks are detected from your files, dependencies, and imports. You confirm them before they are saved.
                 </p>
               ) : (
                 <div>
@@ -967,6 +982,26 @@ export function ProjectFormPage() {
                 </div>
               </div>
 
+              <div className="border-t border-stone-100 pt-6 space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                  Teammates
+                </h3>
+                {isEdit ? (
+                  <p className="text-xs text-stone-600">
+                    Invite people, set their access, and answer join requests from the Team section on the{" "}
+                    <Link to={`/project/${editProjectId}`} className="font-semibold text-maroon-700 hover:underline">project page</Link>.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-stone-600">
+                      Optional. Each person gets an invitation with the role and access you choose, and joins once they accept.
+                      Anyone can also ask to join later from the project page.
+                    </p>
+                    <TeammatePicker value={teammates} onChange={setTeammates} />
+                  </>
+                )}
+              </div>
+
               {detectingStacks && (
                 <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-4">
                   <p className="text-sm font-medium text-maroon-900 mb-2">
@@ -1038,8 +1073,8 @@ export function ProjectFormPage() {
               Confirm tech stacks
             </h3>
             <p className="mt-2 text-sm text-stone-600">
-              We detected stacks from your workspace (extensions + dependency files). Toggle to
-              confirm what should appear on the project. Re-uploading later will not wipe these
+              We detected these from your workspace (file types, dependency files, and imports); they
+              are listed first. Toggle to confirm what should appear on the project. Re-uploading later will not wipe these
               until you save here again.
             </p>
             {loadingStacks ? (
@@ -1051,7 +1086,10 @@ export function ProjectFormPage() {
               </p>
             ) : (
               <div className="mt-6 flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
-                {stackOptions.map((t) => {
+                {[...stackOptions].sort((a, b) => {
+                  const found = (t: TechStackItem) => techConfirmContext.detected.includes(stackNumericId(t) ?? -1);
+                  return Number(found(b)) - Number(found(a));
+                }).map((t) => {
                   const id = stackNumericId(t);
                   if (id === null) return null;
                   const active = selectedStackIds.includes(id);

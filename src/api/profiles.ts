@@ -192,6 +192,8 @@ export type Standing = {
   last_push: string | null;
   languages: { name: string; percentage: number }[];
   tech: { name: string; count: number }[];
+  contributions: { project_id: string; title: string; owned: boolean; commits: number; pushes: number; share: number }[];
+  weekly: [number, number][];
   top: Partial<Record<"projects" | "commits" | "pushes" | "connections" | "activity", number>>;
 };
 

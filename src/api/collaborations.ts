@@ -1,6 +1,6 @@
 import { api } from "./client";
 import { demoFallback, assetUrlOrNull } from "./config";
-import type { CollabPermissions, CollaborationRequest, ProjectCollaborator } from "../types/network";
+import type { AccessLevel, CollabPermissions, CollaborationRequest, ProjectCollaborator } from "../types/network";
 import { INITIAL_PROJECT_COLLABORATORS, INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
 const STORAGE_KEY_COLLABORATORS = "devzgo_collaborators_v1";
@@ -60,17 +60,32 @@ function mapCollaborator(c: Record<string, unknown>): ProjectCollaborator {
     role: (c.role || "Collaborator") as string,
     createdAt: (c.created_at || c.joined_at || c.createdAt || new Date().toISOString()) as string,
     isOwner: Boolean(c.is_owner),
+    access: (c.access as ProjectCollaborator["access"]) ?? "commenter",
+    focus: (c.focus as string | null | undefined) ?? null,
     permissions: (c.permissions as CollabPermissions | undefined) ?? NO_PERMISSIONS,
   };
 }
 
-export const NO_PERMISSIONS: CollabPermissions = { can_edit_details: false, can_manage_files: false, can_view_secrets: false };
+export const NO_PERMISSIONS: CollabPermissions = {
+  can_edit_details: false, can_manage_files: false, can_view_secrets: false, can_comment: false, can_manage_team: false,
+};
+
+export const ACCESS_LEVELS: { value: AccessLevel; label: string; detail: string }[] = [
+  { value: "viewer", label: "Viewer", detail: "Sees the project and its files" },
+  { value: "commenter", label: "Commenter", detail: "Viewer, plus comments" },
+  { value: "editor", label: "Editor", detail: "Commenter, plus edits details and files" },
+  { value: "manager", label: "Manager", detail: "Editor, plus secret files and inviting people" },
+];
+export const accessLabel = (value?: string | null) =>
+  value === "owner" ? "Owner" : ACCESS_LEVELS.find((level) => level.value === value)?.label ?? "Commenter";
 
 type RawUser = { id: string; username: string; full_name?: string | null; headline?: string | null; avatar_url?: string | null };
 export type MyCollabStatus = {
   status: "owner" | "member" | "requested" | "invited" | "none";
   request_id?: string | null;
   invitation_id?: string | null;
+  access?: AccessLevel | "owner" | null;
+  focus?: string | null;
   permissions: CollabPermissions;
 };
 export type Invitation = {
@@ -81,6 +96,7 @@ export type Invitation = {
   invitee: RawUser;
   role: string;
   message?: string | null;
+  access: AccessLevel;
   permissions: CollabPermissions;
   expires_at: string;
 };
@@ -96,15 +112,17 @@ export const searchInvitees = (projectId: string, q: string) => get<Invitee[]>(`
 export const fetchUserCollaborations = (userId: string) =>
   get<{ id: string; title: string; contribution_info?: string | null; owner_username?: string | null }[]>(`/profiles/${userId}/collaborations`);
 
-export const inviteCollaborator = (projectId: string, body: { username: string; role: string; permissions: CollabPermissions }) =>
+export const inviteCollaborator = (projectId: string, body: { username: string; role: string; access: AccessLevel; message?: string }) =>
   api.post(`${base(projectId)}/invitations`, body);
 export const answerInvitation = (id: string, answer: "accept" | "decline") => api.put(`/collaborations/invitations/${id}/${answer}`);
 export const revokeInvitation = (id: string) => api.delete(`/collaborations/invitations/${id}`);
 export const withdrawCollabRequest = (id: string) => api.delete(`/collaborations/requests/${id}`);
 export const leaveProject = (projectId: string) => api.delete(`${base(projectId)}/members/me`);
 export const removeMember = (projectId: string, userId: string) => api.delete(`${base(projectId)}/members/${userId}`);
-export const updateMemberPermissions = (projectId: string, userId: string, permissions: CollabPermissions) =>
-  api.patch(`${base(projectId)}/members/${userId}`, permissions);
+export const updateMemberAccess = (projectId: string, userId: string, access: AccessLevel) =>
+  api.patch(`${base(projectId)}/members/${userId}`, { access });
+export const setMyFocus = (projectId: string, focus: string) =>
+  api.patch<{ focus: string | null }>(`${base(projectId)}/focus`, { focus });
 
 function mapCollabRequest(r: Record<string, unknown>): CollaborationRequest {
   const u = ((r.requester || r.user) as Record<string, unknown>) || {};
@@ -206,10 +224,11 @@ export async function requestCollaboration(
 
 export async function acceptCollaborationRequest(
   requestId: string,
-  projectId?: string
+  projectId?: string,
+  access: AccessLevel = "commenter"
 ): Promise<void> {
   try {
-    await api.put(`/collaborations/requests/${requestId}/accept`);
+    await api.put(`/collaborations/requests/${requestId}/accept`, { access });
     return;
   } catch (err) {
     demoFallback(err);

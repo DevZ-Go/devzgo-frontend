@@ -38,7 +38,10 @@ export interface ApiProject {
   comments_count?: number;
   comments_enabled?: boolean;
   /** What this viewer may do (single project responses only) */
-  access?: { owner: boolean; member: boolean; view: boolean; edit: boolean; files: boolean; secrets: boolean } | null;
+  access?: {
+    owner: boolean; member: boolean; view: boolean; edit: boolean; files: boolean; secrets: boolean;
+    comment?: boolean; manage_team?: boolean;
+  } | null;
   owner?: ApiProjectOwner;
   owner_username?: string;
   /** ISO timestamp from the backend (used to keep TV world positions stable) */

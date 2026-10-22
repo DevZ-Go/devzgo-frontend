@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { fetchStanding } from "../api/profiles";
 import { ui } from "../styles/editorial";
+import { WeeklyCommits } from "./WeeklyCommits";
 
 const BARS = [
   { key: "projects", label: "Projects", color: "bg-maroon-800" },
@@ -102,9 +104,41 @@ export function CandidateStanding({ userId }: { userId: string }) {
           )}
         </div>
       </div>
+      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+        <h3 className="font-serif text-xl text-stone-900">GitHub contributions</h3>
+        {(data.contributions ?? []).length === 0 ? (
+          <p className="mt-3 text-sm text-stone-500">No commits or pushes from imported repositories are visible yet.</p>
+        ) : (
+          <>
+            {(data.weekly ?? []).length > 0 && <div className="mt-4"><WeeklyCommits weekly={data.weekly} /></div>}
+            <ul className="mt-5 space-y-4">
+              {data.contributions.map((row) => (
+                <li key={row.project_id}>
+                  <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Link to={`/project/${row.project_id}`} className="truncate font-semibold text-maroon-800 hover:underline">{row.title}</Link>
+                      <span className="shrink-0 rounded-full bg-[#fced96] px-2 py-0.5 text-[11px] font-semibold text-stone-800">
+                        {row.owned ? "Owner" : "Contributor"}
+                      </span>
+                    </span>
+                    <span className="tabular-nums text-stone-500">
+                      <span className="font-semibold text-stone-800">{row.commits}</span> {row.commits === 1 ? "commit" : "commits"}
+                      {" "}· {row.pushes} {row.pushes === 1 ? "push" : "pushes"} · {row.share}% of the repository
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+                    <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.max(2, row.share)}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
       <p className="text-xs leading-relaxed text-stone-500">
-        Counts use projects, connections, and activity this person has made visible to you. Commits are the repository
-        total when a GitHub repo was imported. Pushes are the recent push events GitHub returned at that import, up to 100.
+        Counts use projects, connections, and activity this person has made visible to you. Commits and pushes come from
+        repositories imported from GitHub and count only the ones this person made, matched by their linked GitHub account
+        or email. Pushes cover what GitHub shared at each import or refresh.
       </p>
     </section>
   );
