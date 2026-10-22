@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CircleHelp, Compass, Inbox, ListChecks, Loader2, Search, ShieldCheck } from "lucide-react";
+import { ArrowRight, CircleHelp, ClipboardCheck, Compass, FileSearch, Inbox, ListChecks, Loader2, Search, ShieldCheck } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { openRecruiterTour } from "../components/tour/events";
@@ -10,6 +10,8 @@ import { ui } from "../styles/editorial";
 
 const ACTIONS = [
   { to: "/recruit/talent", label: "Find talent", body: "Search by tech and evidence", icon: Search },
+  { to: "/recruit/match", label: "Match a role", body: "Rank developers against a job description", icon: FileSearch },
+  { to: "/recruit/challenges", label: "Challenges", body: "Set technical work and review it", icon: ClipboardCheck },
   { to: "/explore", label: "Explore projects", body: "Browse public work", icon: Compass },
   { to: "/recruit/shortlists", label: "Shortlists", body: "Private lists and notes", icon: ListChecks },
   { to: "/recruit/inbox", label: "Inbox", body: "Contact requests and replies", icon: Inbox },
@@ -71,7 +73,7 @@ export function RecruiterDashboardPage() {
           )}
         </section>
 
-        <section aria-label="Recruiting tools" className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section aria-label="Recruiting tools" className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ACTIONS.map(({ to, label, body, icon: Icon }) => (
             <Link key={to} to={to}
               className="group flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-maroon-300 hover:shadow-md">

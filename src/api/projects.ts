@@ -18,6 +18,10 @@ export interface CreateProjectPayload {
   visibility: ProjectVisibility;
   /** Backend `ProjectCreate.tech_stack_ids` — numeric IDs from GET /projects/techstacks */
   tech_stack_ids: number[];
+  /** Live demo or deployment link; "" clears it. Omit to leave it as it is. */
+  live_url?: string;
+  /** Outcomes the developer reports in their own words. Omit to leave it as it is. */
+  impact_note?: string;
 }
 
 /** Response from POST /projects — enough to chain uploads by id */
@@ -225,6 +229,8 @@ export async function createProject(
       payload.category === "Other" ? payload.category_other?.trim() || null : null,
     visibility: payload.visibility,
     tech_stack_ids: payload.tech_stack_ids,
+    live_url: payload.live_url,
+    impact_note: payload.impact_note,
   };
   const { data } = await api.post<CreateProjectResponse>("/projects", body);
   return data;
@@ -253,6 +259,8 @@ export async function updateProject(
     cover_image_url: payload.cover_image_url ?? null,
     demo_video_url: payload.demo_video_url ?? null,
     comments_enabled: payload.comments_enabled,
+    live_url: payload.live_url,
+    impact_note: payload.impact_note,
   };
   const { data } = await api.put<ApiProject>(`/projects/${projectId}`, body);
   return data;

@@ -7,6 +7,9 @@ import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { CandidateStanding } from "../components/CandidateStanding";
 import { ShortlistPicker } from "../components/recruiting/ShortlistPicker";
+import { InviteToChallenge } from "../components/recruiting/InviteToChallenge";
+import { SharedAssessments } from "../components/evidence/SharedAssessments";
+import { SkillMatrix } from "../components/evidence/SkillMatrix";
 import { mapProfile } from "../api/profiles";
 import {
   ENTRY_STATUSES, WORK_TYPES, fetchCandidate, sendRecruitmentRequest, updateEntry, type CandidateView, type EntryStatus,
@@ -253,6 +256,9 @@ export function CandidatePage() {
               )}
             </section>
 
+            {!p.restricted && <SkillMatrix userId={p.userId} />}
+            <SharedAssessments userId={p.userId} />
+
             <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="collab-title">
               <h2 id="collab-title" className="font-serif text-2xl text-stone-900">Collaboration history</h2>
               {view.collaborations.length === 0 ? (
@@ -310,6 +316,12 @@ export function CandidatePage() {
               <h2 id="contact-title" className="font-serif text-xl text-stone-900">Contact</h2>
               <div className="mt-3"><ContactPanel view={view} candidateId={p.userId} /></div>
             </section>
+            {!p.restricted && (
+              <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm" aria-labelledby="challenge-title">
+                <h2 id="challenge-title" className="font-serif text-xl text-stone-900">Technical challenge</h2>
+                <div className="mt-3"><InviteToChallenge developerId={p.userId} /></div>
+              </section>
+            )}
             <p className="flex items-start gap-2 text-xs leading-relaxed text-stone-500">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest-700" />
               You see only what {name} has made visible to you. Private projects, unpublished wraps and hidden counts never appear.

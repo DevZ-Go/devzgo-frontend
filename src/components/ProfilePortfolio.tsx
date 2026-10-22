@@ -5,6 +5,8 @@ import { ArrowUpRight, FileText, Github, Globe, Heart, Linkedin, MapPin } from "
 import { uploadResume } from "../api/profiles";
 import { fetchUserCollaborations } from "../api/collaborations";
 import { queryKeys } from "../api/queryKeys";
+import { SharedAssessments } from "./evidence/SharedAssessments";
+import { SkillMatrix } from "./evidence/SkillMatrix";
 import type { DeveloperProfile } from "../types/network";
 import type { ApiProject, Project } from "../types/project";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -229,6 +231,8 @@ export function ProfilePortfolio({
             )}
           </Card>
 
+          <SkillMatrix userId={userId} own={own} />
+
           {joined.length > 0 && (
             <Card title="Collaborations">
               <ul className="divide-y divide-stone-100">
@@ -246,6 +250,8 @@ export function ProfilePortfolio({
               </ul>
             </Card>
           )}
+
+          <SharedAssessments userId={userId} own={own} />
         </div>
 
         <aside className="min-w-0 space-y-6">
