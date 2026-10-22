@@ -1,32 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
+import { ArrowLeft, Code2, ExternalLink, Github, Loader2, Pencil, Trash2, User, Heart } from "lucide-react";
 import { ProjectQualityReport } from "../components/evidence/ProjectQualityReport";
+import { FilePreview } from "../components/files/FilePreview";
 import { useProjectLike } from "../hooks/useProjectLike";
-import Prism from "prismjs";
-import "prismjs/themes/prism-tomorrow.css";
-import "prismjs/components/prism-markup";
-import "prismjs/components/prism-css";
-import "prismjs/components/prism-clike";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-typescript";
-import "prismjs/components/prism-jsx";
-import "prismjs/components/prism-tsx";
-import "prismjs/components/prism-json";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-java";
-import "prismjs/components/prism-bash";
-import "prismjs/components/prism-yaml";
-import "prismjs/components/prism-markdown";
 import { Navbar } from "../components/Navbar";
 import { ProjectComments } from "../components/ProjectComments";
 import { TeamPanel } from "../components/TeamPanel";
 import { GitHubInsights } from "../components/GitHubInsights";
+import { ProjectSourceLine } from "../components/ProjectSourceLine";
 import {
   deleteProject,
   fetchProject,
-  fetchProjectFileBlob,
-  fetchProjectFileContent,
   fetchProjectFiles,
 } from "../api";
 import type { ProjectFileEntry } from "../api";
@@ -34,10 +19,7 @@ import { resolveApiAssetUrl } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { ApiProject } from "../types/project";
 import { ImageWithFallback } from "../components/ImageWithFallback";
-import {
-  FilePathBreadcrumb,
-  ProjectFileTree,
-} from "../components/ProjectFileTree";
+import { ProjectFileTree } from "../components/ProjectFileTree";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
 import { isProjectOwner } from "../utils/projectOwnership";
@@ -51,52 +33,6 @@ const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
 
 const PROJECT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-/** Map API language ids to Prism grammar names. */
-function prismLanguage(apiLanguage: string | null | undefined, path: string | null): string {
-  const fromApi = (apiLanguage ?? "").toLowerCase();
-  const byApi: Record<string, string> = {
-    html: "markup",
-    xml: "markup",
-    css: "css",
-    javascript: "javascript",
-    typescript: "typescript",
-    json: "json",
-    python: "python",
-    java: "java",
-    bash: "bash",
-    yaml: "yaml",
-    markdown: "markdown",
-  };
-  if (fromApi && byApi[fromApi]) return byApi[fromApi];
-  if (!path) return "none";
-  const ext = path.toLowerCase().split(".").pop() ?? "";
-  const byExt: Record<string, string> = {
-    html: "markup",
-    xml: "markup",
-    css: "css",
-    js: "javascript",
-    jsx: "jsx",
-    ts: "typescript",
-    tsx: "tsx",
-    json: "json",
-    py: "python",
-    java: "java",
-    sh: "bash",
-    bash: "bash",
-    yml: "yaml",
-    yaml: "yaml",
-    md: "markdown",
-  };
-  return byExt[ext] ?? "none";
-}
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -112,40 +48,12 @@ export function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [activeFilePath, setActiveFilePath] = useState<string | null>(null);
-  const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
-  const [activeFileContent, setActiveFileContent] = useState<string>("");
-  const [activeFileLanguage, setActiveFileLanguage] = useState<string | null>(null);
-  const [fileStatusMessage, setFileStatusMessage] = useState<string | null>(null);
-  const [loadingFileContent, setLoadingFileContent] = useState(false);
-  const [fileContentError, setFileContentError] = useState<string | null>(null);
+  const activeFilePath = searchParams.get("file");
 
   const fileTreeRoots = useMemo(
     () => buildFileTreeFromEntries(files),
     [files]
   );
-  const highlightedFile = useMemo(() => {
-    const language = prismLanguage(activeFileLanguage, activeFilePath);
-    if (!activeFilePath || !activeFileContent) {
-      return { language: "none", html: "" };
-    }
-    if (language !== "none" && Prism.languages[language]) {
-      return {
-        language,
-        html: Prism.highlight(activeFileContent, Prism.languages[language], language),
-      };
-    }
-    return { language: "none", html: escapeHtml(activeFileContent) };
-  }, [activeFilePath, activeFileContent, activeFileLanguage]);
-
-  // Revoke blob URLs created for image previews.
-  useEffect(() => {
-    return () => {
-      if (activeImageUrl?.startsWith("blob:")) {
-        URL.revokeObjectURL(activeImageUrl);
-      }
-    };
-  }, [activeImageUrl]);
 
   const isOwner =
     project?.is_owner === true ||
@@ -171,15 +79,6 @@ export function ProjectDetailPage() {
     setError(null);
     setFilesError(null);
     setFiles([]);
-    setActiveFilePath(null);
-    setActiveImageUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return null;
-    });
-    setActiveFileContent("");
-    setActiveFileLanguage(null);
-    setFileStatusMessage(null);
-    setFileContentError(null);
 
     (async () => {
       try {
@@ -190,8 +89,6 @@ export function ProjectDetailPage() {
           const fileList = await fetchProjectFiles(id);
           if (cancelled) return;
           setFiles(fileList);
-          const linked = new URLSearchParams(window.location.search).get("file");
-          if (linked && fileList.some((f) => f.file_path === linked && !f.is_directory)) void openFile(id, linked);
         } catch (fe) {
           if (!cancelled) {
             setFilesError(getApiErrorMessage(fe));
@@ -241,7 +138,11 @@ export function ProjectDetailPage() {
   }
 
   function handleFileClick(node: FileTreeNode) {
-    if (id && !node.is_directory) void openFile(id, node.path);
+    if (!id || node.is_directory) return;
+    setSearchParams((params) => {
+      params.set("file", node.path);
+      return params;
+    }, { replace: true });
   }
 
   /** Report evidence opens the file in the Overview viewer, scrolled into view. */
@@ -252,55 +153,7 @@ export function ProjectDetailPage() {
       params.set("file", path);
       return params;
     }, { replace: true });
-    void openFile(id, path);
     requestAnimationFrame(() => document.getElementById("project-files")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }
-
-  async function openFile(projectId: string, path: string) {
-    setActiveFilePath(path);
-    setFileContentError(null);
-    setFileStatusMessage(null);
-    setActiveFileContent("");
-    setActiveFileLanguage(null);
-    setActiveImageUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return null;
-    });
-    setLoadingFileContent(true);
-
-    try {
-      const res = await fetchProjectFileContent(projectId, path);
-      setActiveFileLanguage(res.language ?? null);
-
-      if (res.is_secret && !res.content) {
-        setFileStatusMessage(
-          res.message ??
-            "This file may contain secrets and is hidden from public preview."
-        );
-        return;
-      }
-
-      if (res.is_image) {
-        const blob = await fetchProjectFileBlob(projectId, path);
-        setActiveImageUrl(URL.createObjectURL(blob));
-        setFileStatusMessage(null);
-        return;
-      }
-
-      if (res.is_binary || res.content == null) {
-        setFileStatusMessage(
-          res.message ?? "Binary or unsupported file — preview is not available."
-        );
-        return;
-      }
-
-      setActiveFileContent(res.content);
-      if (res.message) setFileStatusMessage(res.message);
-    } catch (err) {
-      setFileContentError(getApiErrorMessage(err));
-    } finally {
-      setLoadingFileContent(false);
-    }
   }
 
   return (
@@ -384,6 +237,15 @@ export function ProjectDetailPage() {
                     >
                       <ExternalLink className="w-4 h-4 shrink-0" /> Live demo
                     </a>
+                  )}
+                  {id && (
+                    <Link
+                      to={`/project/${id}/workspace`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <Code2 className="w-3.5 h-3.5" />
+                      Code
+                    </Link>
                   )}
                   {id && (
                     <ProjectLikeButton
@@ -497,6 +359,7 @@ export function ProjectDetailPage() {
 
             <section id="project-files" className="scroll-mt-24 rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Project files</h2>
+              <ProjectSourceLine source={project.source} />
               {filesError && (
                 <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
                   {filesError}
@@ -514,49 +377,8 @@ export function ProjectDetailPage() {
                     selectedPath={activeFilePath}
                     onFileClick={handleFileClick}
                   />
-                  <div className="mt-4 rounded-xl border border-slate-200 bg-slate-950 text-slate-100 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-slate-800 text-xs font-mono text-slate-300">
-                      <FilePathBreadcrumb path={activeFilePath} />
-                    </div>
-                    <div className="p-4">
-                      {loadingFileContent ? (
-                        <div className="flex items-center gap-2 text-sm text-slate-300">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Loading file…
-                        </div>
-                      ) : activeImageUrl ? (
-                        <div className="rounded-lg border border-slate-800 bg-slate-900 p-2">
-                          <img
-                            src={activeImageUrl}
-                            alt={activeFilePath ?? "Image preview"}
-                            className="max-h-[420px] w-auto max-w-full mx-auto rounded"
-                          />
-                        </div>
-                      ) : fileContentError ? (
-                        <p className="text-sm text-red-300">{fileContentError}</p>
-                      ) : fileStatusMessage && !activeFileContent ? (
-                        <p className="text-sm text-amber-200/90">{fileStatusMessage}</p>
-                      ) : activeFilePath && activeFileContent ? (
-                        <>
-                          {fileStatusMessage && (
-                            <p className="text-xs text-amber-200/80 mb-2">{fileStatusMessage}</p>
-                          )}
-                          <pre
-                            className="dark-scrollbar text-xs font-mono max-h-[420px] overflow-y-auto overflow-x-auto bg-transparent !m-0 whitespace-pre"
-                            style={{ whiteSpace: "pre" }}
-                          >
-                            <code
-                              className={`language-${highlightedFile.language} !bg-transparent block whitespace-pre`}
-                              dangerouslySetInnerHTML={{ __html: highlightedFile.html }}
-                            />
-                          </pre>
-                        </>
-                      ) : (
-                        <p className="text-sm text-slate-400">
-                          Click any file in the tree to view its content.
-                        </p>
-                      )}
-                    </div>
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                    {id && <FilePreview projectId={id} path={activeFilePath} />}
                   </div>
                 </>
               )}

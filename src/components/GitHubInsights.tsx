@@ -7,6 +7,7 @@ import {
   startGitHubRefresh,
   type GitHubContributor,
 } from "../api/githubHistory";
+import { refreshWorkspace } from "../api/workspace";
 import { getApiErrorMessage } from "../utils/apiError";
 import { ui } from "../styles/editorial";
 import { WeeklyCommits } from "./WeeklyCommits";
@@ -40,13 +41,25 @@ export function GitHubInsights({ projectId }: { projectId: string }) {
   const [starting, setStarting] = useState(false);
   const data = insights.data;
 
-  async function refresh() {
+  async function refresh(kind: "history" | "source" | "analysis") {
     setStarting(true);
     setRefreshError(null);
     try {
-      await startGitHubRefresh(projectId);
+      await refreshWorkspace(projectId, kind);
+      if (kind === "history") await insights.refetch();
     } catch (err) {
-      setRefreshError(getApiErrorMessage(err));
+      const status = (err as { response?: { status?: number } }).response?.status;
+      if (kind === "history" && status === 409) {
+        try {
+          await startGitHubRefresh(projectId);
+          return;
+        } catch (fallback) {
+          setRefreshError(getApiErrorMessage(fallback));
+        }
+      } else {
+        setRefreshError(getApiErrorMessage(err));
+      }
+    } finally {
       setStarting(false);
     }
   }
@@ -75,10 +88,14 @@ export function GitHubInsights({ projectId }: { projectId: string }) {
             </Link>
           )}
           {data.can_refresh && (
-            <button type="button" className={`${ui.btn} ${ui.primary}`} onClick={refresh} disabled={starting}>
-              {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              Refresh from GitHub
-            </button>
+            <>
+              <button type="button" className={`${ui.btn} ${ui.primary}`} onClick={() => void refresh("history")} disabled={starting}>
+                {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                Refresh history
+              </button>
+              <button type="button" className={`${ui.btn} ${ui.neutral}`} onClick={() => void refresh("source")} disabled={starting}>Refresh snapshot</button>
+              <button type="button" className={`${ui.btn} ${ui.neutral}`} onClick={() => void refresh("analysis")} disabled={starting}>Re-analyse</button>
+            </>
           )}
         </div>
       </div>

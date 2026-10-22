@@ -8,6 +8,7 @@ export const queryKeys = {
   project: (id: string) => ["projects", id] as const,
   projectLike: (id: string) => ["projects", id, "like"] as const,
   projectComments: (id: string) => ["projects", id, "comments"] as const,
+  workspace: (id: string) => ["projects", id, "workspace"] as const,
   qualityReport: (id: string) => ["projects", id, "quality-report"] as const,
   skillMatrix: (userId: string) => ["projects", "skill-matrix", userId] as const,
   sharedAssessments: (userId: string) => ["challenges", "shared", userId] as const,
@@ -36,6 +37,7 @@ const AREAS: [string, QueryKey][] = [
   ["comment", queryKeys.feed],
   ["message", queryKeys.messages],
   ["new_message", queryKeys.messages],
+  ["workspace", queryKeys.projects],
   ["notification", queryKeys.notifications],
 ];
 
