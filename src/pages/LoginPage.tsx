@@ -8,6 +8,7 @@ import { useAuth } from "../auth/AuthContext";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton, githubErrorMessage } from "../components/GitHubButton";
+import { PasswordInput } from "../components/PasswordInput";
 
 const bouncy = { type: "spring" as const, stiffness: 300, damping: 22 };
 
@@ -99,10 +100,9 @@ export function LoginPage() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                <input
+                <Lock className="pointer-events-none absolute z-10 left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

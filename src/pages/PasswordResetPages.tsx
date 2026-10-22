@@ -5,6 +5,7 @@ import { AuthLayout } from "../components/AuthLayout";
 import { requestPasswordReset, resetPassword } from "../api/auth";
 import { getApiErrorMessage } from "../utils/apiError";
 import { PasswordField } from "../components/PasswordField";
+import { PasswordInput } from "../components/PasswordInput";
 import { passwordValid } from "../utils/passwordPolicy";
 
 const inputClass =
@@ -98,12 +99,12 @@ export function ResetPasswordPage() {
     <AuthLayout title="Choose a new password" subtitle="Updating it signs you out on other devices">
       <Card onSubmit={submit} busy={busy || !token || !passwordValid(password)} label="Update password" error={error}>
         <div className="relative">
-          <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-300" />
+          <Lock className="pointer-events-none absolute z-10 left-3.5 top-3.5 w-4 h-4 text-gray-300" />
           <PasswordField value={password} onChange={setPassword} className={inputClass} />
         </div>
         <div className="relative">
-          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)}
+          <Lock className="pointer-events-none absolute z-10 left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          <PasswordInput required value={confirm} onChange={(e) => setConfirm(e.target.value)}
             autoComplete="new-password" placeholder="Repeat new password" className={inputClass} />
         </div>
       </Card>

@@ -146,13 +146,19 @@ export interface ProjectFileEntry {
  */
 export async function uploadProjectWorkspace(
   projectId: string,
-  zipFile: File
+  zipFile: File,
+  onProgress?: (percent: number) => void
 ): Promise<WorkspaceUploadResponse> {
   const formData = new FormData();
   formData.append("file", zipFile);
   const { data } = await api.post<WorkspaceUploadResponse>(
     `/projects/${projectId}/workspace/upload`,
-    formData
+    formData,
+    {
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
+      },
+    }
   );
   return data;
 }

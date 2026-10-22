@@ -1,28 +1,53 @@
+import { lazy, type ComponentType } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { ProjectFormPage } from "./pages/ProjectFormPage";
-import { LandingPage } from "./pages/LandingPage";
-import { ProfilePage } from "./pages/ProfilePage";
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { ForgotPasswordPage, ResetPasswordPage } from "./pages/PasswordResetPages";
-import { AuthCallbackPage } from "./pages/AuthCallbackPage";
-import { GitHubOnboardingPage } from "./pages/GitHubOnboardingPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { ExplorePage } from "./pages/ExplorePage";
-import { ThemeSelectPage } from "./pages/ThemeSelectPage";
-import { CardsWorldPage } from "./pages/CardsWorldPage";
-import { StudioWallPage } from "./pages/StudioWallPage";
-import { CatalogPage } from "./pages/CatalogPage";
-import { DevelopersPage } from "./pages/DevelopersPage";
-import { WrapPage } from "./pages/WrapPage";
-import { NetworkPage } from "./pages/NetworkPage";
-import { ConnectionsPage } from "./pages/ConnectionsPage";
-import { PostPage } from "./pages/PostPage";
-import { MessagesPage } from "./pages/MessagesPage";
-import { GitHubImportPage } from "./pages/GitHubImportPage";
+
+const RELOADED_KEY = "devzgo.chunkReload";
+
+/** Loads a page's code when it is first opened. After a deploy, old chunk names are gone, so reload once to fetch the new ones. */
+function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  return lazy(() =>
+    load().then(
+      (module) => {
+        sessionStorage.removeItem(RELOADED_KEY);
+        return { default: module[name] };
+      },
+      (error: unknown) => {
+        if (!sessionStorage.getItem(RELOADED_KEY)) {
+          sessionStorage.setItem(RELOADED_KEY, "1");
+          window.location.reload();
+          return new Promise<never>(() => {});
+        }
+        throw error;
+      }
+    )
+  );
+}
+
+const ProjectFormPage = page(() => import("./pages/ProjectFormPage"), "ProjectFormPage");
+const LandingPage = page(() => import("./pages/LandingPage"), "LandingPage");
+const ProfilePage = page(() => import("./pages/ProfilePage"), "ProfilePage");
+const LoginPage = page(() => import("./pages/LoginPage"), "LoginPage");
+const RegisterPage = page(() => import("./pages/RegisterPage"), "RegisterPage");
+const ForgotPasswordPage = page(() => import("./pages/PasswordResetPages"), "ForgotPasswordPage");
+const ResetPasswordPage = page(() => import("./pages/PasswordResetPages"), "ResetPasswordPage");
+const AuthCallbackPage = page(() => import("./pages/AuthCallbackPage"), "AuthCallbackPage");
+const GitHubOnboardingPage = page(() => import("./pages/GitHubOnboardingPage"), "GitHubOnboardingPage");
+const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
+const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
+const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
+const ThemeSelectPage = page(() => import("./pages/ThemeSelectPage"), "ThemeSelectPage");
+const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
+const StudioWallPage = page(() => import("./pages/StudioWallPage"), "StudioWallPage");
+const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
+const DevelopersPage = page(() => import("./pages/DevelopersPage"), "DevelopersPage");
+const WrapPage = page(() => import("./pages/WrapPage"), "WrapPage");
+const NetworkPage = page(() => import("./pages/NetworkPage"), "NetworkPage");
+const ConnectionsPage = page(() => import("./pages/ConnectionsPage"), "ConnectionsPage");
+const PostPage = page(() => import("./pages/PostPage"), "PostPage");
+const MessagesPage = page(() => import("./pages/MessagesPage"), "MessagesPage");
+const GitHubImportPage = page(() => import("./pages/GitHubImportPage"), "GitHubImportPage");
 
 export const router = createBrowserRouter([
   {
