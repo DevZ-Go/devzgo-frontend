@@ -2,6 +2,7 @@ import { api } from "./client";
 import { demoFallback, USE_MOCK, assetUrlOrNull } from "./config";
 import type { DeveloperProfile } from "../types/network";
 import type { ApiProject } from "../types/project";
+import type { TeamMember } from "./collaborations";
 import { INITIAL_DEMO_USERS } from "../data/networkDemoData";
 
 const STORAGE_KEY_PROFILES = "devzgo_profiles_v1";
@@ -180,7 +181,7 @@ export type CollabGroup = {
   title: string;
   visibility: string;
   role: string;
-  members: { username: string; role: string }[];
+  members: TeamMember[];
 };
 
 export type Standing = {

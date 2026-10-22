@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Loader2,
@@ -21,6 +22,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject } from "../api/projects";
+import { accessLabel, fetchUserCollaborations } from "../api/collaborations";
 import { fetchMyProfile, fetchProfileProjects, fetchUserProfile, PROFILE_ROLES, updateMyProfile } from "../api/profiles";
 import { fetchFeed } from "../api/network";
 import { ConnectButton } from "../components/ConnectButton";
@@ -214,6 +216,23 @@ export function ProfilePage() {
       setSavingProfile(false);
     }
   }
+
+  const workOwnerId = devProfile?.userId || devProfile?.id;
+  const joinedQuery = useQuery({
+    queryKey: ["profile-joined", workOwnerId],
+    queryFn: () => fetchUserCollaborations(workOwnerId!),
+    enabled: Boolean(workOwnerId) && !devProfile?.restricted,
+  });
+  const joined = useMemo(() => (joinedQuery.data ?? []).map((p, i) => ({
+    project: transformApiProject({
+      id: p.id, title: p.title, short_description: p.short_description ?? "", cover_image_url: p.cover_image_url,
+      tech_stacks: p.tech_stacks, owner_username: p.owner_username ?? undefined, likes_count: p.likes_count,
+      is_liked: p.is_liked, comments_count: p.comments_count, visibility: p.visibility ?? undefined,
+    }, i),
+    badge: `${p.contribution_info || "Collaborator"} · ${accessLabel(p.access)}`,
+    canEdit: p.access === "editor" || p.access === "manager",
+  })), [joinedQuery.data]);
+  const workCount = projects.length + joined.length;
 
   const memberSince = formatMemberSince(
     typeof user?.created_at === "string" ? user.created_at : undefined
@@ -444,9 +463,11 @@ export function ProfilePage() {
                 Projects
               </div>
               <p className="text-3xl font-serif font-normal text-stone-900 tabular-nums">
-                {loading ? "—" : projects.length}
+                {loading ? "—" : workCount}
               </p>
-              <p className="text-xs text-stone-400 mt-1">Visible to you</p>
+              <p className="text-xs text-stone-400 mt-1">
+                {joined.length ? `${projects.length} owned · ${joined.length} joined` : "Visible to you"}
+              </p>
             </button>
 
             {isOwnProfile ? (
@@ -531,7 +552,7 @@ export function ProfilePage() {
                 : "border-transparent text-stone-500 hover:text-stone-800"
             }`}
           >
-            Projects ({projects.length})
+            Projects ({workCount})
           </button>
           <button
             type="button"
@@ -578,7 +599,7 @@ export function ProfilePage() {
               </div>
             )}
 
-            {!loading && projects.length === 0 && (
+            {!loading && workCount === 0 && (
               <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-20 text-center shadow-sm">
                 <p className="text-stone-600 mb-6 max-w-md mx-auto text-sm">
                   {isOwnProfile
@@ -604,11 +625,11 @@ export function ProfilePage() {
               </div>
             )}
 
-            {!loading && projects.length > 0 && (
+            {!loading && workCount > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projects.map((project) => (
                   <div key={project.id} className="flex flex-col gap-3">
-                    <ProjectCard project={project} variant="compact" />
+                    <ProjectCard project={project} variant="compact" badge={{ label: "Owner", strong: true }} />
                     {isOwnProfile && (
                       <div className="flex flex-wrap items-center gap-3 px-1 text-xs">
                         <Link
@@ -636,6 +657,26 @@ export function ProfilePage() {
                           <Trash2 className="w-3.5 h-3.5" />
                           {deletingId === project.id ? "Deleting…" : "Delete"}
                         </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {joined.map(({ project, badge, canEdit }) => (
+                  <div key={`joined-${project.id}`} className="flex flex-col gap-3">
+                    <ProjectCard project={project} variant="compact" badge={{ label: badge }} />
+                    {isOwnProfile && (
+                      <div className="flex flex-wrap items-center gap-3 px-1 text-xs">
+                        {canEdit && (
+                          <>
+                            <Link to={`/project/${project.id}/edit`} className="font-semibold text-maroon-700 hover:text-maroon-800">
+                              Edit project
+                            </Link>
+                            <span className="text-stone-300">·</span>
+                          </>
+                        )}
+                        <Link to={`/project/${project.id}`} className="font-medium text-stone-600 hover:text-stone-900">
+                          View details
+                        </Link>
                       </div>
                     )}
                   </div>
