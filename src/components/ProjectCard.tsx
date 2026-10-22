@@ -9,9 +9,11 @@ import { useProjectLike } from "../hooks/useProjectLike";
 interface ProjectCardProps {
   project: Project;
   variant?: "hero" | "featured" | "compact";
+  /** Compact only: a pill in the top corner, such as the viewer's role on the project. */
+  badge?: { label: string; strong?: boolean };
 }
 
-export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) {
+export function ProjectCard({ project, variant = "compact", badge }: ProjectCardProps) {
   const techClass = (tech: string) => getTechStackChipClasses(tech, "onDark");
   const { count, liked } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
 
@@ -139,6 +141,12 @@ export function ProjectCard({ project, variant = "compact" }: ProjectCardProps) 
             className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          {badge && (
+            <span className={`absolute left-3 top-3 z-10 max-w-[80%] truncate rounded-full px-2.5 py-0.5 text-[11px] font-semibold shadow-sm ${
+              badge.strong ? "bg-maroon-800 text-[#fced96]" : "bg-[#fced96] text-stone-900"}`}>
+              {badge.label}
+            </span>
+          )}
           <div className="absolute inset-0 p-5 flex flex-col justify-end">
             <h3 className="text-xl font-bold text-white mb-1.5">{project.title}</h3>
             <p className="text-white/75 text-xs mb-2.5 line-clamp-2">

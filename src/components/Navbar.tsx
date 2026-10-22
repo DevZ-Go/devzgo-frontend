@@ -87,9 +87,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       checkMessages();
     };
     window.addEventListener("devzgo:messages-updated", handleUpdate);
+    window.addEventListener("devzgo:unread-changed", handleUpdate);
     return () => {
       cancelled = true;
       window.removeEventListener("devzgo:messages-updated", handleUpdate);
+      window.removeEventListener("devzgo:unread-changed", handleUpdate);
     };
   }, []);
 
@@ -195,6 +197,23 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     </AnimatePresence>
   );
 
+  const messagesButton = (className: string) => (
+    <Link
+      to="/messages"
+      aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
+      title="Messages"
+      aria-current={isActive("/messages") ? "page" : undefined}
+      className={`relative rounded-xl p-2 transition ${className}`}
+    >
+      <MessageSquare className="h-5 w-5" />
+      {unreadMessages > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#d4a017] px-1 text-[10px] font-bold text-stone-950 ring-2 ring-white dark:ring-stone-900">
+          {unreadMessages > 99 ? "99+" : unreadMessages}
+        </span>
+      )}
+    </Link>
+  );
+
   const menuButton = (className: string) => (
     <button
       type="button"
@@ -240,7 +259,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           <div className="hidden lg:flex items-center gap-6 font-medium">
             {topLink("/network", "Network")}
             {topLink("/explore", "Explore")}
-            {topLink("/messages", unreadMessages > 0 ? `Messages (${unreadMessages})` : "Messages")}
+            {topLink("/messages", "Messages")}
           </div>
 
           <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
@@ -265,6 +284,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
               <span>Wrap</span>
             </Link>
+            {messagesButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white")}
             <NotificationsDropdown className="bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white" />
             <Link to="/profile" className={iconLink} title="My account" aria-label="My account">
               <User className="w-5 h-5 drop-shadow-sm" />
@@ -316,7 +336,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <div className="hidden lg:flex items-center gap-1">
-          {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800" />}
+          {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
           <Link
             to="/add-project"
             className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
@@ -334,7 +354,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <div className="lg:hidden flex items-center gap-1">
-          {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800" />}
+          {messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
+          {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
           {menuButton("text-stone-900 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-800")}
         </div>
       </div>

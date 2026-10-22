@@ -109,8 +109,37 @@ export const fetchMyCollabStatus = (projectId: string) => get<MyCollabStatus>(`$
 export const fetchProjectInvitations = (projectId: string) => get<Invitation[]>(`${base(projectId)}/invitations`);
 export const fetchMyInvitations = () => get<Invitation[]>("/collaborations/invitations/mine");
 export const searchInvitees = (projectId: string, q: string) => get<Invitee[]>(`${base(projectId)}/invitee-search`, { q });
-export const fetchUserCollaborations = (userId: string) =>
-  get<{ id: string; title: string; contribution_info?: string | null; owner_username?: string | null }[]>(`/profiles/${userId}/collaborations`);
+export type TeamMember = {
+  user_id?: string | null;
+  username: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  role: string;
+  access?: AccessLevel | "owner" | null;
+  focus?: string | null;
+};
+export type JoinedProject = {
+  id: string;
+  title: string;
+  short_description?: string | null;
+  cover_image_url?: string | null;
+  tech_stacks: string[];
+  category?: string | null;
+  github_url?: string | null;
+  contribution_info?: string | null;
+  owner_username?: string | null;
+  owner_avatar_url?: string | null;
+  visibility?: string | null;
+  access: AccessLevel;
+  focus?: string | null;
+  joined_at?: string | null;
+  languages: { name: string; percentage: number }[];
+  team: TeamMember[];
+  likes_count: number;
+  is_liked: boolean;
+  comments_count: number;
+};
+export const fetchUserCollaborations = (userId: string) => get<JoinedProject[]>(`/profiles/${userId}/collaborations`);
 
 export const inviteCollaborator = (projectId: string, body: { username: string; role: string; access: AccessLevel; message?: string }) =>
   api.post(`${base(projectId)}/invitations`, body);

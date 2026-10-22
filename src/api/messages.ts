@@ -45,6 +45,7 @@ export function mapMessage(m: Record<string, unknown>): Message {
 export interface ChatRoomSummary {
   id: string;
   title: string;
+  avatarUrl: string | null;
   projectId: string | null;
   memberCount: number;
   unreadCount: number;
@@ -56,6 +57,7 @@ function mapRoom(raw: Record<string, unknown>): ChatRoomSummary {
   return {
     id: String(raw.id),
     title: String(raw.title || "Group"),
+    avatarUrl: assetUrlOrNull(raw.avatar_url ?? raw.avatarUrl),
     projectId: raw.project_id ? String(raw.project_id) : raw.projectId ? String(raw.projectId) : null,
     memberCount: Number(raw.member_count ?? raw.memberCount ?? 0),
     unreadCount: Number(raw.unread_count ?? raw.unreadCount ?? 0),
@@ -72,6 +74,44 @@ export async function fetchGroups(): Promise<ChatRoomSummary[]> {
 export async function createGroup(title: string, memberIds: string[]): Promise<ChatRoomSummary> {
   const res = await api.post("/messages/groups", { title, member_ids: memberIds });
   return mapRoom(res.data);
+}
+
+export interface ChatRoomMember {
+  user_id: string;
+  username: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  is_admin: boolean;
+  team_role?: string | null;
+  joined_at?: string | null;
+}
+
+export interface ChatRoomDetails {
+  id: string;
+  title: string;
+  avatar_url?: string | null;
+  project_id?: string | null;
+  project_title?: string | null;
+  created_at?: string | null;
+  is_admin: boolean;
+  members: ChatRoomMember[];
+}
+
+const groupUrl = (roomId: string) => `/messages/groups/${roomId}`;
+
+export const fetchGroupDetails = async (roomId: string): Promise<ChatRoomDetails> =>
+  (await api.get(`${groupUrl(roomId)}/details`)).data;
+export const renameGroup = async (roomId: string, title: string): Promise<ChatRoomDetails> =>
+  (await api.patch(groupUrl(roomId), { title })).data;
+export const addGroupMembers = async (roomId: string, memberIds: string[]): Promise<ChatRoomDetails> =>
+  (await api.post(`${groupUrl(roomId)}/members`, { member_ids: memberIds })).data;
+export const removeGroupMember = async (roomId: string, userId: string): Promise<ChatRoomDetails> =>
+  (await api.delete(`${groupUrl(roomId)}/members/${userId}`)).data;
+export const leaveGroup = (roomId: string) => api.post(`${groupUrl(roomId)}/leave`);
+export async function setGroupPhoto(roomId: string, file: File): Promise<ChatRoomDetails> {
+  const body = new FormData();
+  body.append("file", file);
+  return (await api.post(`${groupUrl(roomId)}/photo`, body)).data;
 }
 
 export async function fetchGroupThread(roomId: string): Promise<Message[]> {
@@ -190,9 +230,18 @@ export async function sendMessage(receiverId: string, content: string): Promise<
   return newMsg;
 }
 
+/** Tells the navbar to recount unread messages. */
+export const announceUnreadChange = () => window.dispatchEvent(new CustomEvent("devzgo:unread-changed"));
+
+export async function markGroupRead(roomId: string): Promise<void> {
+  await api.put(`/messages/groups/${roomId}/read`);
+  announceUnreadChange();
+}
+
 export async function markConversationRead(otherUserId: string): Promise<void> {
   try {
     await api.put(`/messages/read/${otherUserId}`);
+    announceUnreadChange();
     return;
   } catch (err) {
     demoFallback(err);
