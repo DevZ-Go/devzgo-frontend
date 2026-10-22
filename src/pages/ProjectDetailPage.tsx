@@ -20,6 +20,7 @@ import "prismjs/components/prism-markdown";
 import { Navbar } from "../components/Navbar";
 import { ProjectComments } from "../components/ProjectComments";
 import { TeamPanel } from "../components/TeamPanel";
+import { GitHubInsights } from "../components/GitHubInsights";
 import {
   deleteProject,
   fetchProject,
@@ -437,6 +438,8 @@ export function ProjectDetailPage() {
 
             {id && <TeamPanel projectId={id} projectTitle={project.title} />}
 
+            {id && project.github_url && <GitHubInsights projectId={id} />}
+
             <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Project files</h2>
               {filesError && (
@@ -504,7 +507,8 @@ export function ProjectDetailPage() {
               )}
             </section>
 
-            {id && <ProjectComments projectId={id} enabled={project.comments_enabled !== false} signedIn={Boolean(token)} />}
+            {id && <ProjectComments projectId={id} enabled={project.comments_enabled !== false} signedIn={Boolean(token)}
+              readOnly={Boolean(project.access?.member && project.access.comment === false)} />}
           </article>
         )}
       </main>
