@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   CalendarDays,
   CircleHelp,
+  ClipboardCheck,
   Compass,
+  FileSearch,
   FolderPlus,
   Home,
   Inbox,
@@ -38,6 +40,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/explore", label: "Explore", icon: Compass },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/wrap", label: "Wrap", icon: CalendarDays },
+  { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
@@ -45,6 +48,8 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
 const RECRUITER_NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/recruit", label: "Dashboard", icon: LayoutDashboard },
   { to: "/recruit/talent", label: "Find talent", icon: Search },
+  { to: "/recruit/match", label: "Match", icon: FileSearch },
+  { to: "/recruit/challenges", label: "Challenges", icon: ClipboardCheck },
   { to: "/explore", label: "Explore projects", icon: Compass },
   { to: "/recruit/shortlists", label: "Shortlists", icon: ListChecks },
   { to: "/recruit/inbox", label: "Inbox", icon: Inbox },
@@ -349,7 +354,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   }
 
   const linkClass = (path: string) =>
-    `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+    `flex items-center gap-2 whitespace-nowrap px-2 xl:px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
       isActive(path)
         ? "bg-maroon-100 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 font-semibold"
         : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60"

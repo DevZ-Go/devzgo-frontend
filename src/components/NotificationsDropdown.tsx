@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Bell, Briefcase, CheckCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
+import { Bell, Briefcase, CheckCheck, ClipboardCheck, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
 
@@ -42,6 +42,9 @@ const LABELS: Record<string, string> = {
   recruitment_request: "Recruiter",
   recruitment_accepted: "Recruiter",
   recruitment_declined: "Recruiter",
+  challenge_invitation: "Challenge",
+  challenge_submission: "Challenge",
+  challenge_feedback: "Challenge",
 };
 
 function TypeIcon({ type }: { type: string }) {
@@ -53,6 +56,7 @@ function TypeIcon({ type }: { type: string }) {
   if (type.startsWith("connection")) return <UserPlus className={`${cls} text-forest-800`} />;
   if (type.startsWith("collaboration")) return <Users className={`${cls} text-maroon-800`} />;
   if (type.startsWith("recruitment")) return <Briefcase className={`${cls} text-maroon-800`} />;
+  if (type.startsWith("challenge")) return <ClipboardCheck className={`${cls} text-maroon-800`} />;
   return <Sparkles className={`${cls} text-stone-600`} />;
 }
 
@@ -65,6 +69,9 @@ function destination(notif: NotificationItem): string {
   if (notif.type === "recruitment_request") return "/opportunities";
   if (notif.type === "recruitment_accepted") return `/messages?user=${notif.actorId}`;
   if (notif.type === "recruitment_declined") return "/recruit/inbox";
+  if (notif.type === "challenge_invitation") return UUID.test(related) ? `/assessments/${related}` : "/assessments";
+  if (notif.type === "challenge_feedback") return "/assessments";
+  if (notif.type === "challenge_submission") return UUID.test(related) ? `/recruit/challenges/${related}` : "/recruit/challenges";
   if (
     ["project_like", "project_comment", "project_share", "collaboration_request", "collaboration_accepted", "collaboration_invitation", "collaboration_joined"].includes(notif.type)
     && UUID.test(related)
