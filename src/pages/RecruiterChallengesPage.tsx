@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, ExternalLink, Loader2, Pencil, Plus, Send, Trash2, Users } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
+import { Select } from "../components/ui/Select";
 import {
   deleteChallenge, fetchInvitations, fetchMyChallenges, fetchSubmissions, saveReview, setChallengeState, withdrawInvitation,
   type Rating, type RecruiterChallenge, type Submission,
@@ -300,9 +301,11 @@ export function RecruiterChallengePage() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Compare</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       {[leftId || rows[0]?.id, rightId || rows[1]?.id].map((value, index) => (
-                        <select key={index} value={value} onChange={(e) => (index === 0 ? setLeftId : setRightId)(e.target.value)} className={ui.input} aria-label={index === 0 ? "First submission" : "Second submission"}>
-                          {rows.map((row) => <option key={row.id} value={row.id}>{row.developer.full_name || row.developer.username}</option>)}
-                        </select>
+                        <Select
+                          key={index} value={value ?? ""} onChange={(v) => (index === 0 ? setLeftId : setRightId)(v)} className={ui.input}
+                          aria-label={index === 0 ? "First submission" : "Second submission"}
+                          options={rows.map((row) => ({ value: row.id, label: row.developer.full_name || row.developer.username }))}
+                        />
                       ))}
                     </div>
                     <div className="mt-3 grid gap-3 lg:grid-cols-2">

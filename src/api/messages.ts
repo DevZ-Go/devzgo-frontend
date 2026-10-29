@@ -27,7 +27,19 @@ function saveLocalMessages(messages: Record<string, Message[]>) {
   }
 }
 
+function mapReaction(raw: unknown): Message["reactions"] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const emoji = String(row.emoji || "");
+    if (!emoji) return [];
+    return [{ emoji, count: Number(row.count || 0), mine: Boolean(row.mine) }];
+  });
+}
+
 export function mapMessage(m: Record<string, unknown>): Message {
+  const kind = m.media_kind || m.mediaKind;
   return {
     id: String(m.id),
     senderId: (m.sender_id || m.senderId || "") as string,
@@ -38,6 +50,11 @@ export function mapMessage(m: Record<string, unknown>): Message {
     isOutgoing: Boolean(m.is_outgoing ?? m.isOutgoing ?? false),
     senderUsername: (m.sender_username || m.senderUsername || undefined) as string | undefined,
     senderName: (m.sender_name || m.senderName || undefined) as string | undefined,
+    senderAvatarUrl: assetUrlOrNull(m.sender_avatar_url || m.senderAvatarUrl),
+    mediaKind: kind === "image" || kind === "video" || kind === "file" ? kind : null,
+    mediaUrl: (m.media_url || m.mediaUrl || null) as string | null,
+    mediaName: (m.media_name || m.mediaName || null) as string | null,
+    reactions: mapReaction(m.reactions),
     roomId: (m.room_id || m.roomId || undefined) as string | undefined,
   };
 }
@@ -51,6 +68,7 @@ export interface ChatRoomSummary {
   unreadCount: number;
   lastMessage: string | null;
   lastAt: string | null;
+  muted: boolean;
 }
 
 function mapRoom(raw: Record<string, unknown>): ChatRoomSummary {
@@ -63,6 +81,7 @@ function mapRoom(raw: Record<string, unknown>): ChatRoomSummary {
     unreadCount: Number(raw.unread_count ?? raw.unreadCount ?? 0),
     lastMessage: (raw.last_message || raw.lastMessage || null) as string | null,
     lastAt: (raw.last_at || raw.lastAt || null) as string | null,
+    muted: Boolean(raw.muted),
   };
 }
 
@@ -82,6 +101,8 @@ export interface ChatRoomMember {
   full_name?: string | null;
   avatar_url?: string | null;
   is_admin: boolean;
+  /** Group starter, project owner or Manager: always an admin. */
+  admin_fixed?: boolean;
   team_role?: string | null;
   joined_at?: string | null;
 }
@@ -94,6 +115,7 @@ export interface ChatRoomDetails {
   project_title?: string | null;
   created_at?: string | null;
   is_admin: boolean;
+  muted?: boolean;
   members: ChatRoomMember[];
 }
 
@@ -107,6 +129,10 @@ export const addGroupMembers = async (roomId: string, memberIds: string[]): Prom
   (await api.post(`${groupUrl(roomId)}/members`, { member_ids: memberIds })).data;
 export const removeGroupMember = async (roomId: string, userId: string): Promise<ChatRoomDetails> =>
   (await api.delete(`${groupUrl(roomId)}/members/${userId}`)).data;
+export async function setGroupAdmin(roomId: string, userId: string, admin: boolean): Promise<ChatRoomDetails> {
+  const url = `${groupUrl(roomId)}/admins/${userId}`;
+  return (admin ? await api.post(url) : await api.delete(url)).data;
+}
 export const leaveGroup = (roomId: string) => api.post(`${groupUrl(roomId)}/leave`);
 export async function setGroupPhoto(roomId: string, file: File): Promise<ChatRoomDetails> {
   const body = new FormData();
@@ -119,8 +145,17 @@ export async function fetchGroupThread(roomId: string): Promise<Message[]> {
   return Array.isArray(res.data) ? res.data.map(mapMessage) : [];
 }
 
-export async function sendGroupMessage(roomId: string, content: string): Promise<Message> {
-  const res = await api.post(`/messages/groups/${roomId}`, { content });
+export interface OutgoingAttachment {
+  mediaKey: string;
+  mediaName?: string | null;
+}
+
+export async function sendGroupMessage(roomId: string, content: string, media?: OutgoingAttachment): Promise<Message> {
+  const res = await api.post(`/messages/groups/${roomId}`, {
+    content,
+    media_key: media?.mediaKey || undefined,
+    media_name: media?.mediaName || undefined,
+  });
   return mapMessage(res.data);
 }
 
@@ -137,6 +172,9 @@ function mapConversation(c: Record<string, unknown>): Conversation {
     },
     lastMessage: mapMessage(last),
     unreadCount: (c.unread_count ?? c.unreadCount ?? 0) as number,
+    muted: Boolean(c.muted),
+    relation: c.relation === "block" || c.relation === "restrict" ? c.relation : null,
+    blockedMe: Boolean(c.blocked_me ?? c.blockedMe),
   };
 }
 
@@ -197,11 +235,13 @@ export async function fetchConversationThread(otherUserId: string): Promise<Mess
   return thread;
 }
 
-export async function sendMessage(receiverId: string, content: string): Promise<Message> {
+export async function sendMessage(receiverId: string, content: string, media?: OutgoingAttachment): Promise<Message> {
   try {
     const res = await api.post("/messages", {
       receiver_id: receiverId,
       content,
+      media_key: media?.mediaKey || undefined,
+      media_name: media?.mediaName || undefined,
     });
     if (res.data) {
       return mapMessage(res.data);
@@ -273,4 +313,23 @@ export async function fetchUnreadMessagesCount(): Promise<number> {
     count += thread.filter((m) => !m.read && !m.isOutgoing).length;
   }
   return count;
+}
+
+export type AttachmentKind = "image" | "video" | "file";
+
+export async function uploadChatAttachment(
+  file: File,
+): Promise<{ mediaKey: string; mediaKind: AttachmentKind; mediaName: string | null }> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await api.post("/messages/attachments", body);
+  const raw = res.data?.media_kind;
+  const kind: AttachmentKind = raw === "video" || raw === "file" ? raw : "image";
+  return { mediaKey: String(res.data.media_key), mediaKind: kind, mediaName: res.data?.media_name ?? null };
+}
+
+export async function reactToMessage(messageId: string, emoji: string, roomId?: string): Promise<Message> {
+  const url = roomId ? `/messages/groups/${roomId}/${messageId}/reactions` : `/messages/${messageId}/reactions`;
+  const res = await api.post(url, { emoji });
+  return mapMessage(res.data);
 }

@@ -5,6 +5,7 @@ import axios from "axios";
 import { Activity, ArrowLeft, BadgeCheck, Briefcase, CalendarDays, Code2, ExternalLink, FileText, GitBranch, Globe, Heart, Linkedin, Loader2, Lock, MapPin, Send, ShieldCheck, Users } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
+import { Select } from "../components/ui/Select";
 import { CandidateStanding } from "../components/CandidateStanding";
 import { ShortlistPicker } from "../components/recruiting/ShortlistPicker";
 import { InviteToChallenge } from "../components/recruiting/InviteToChallenge";
@@ -43,11 +44,12 @@ function MembershipRow({ row, candidateId }: { row: CandidateView["shortlists"][
         <Link to={`/recruit/shortlists/${row.shortlist_id}`} className="truncate text-sm font-semibold text-stone-900 hover:text-maroon-800">
           {row.shortlist_name}
         </Link>
-        <select value={row.status} aria-label={`Status in ${row.shortlist_name}`}
-          onChange={(e) => save.mutate({ status: e.target.value as EntryStatus })}
-          className="rounded-lg border border-stone-200 bg-white px-2 py-1 text-xs">
-          {ENTRY_STATUSES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-        </select>
+        <Select
+          value={row.status} aria-label={`Status in ${row.shortlist_name}`}
+          onChange={(v) => save.mutate({ status: v as EntryStatus })}
+          options={ENTRY_STATUSES}
+          className="w-36 rounded-lg border border-stone-200 bg-white px-2 py-1 text-xs"
+        />
       </div>
       <label className="mt-2 block text-[11px] font-semibold uppercase tracking-wider text-stone-500">
         Private note
@@ -100,10 +102,11 @@ function ContactPanel({ view, candidateId }: { view: CandidateView; candidateId:
       </label>
       <label className="block text-xs font-semibold text-stone-600">
         Work type
-        <select value={workType} onChange={(e) => setWorkType(e.target.value)} className={`${ui.input} mt-1`}>
-          <option value="">Not specified</option>
-          {WORK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+        <Select
+          aria-label="Work type" value={workType} onChange={setWorkType}
+          options={[["", "Not specified"], ...WORK_TYPES.map((t) => [t, t] as const)]}
+          className={`${ui.input} mt-1 font-normal`}
+        />
       </label>
       <label className="block text-xs font-semibold text-stone-600">
         Message

@@ -74,7 +74,19 @@ function mapProfile(p: Record<string, unknown>): DeveloperProfile {
     notifyConnections: p.notify_connections !== false && p.notifyConnections !== false,
     notifyMessages: p.notify_messages !== false && p.notifyMessages !== false,
     notifyCollaborations: p.notify_collaborations !== false && p.notifyCollaborations !== false,
-    notifyChallenges: p.notify_challenges === true || p.notifyChallenges === true,
+    notifyChallenges: p.notify_challenges === true || p.notifyChallenges === true || p.challenge_notices === "always" || p.challenge_notices === "open_to_work" || p.challengeNotices === "always" || p.challengeNotices === "open_to_work",
+    challengeNotices: p.challenge_notices === "always" || p.challenge_notices === "open_to_work" || p.challenge_notices === "off"
+      ? p.challenge_notices
+      : p.challengeNotices === "always" || p.challengeNotices === "open_to_work" || p.challengeNotices === "off"
+        ? p.challengeNotices
+        : p.notify_challenges === true || p.notifyChallenges === true
+          ? "always"
+          : "off",
+    challengeInvites: p.challenge_invites === "off" || p.challenge_invites === "open_to_work" || p.challenge_invites === "always"
+      ? p.challenge_invites
+      : p.challengeInvites === "off" || p.challengeInvites === "open_to_work" || p.challengeInvites === "always"
+        ? p.challengeInvites
+        : "always",
     startPage: p.start_page === "resume" || p.startPage === "resume" ? "resume" : "home",
     accountType: p.account_type === "recruiter" ? "recruiter" : "developer",
     tourVersion: typeof p.tour_version === "number" ? p.tour_version : null,
@@ -149,6 +161,8 @@ export async function updateMyProfile(
       notify_messages: payload.notifyMessages,
       notify_collaborations: payload.notifyCollaborations,
       notify_challenges: payload.notifyChallenges,
+      challenge_notices: payload.challengeNotices,
+      challenge_invites: payload.challengeInvites,
       start_page: payload.startPage,
       open_to_work: payload.openToWork,
       work_types: payload.workTypes,

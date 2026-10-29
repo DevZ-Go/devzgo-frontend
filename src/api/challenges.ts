@@ -76,7 +76,14 @@ export type Invitation = {
 
 export type DeveloperInvitation = { id: string; status: Invitation["status"]; message: string | null; created_at: string; challenge: ChallengeSummary };
 export type DeveloperSubmission = Submission & { challenge: ChallengeDetail };
-export type Assessments = { invitations: DeveloperInvitation[]; open_challenges: ChallengeSummary[]; submissions: DeveloperSubmission[] };
+export type ChallengeChoice = "off" | "open_to_work" | "always";
+export type Assessments = {
+  invitations: DeveloperInvitation[];
+  open_challenges: ChallengeSummary[];
+  submissions: DeveloperSubmission[];
+  receiving: boolean;
+  challenge_choice: ChallengeChoice;
+};
 
 export type SharedAssessment = {
   submission_id: string;
@@ -150,6 +157,8 @@ export async function fetchAssessments(): Promise<Assessments> {
     invitations: data.invitations.map((i) => ({ ...i, challenge: summary(i.challenge) })),
     open_challenges: data.open_challenges.map(summary),
     submissions: data.submissions.map((s) => submission({ ...s, challenge: summary(s.challenge) })),
+    receiving: data.receiving !== false,
+    challenge_choice: data.challenge_choice === "off" || data.challenge_choice === "open_to_work" ? data.challenge_choice : "always",
   };
 }
 

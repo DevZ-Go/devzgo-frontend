@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Check, CheckCheck, Info, Loader2, MessageSquare, Plus, Search, Send, X } from "lucide-react";
+import { ArrowLeft, BellOff, Loader2, MessageSquare, Paperclip, Plus, Search, Send, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { ChatActionsMenu } from "../components/ChatActionsMenu";
+import { ChatMessage } from "../components/ChatMessage";
 import { GroupDetails } from "../components/GroupDetails";
 import { MemberAvatar } from "../components/MemberAvatar";
 import {
@@ -14,27 +16,47 @@ import {
   mapMessage,
   markConversationRead,
   markGroupRead,
+  reactToMessage,
   sendGroupMessage,
   sendMessage,
+  uploadChatAttachment,
+  type AttachmentKind,
   type ChatRoomSummary,
 } from "../api/messages";
+import { clearPersonSafety, fetchPersonSafety, setGroupMuted, setPersonMuted, setPersonSafety, type PersonSafety } from "../api/safety";
 import { fetchConnections } from "../api/connections";
 import { fetchUserProfile } from "../api/profiles";
 import { useRealtimeEvent } from "../realtime/RealtimeProvider";
-import type { ConnectionUserSummary, Message } from "../types/network";
+import type { ConnectionUserSummary, Message, SafetyRelation } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
 import { assetUrlOrNull } from "../api/config";
 import { getApiErrorMessage } from "../utils/apiError";
 
-function formatMessageTime(isoString: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "numeric" }).format(new Date(isoString));
-  } catch {
-    return "";
-  }
+function threadPreview(content: string, kind?: string | null): string | null {
+  const text = content.trim();
+  if (text) return text;
+  if (kind === "video") return "Video";
+  if (kind === "image") return "Photo";
+  if (kind === "file") return "File";
+  return null;
 }
 
-type PersonRow = { person: ConnectionUserSummary; preview: string | null; unread: number };
+const ACCEPT = [
+  "image/png", "image/jpeg", "image/gif", "image/webp", "video/mp4", "video/webm",
+  ".pdf", ".txt", ".md", ".csv", ".json", ".docx", ".xlsx", ".pptx", ".zip",
+].join(",");
+const LIMIT_MB: Record<AttachmentKind, number> = { image: 8, video: 25, file: 15 };
+const KIND_LABEL: Record<AttachmentKind, string> = { image: "Photo", video: "Video", file: "File" };
+
+function guessKind(file: File): AttachmentKind {
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type.startsWith("image/")) return "image";
+  return "file";
+}
+
+const NO_SAFETY: PersonSafety = { relation: null, blockedMe: false, muted: false };
+
+type PersonRow = { person: ConnectionUserSummary; preview: string | null; unread: number; safety: PersonSafety };
 type Pane = { kind: "dm"; person: ConnectionUserSummary } | { kind: "room"; room: ChatRoomSummary };
 
 export function MessagesPage() {
@@ -58,7 +80,14 @@ export function MessagesPage() {
   const [groupError, setGroupError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<ConnectionUserSummary[]>([]);
   const [detailsFor, setDetailsFor] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<
+    { mediaKey: string; mediaKind: AttachmentKind; mediaName: string | null; name: string } | null
+  >(null);
+  const [uploading, setUploading] = useState(false);
+  const [paneSafety, setPaneSafety] = useState<PersonSafety>(NO_SAFETY);
+  const [safetyBusy, setSafetyBusy] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const loadLists = useCallback(async (openUserId?: string) => {
     try {
@@ -69,15 +98,20 @@ export function MessagesPage() {
       ]);
       const rows = new Map<string, PersonRow>();
       for (const connection of connections.accepted) {
-        rows.set(connection.partner.id, { person: connection.partner, preview: null, unread: 0 });
+        rows.set(connection.partner.id, { person: connection.partner, preview: null, unread: 0, safety: NO_SAFETY });
       }
       for (const conversation of conversations) {
         const id = conversation.otherUser.id;
         const existing = rows.get(id);
         rows.set(id, {
           person: existing?.person ?? conversation.otherUser,
-          preview: conversation.lastMessage.content,
+          preview: threadPreview(conversation.lastMessage.content, conversation.lastMessage.mediaKind),
           unread: conversation.unreadCount,
+          safety: {
+            relation: conversation.relation ?? null,
+            blockedMe: Boolean(conversation.blockedMe),
+            muted: Boolean(conversation.muted),
+          },
         });
       }
       const list = [...rows.values()].sort((a, b) => b.unread - a.unread || (a.person.username || "").localeCompare(b.person.username || ""));
@@ -123,6 +157,15 @@ export function MessagesPage() {
     let cancelled = false;
     setLoadingThread(true);
     setMessages([]);
+    setAttachment(null);
+    setPaneSafety(NO_SAFETY);
+    if (pane.kind === "dm") {
+      void fetchPersonSafety(pane.person.id)
+        .then((safety) => {
+          if (!cancelled) setPaneSafety(safety);
+        })
+        .catch(() => undefined);
+    }
     const run = pane.kind === "dm" ? fetchConversationThread(pane.person.id) : fetchGroupThread(pane.room.id);
     void run
       .then(async (thread) => {
@@ -157,6 +200,13 @@ export function MessagesPage() {
       void markGroupRead(pane.room.id).catch(() => undefined);
     } else if (event.type === "message.read" && pane.kind === "dm" && event.by === pane.person.id) {
       setMessages((prev) => prev.map((m) => ({ ...m, read: true })));
+    } else if (event.type === "message.reaction") {
+      const same =
+        (pane.kind === "dm" && event.with_user === pane.person.id) ||
+        (pane.kind === "room" && event.room_id === pane.room.id);
+      if (!same) return;
+      const run = pane.kind === "dm" ? fetchConversationThread(pane.person.id) : fetchGroupThread(pane.room.id);
+      void run.then(setMessages).catch(() => undefined);
     } else if (event.type === "resync" || event.type === "poll") {
       const run = pane.kind === "dm" ? fetchConversationThread(pane.person.id) : fetchGroupThread(pane.room.id);
       void run.then(setMessages).catch(() => undefined);
@@ -169,19 +219,92 @@ export function MessagesPage() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!pane || !inputContent.trim() || sending) return;
+    if (!pane || sending || uploading) return;
     const content = inputContent.trim();
+    if (!content && !attachment) return;
     setSending(true);
     setSendError(null);
     try {
-      const sent = pane.kind === "dm" ? await sendMessage(pane.person.id, content) : await sendGroupMessage(pane.room.id, content);
+      const sent =
+        pane.kind === "dm"
+          ? await sendMessage(pane.person.id, content, attachment ?? undefined)
+          : await sendGroupMessage(pane.room.id, content, attachment ?? undefined);
       setInputContent("");
+      setAttachment(null);
       setMessages((prev) => [...prev, sent]);
       void loadLists();
     } catch (err) {
       setSendError(getApiErrorMessage(err));
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    const kind = guessKind(file);
+    if (file.size > LIMIT_MB[kind] * 1024 * 1024) {
+      setSendError(`${KIND_LABEL[kind]}s must be ${LIMIT_MB[kind]} MB or smaller.`);
+      return;
+    }
+    setUploading(true);
+    setSendError(null);
+    try {
+      const stored = await uploadChatAttachment(file);
+      setAttachment({ ...stored, name: file.name });
+    } catch (err) {
+      setSendError(getApiErrorMessage(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function applySafety(personId: string, safety: PersonSafety) {
+    setPaneSafety(safety);
+    setPeople((prev) => prev.map((row) => (row.person.id === personId ? { ...row, safety } : row)));
+    announceUnreadChange();
+  }
+
+  async function handleMute(muted: boolean) {
+    if (!pane) return;
+    setSafetyBusy(true);
+    setSendError(null);
+    try {
+      if (pane.kind === "dm") applySafety(pane.person.id, await setPersonMuted(pane.person.id, muted));
+      else {
+        await setGroupMuted(pane.room.id, muted);
+        setRooms((prev) => prev.map((r) => (r.id === pane.room.id ? { ...r, muted } : r)));
+        announceUnreadChange();
+      }
+    } catch (err) {
+      setSendError(getApiErrorMessage(err));
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
+  async function handleRelation(relation: SafetyRelation | null) {
+    if (pane?.kind !== "dm") return;
+    setSafetyBusy(true);
+    setSendError(null);
+    try {
+      const id = pane.person.id;
+      applySafety(id, relation ? await setPersonSafety(id, relation) : await clearPersonSafety(id));
+      if (relation === "block") setContacts((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setSendError(getApiErrorMessage(err));
+    } finally {
+      setSafetyBusy(false);
+    }
+  }
+
+  async function handleReact(messageId: string, emoji: string) {
+    if (!pane) return;
+    try {
+      const updated = await reactToMessage(messageId, emoji, pane.kind === "room" ? pane.room.id : undefined);
+      setMessages((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (err) {
+      setSendError(getApiErrorMessage(err));
     }
   }
 
@@ -327,8 +450,11 @@ export function MessagesPage() {
                             {room.lastMessage ? ` · ${room.lastMessage}` : ""}
                           </span>
                         </span>
+                        {room.muted && <BellOff className="mt-1 h-3.5 w-3.5 shrink-0 text-stone-400" aria-label="Muted" />}
                         {room.unreadCount > 0 && (
-                          <span className="rounded-full bg-maroon-800 px-1.5 text-[10px] font-bold text-white">{room.unreadCount}</span>
+                          <span className={`rounded-full px-1.5 text-[10px] font-bold ${room.muted ? "bg-stone-200 text-stone-600" : "bg-maroon-800 text-white"}`}>
+                            {room.unreadCount}
+                          </span>
                         )}
                       </button>
                     ))
@@ -346,16 +472,27 @@ export function MessagesPage() {
                         }}
                         className={`flex w-full items-start gap-3 px-4 py-3 text-left ${pane?.kind === "dm" && pane.person.id === row.person.id ? "bg-amber-50" : "hover:bg-stone-50"}`}
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#DCFCE7] text-xs font-bold text-[#14532D]">
-                          {(row.person.username || "?").slice(0, 2).toUpperCase()}
-                        </span>
+                        <MemberAvatar name={row.person.fullName || row.person.username} src={row.person.avatarUrl} size="md" className="!h-10 !w-10" />
                         <span className="min-w-0 flex-1">
                           <span className="block break-words font-medium text-stone-900">{row.person.fullName || row.person.username}</span>
                           <span className="block break-all font-mono text-[11px] text-stone-500">@{row.person.username}</span>
-                          {row.preview && <span className="block truncate text-xs text-stone-500">{row.preview}</span>}
+                          {row.safety.relation ? (
+                            <span className="block text-xs font-semibold text-stone-500">
+                              {row.safety.relation === "block" ? "Blocked" : "Restricted"}
+                            </span>
+                          ) : (
+                            row.preview && <span className="block truncate text-xs text-stone-500">{row.preview}</span>
+                          )}
                         </span>
+                        {row.safety.muted && <BellOff className="mt-1 h-3.5 w-3.5 shrink-0 text-stone-400" aria-label="Muted" />}
                         {row.unread > 0 && (
-                          <span className="rounded-full bg-maroon-800 px-1.5 text-[10px] font-bold text-white">{row.unread}</span>
+                          <span
+                            className={`rounded-full px-1.5 text-[10px] font-bold ${
+                              row.safety.muted || row.safety.relation ? "bg-stone-200 text-stone-600" : "bg-maroon-800 text-white"
+                            }`}
+                          >
+                            {row.unread}
+                          </span>
                         )}
                       </button>
                     ))
@@ -403,23 +540,48 @@ export function MessagesPage() {
                           <span className="block break-all font-mono text-[11px] text-stone-500">{subtitle} · tap for info</span>
                         </span>
                       </button>
-                    ) : (
-                      <div className="min-w-0">
-                        <h3 className="break-words font-serif text-lg text-stone-900">{title}</h3>
-                        <p className="break-all font-mono text-[11px] text-stone-500">{subtitle}</p>
-                      </div>
-                    )}
+                    ) : pane.kind === "dm" ? (
+                      <Link to={`/profile/${pane.person.id}`} className="flex min-w-0 items-center gap-3 rounded-xl hover:opacity-80">
+                        <MemberAvatar name={pane.person.fullName || pane.person.username} src={pane.person.avatarUrl} size="sm" />
+                        <span className="min-w-0">
+                          <span className="block break-words font-serif text-lg text-stone-900">{title}</span>
+                          <span className="block break-all font-mono text-[11px] text-stone-500">{subtitle}</span>
+                        </span>
+                      </Link>
+                    ) : null}
                   </div>
                   {pane.kind === "dm" ? (
-                    <Link to={`/profile/${pane.person.id}`} className="shrink-0 text-xs font-semibold text-maroon-800">
-                      Profile
-                    </Link>
+                    <ChatActionsMenu
+                      kind="dm"
+                      name={pane.person.fullName || `@${pane.person.username}`}
+                      profileHref={`/profile/${pane.person.id}`}
+                      muted={paneSafety.muted}
+                      relation={paneSafety.relation}
+                      busy={safetyBusy}
+                      onMute={(value) => void handleMute(value)}
+                      onRelation={(value) => void handleRelation(value)}
+                    />
                   ) : (
-                    <button type="button" onClick={() => setDetailsFor(pane.room.id)} aria-label="Group info" className="shrink-0 rounded-full p-1.5 text-stone-500 hover:bg-stone-100 hover:text-maroon-800">
-                      <Info className="h-5 w-5" />
-                    </button>
+                    <ChatActionsMenu
+                      kind="room"
+                      name={room?.title ?? pane.room.title}
+                      muted={Boolean(room?.muted)}
+                      busy={safetyBusy}
+                      onMute={(value) => void handleMute(value)}
+                      onGroupInfo={() => setDetailsFor(pane.room.id)}
+                    />
                   )}
                 </div>
+                {pane.kind === "dm" && paneSafety.relation === "restrict" && (
+                  <p className="border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs text-stone-600">
+                    You restricted this person. You won't be notified about their messages, and they can't see when you've read them.
+                  </p>
+                )}
+                {pane.kind !== "dm" && room?.muted && (
+                  <p className="border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs text-stone-600">
+                    This group is muted. New messages won't add to your unread count.
+                  </p>
+                )}
                 <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                   {loadingThread ? (
                     <div className="flex justify-center py-16">
@@ -428,34 +590,66 @@ export function MessagesPage() {
                   ) : messages.length === 0 ? (
                     <p className="py-16 text-center text-sm text-stone-500">No messages yet. Say hello.</p>
                   ) : (
-                    messages.map((msg) => {
-                      const mine = msg.isOutgoing || msg.senderId === user?.id;
-                      return (
-                        <div key={msg.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                          <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                              mine ? "bg-gradient-to-r from-maroon-800 to-autumn-rust text-white" : "border border-stone-200 bg-white text-stone-900"
-                            }`}
-                          >
-                            {!mine && pane.kind === "room" && (
-                              <p className="mb-1 break-all text-[11px] font-semibold text-maroon-800">
-                                {msg.senderName || msg.senderUsername || "Member"}
-                              </p>
-                            )}
-                            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                            <p className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-amber-100" : "text-stone-400"}`}>
-                              {formatMessageTime(msg.createdAt)}
-                              {mine && (msg.read ? <CheckCheck className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
+                    messages.map((msg) => (
+                      <ChatMessage
+                        key={msg.id}
+                        message={msg}
+                        mine={Boolean(msg.isOutgoing || msg.senderId === user?.id)}
+                        onReact={(emoji) => void handleReact(msg.id, emoji)}
+                      />
+                    ))
                   )}
                   <div ref={messagesEndRef} />
                 </div>
                 {sendError && <p className="px-4 text-xs text-rose-700">{sendError}</p>}
+                {attachment && (
+                  <div className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-700">
+                    <span className="min-w-0 truncate">{KIND_LABEL[attachment.mediaKind]} · {attachment.name}</span>
+                    <button type="button" aria-label="Remove attachment" onClick={() => setAttachment(null)}>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                {pane.kind === "dm" && (paneSafety.relation === "block" || paneSafety.blockedMe) ? (
+                  <div className="flex items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 text-sm text-stone-600">
+                    <span>
+                      {paneSafety.relation === "block"
+                        ? `You blocked @${pane.person.username}. Unblock them to send a message.`
+                        : "You can't reply to this conversation."}
+                    </span>
+                    {paneSafety.relation === "block" && (
+                      <button
+                        type="button"
+                        disabled={safetyBusy}
+                        onClick={() => void handleRelation(null)}
+                        className="shrink-0 rounded-full border border-stone-200 px-3 py-1.5 text-xs font-semibold text-maroon-800 hover:bg-amber-50 disabled:opacity-50"
+                      >
+                        Unblock
+                      </button>
+                    )}
+                  </div>
+                ) : (
                 <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-stone-200 bg-white p-3">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={ACCEPT}
+                    className="hidden"
+                    onChange={(e) => {
+                      void handleFile(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Attach a photo, video or file"
+                    title="Attach a photo, video or file"
+                    disabled={uploading || sending}
+                    onClick={() => fileRef.current?.click()}
+                    className="rounded-xl border border-stone-200 p-2.5 text-stone-600 hover:text-maroon-800 disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                  </button>
                   <input
                     value={inputContent}
                     onChange={(e) => setInputContent(e.target.value)}
@@ -465,13 +659,14 @@ export function MessagesPage() {
                   />
                   <button
                     type="submit"
-                    disabled={!inputContent.trim() || sending}
+                    disabled={(!inputContent.trim() && !attachment) || sending || uploading}
                     className="rounded-xl bg-maroon-800 p-2.5 text-white disabled:opacity-50"
                     aria-label="Send"
                   >
                     {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                 </form>
+                )}
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center px-8 text-center text-stone-500">

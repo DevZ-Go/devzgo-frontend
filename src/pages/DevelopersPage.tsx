@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BadgeCheck, Check, CircleHelp, Code2, GitCommitHorizontal, Loader2, Lock, MapPin, Search, Send, UserPlus, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { Select } from "../components/ui/Select";
 import { fetchTalent, TALENT_SORTS, type TalentCard } from "../api/profiles";
 import { fetchTechStacks } from "../api/projects";
 import { sendConnectionRequest } from "../api/connections";
@@ -194,23 +195,27 @@ export function DevelopersPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="text-xs font-semibold text-stone-600">
                 Relevant projects, at least
-                <select value={minProjects} onChange={(e) => setMinProjects(Number(e.target.value))} className={`${ui.input} mt-1`}>
-                  {[0, 1, 2, 3, 5].map((n) => <option key={n} value={n}>{n === 0 ? "Any" : n}</option>)}
-                </select>
+                <Select
+                  aria-label="Relevant projects, at least" value={String(minProjects)} onChange={(v) => setMinProjects(Number(v))}
+                  options={[0, 1, 2, 3, 5].map((n) => [String(n), n === 0 ? "Any" : String(n)] as const)}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
               </label>
               <label className="text-xs font-semibold text-stone-600">
                 Work type
-                <select value={workType} onChange={(e) => setWorkType(e.target.value)} className={`${ui.input} mt-1`}>
-                  <option value="">Any</option>
-                  {WORK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <Select
+                  aria-label="Work type" value={workType} onChange={setWorkType}
+                  options={[["", "Any"], ...WORK_TYPES.map((t) => [t, t] as const)]}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
               </label>
               <label className="text-xs font-semibold text-stone-600">
                 Arrangement
-                <select value={arrangement} onChange={(e) => setArrangement(e.target.value)} className={`${ui.input} mt-1`}>
-                  <option value="">Any</option>
-                  {WORK_ARRANGEMENTS.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <Select
+                  aria-label="Arrangement" value={arrangement} onChange={setArrangement}
+                  options={[["", "Any"], ...WORK_ARRANGEMENTS.map((t) => [t, t] as const)]}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
               </label>
             </div>
             <p className="text-xs leading-relaxed text-stone-500">
@@ -221,9 +226,7 @@ export function DevelopersPage() {
 
           <div data-tour="talent-sort" className="flex flex-col gap-2 border-t border-stone-100 pt-4 sm:flex-row sm:items-center">
             <label className="text-xs font-semibold uppercase tracking-wider text-stone-500 sm:w-24" htmlFor="talent-sort">Order by</label>
-            <select id="talent-sort" value={sort} onChange={(e) => setSort(e.target.value)} className={`${ui.input} sm:w-72`}>
-              {TALENT_SORTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
+            <Select id="talent-sort" aria-label="Order by" value={sort} onChange={setSort} options={TALENT_SORTS} className={`${ui.input} sm:w-72`} />
             <p className="text-xs text-stone-500 sm:flex-1">{SORT_HELP[sort]} There is no overall score.</p>
           </div>
         </section>

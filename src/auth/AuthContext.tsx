@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -11,6 +10,7 @@ import { fetchCurrentUser } from "../api";
 import { queryClient } from "../api/queryKeys";
 import type { AuthUser } from "../types/auth";
 import { getToken, removeToken, setToken } from "./token";
+import { stableContext } from "../utils/stableContext";
 
 interface AuthContextValue {
   token: string | null;
@@ -22,7 +22,7 @@ interface AuthContextValue {
   refreshUser: () => Promise<AuthUser | null>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = stableContext<AuthContextValue | null>("AuthContext", null);
 
 function loadStoredToken(): string | null {
   if (typeof window === "undefined") return null;

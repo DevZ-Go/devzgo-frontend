@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { Select } from "../components/ui/Select";
 import {
   createChallenge, fetchMyChallenges, updateChallenge, type ChallengeInput, type ChallengeType, type Criterion, type Difficulty,
   type RecruiterChallenge,
@@ -68,14 +69,16 @@ function ChallengeForm({ existing }: { existing: RecruiterChallenge | null }) {
         </label>
         <div className="grid gap-4 sm:grid-cols-3">
           <label className={label}>Type
-            <select value={type} onChange={(e) => setType(e.target.value as ChallengeType)} className={`${ui.input} mt-1`}>
-              {CHALLENGE_TYPES.map(([id, text]) => <option key={id} value={id}>{text}</option>)}
-            </select>
+            <Select
+              aria-label="Type" value={type} onChange={(v) => setType(v as ChallengeType)} options={CHALLENGE_TYPES}
+              className={`${ui.input} mt-1 font-normal`}
+            />
           </label>
           <label className={label}>Difficulty
-            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)} className={`${ui.input} mt-1`}>
-              {DIFFICULTIES.map(([id, text]) => <option key={id} value={id}>{text}</option>)}
-            </select>
+            <Select
+              aria-label="Difficulty" value={difficulty} onChange={(v) => setDifficulty(v as Difficulty)} options={DIFFICULTIES}
+              className={`${ui.input} mt-1 font-normal`}
+            />
           </label>
           <label className={label}>Estimated minutes <span className="font-normal text-stone-400">(optional)</span>
             <input type="number" min={15} max={2400} value={minutes} onChange={(e) => setMinutes(e.target.value)} className={`${ui.input} mt-1`} placeholder="120" />

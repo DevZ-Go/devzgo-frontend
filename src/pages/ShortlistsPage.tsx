@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Code2, ListChecks, Loader2, Lock, Plus, Trash2 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
+import { Select } from "../components/ui/Select";
 import {
   ENTRY_STATUSES, createShortlist, deleteShortlist, fetchShortlist, fetchShortlists, removeEntry, statusLabel, updateEntry,
   type EntryStatus, type ShortlistEntry,
@@ -30,10 +31,11 @@ function EntryRow({ entry, listId }: { entry: ShortlistEntry; listId: string }) 
           <Link to={`/recruit/candidates/${entry.candidate.id}`} className="block truncate font-semibold text-stone-900 hover:text-maroon-800">{name}</Link>
           <p className="truncate text-xs text-stone-500">@{entry.candidate.username}{entry.candidate.headline ? ` · ${entry.candidate.headline}` : ""}</p>
         </div>
-        <select value={entry.status} aria-label={`Status for ${name}`} onChange={(e) => save.mutate({ status: e.target.value as EntryStatus })}
-          className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs font-semibold">
-          {ENTRY_STATUSES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-        </select>
+        <Select
+          value={entry.status} aria-label={`Status for ${name}`} onChange={(v) => save.mutate({ status: v as EntryStatus })}
+          options={ENTRY_STATUSES}
+          className="w-36 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs font-semibold"
+        />
         <Link to={`/recruit/candidates/${entry.candidate.id}`} className={`${ui.btn} ${ui.neutral}`}><Code2 className="h-3.5 w-3.5" /> Evaluate</Link>
         <button type="button" onClick={() => remove.mutate()} disabled={remove.isPending} aria-label={`Remove ${name} from this list`}
           className="rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-700">
@@ -139,10 +141,14 @@ export function ShortlistsPage() {
                     <p className="text-xs text-stone-500">{detail.data.count} {detail.data.count === 1 ? "candidate" : "candidates"}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Show status" className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs">
-                      <option value="all">All statuses</option>
-                      {ENTRY_STATUSES.map(([sid, label]) => <option key={sid} value={sid}>{label} ({detail.data.statuses[sid] ?? 0})</option>)}
-                    </select>
+                    <Select
+                      value={filter} onChange={setFilter} aria-label="Show status"
+                      options={[
+                        ["all", "All statuses"],
+                        ...ENTRY_STATUSES.map(([sid, label]) => [sid, `${label} (${detail.data.statuses[sid] ?? 0})`] as const),
+                      ]}
+                      className="w-44 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs"
+                    />
                     <button type="button" onClick={() => { if (window.confirm(`Delete "${detail.data.name}" and its notes?`)) remove.mutate(detail.data.id); }}
                       className={`${ui.btn} ${ui.danger}`}><Trash2 className="h-3.5 w-3.5" /> Delete list</button>
                   </div>
