@@ -11,6 +11,8 @@ import { PasswordField } from "../components/PasswordField";
 import { PasswordInput } from "../components/PasswordInput";
 import { PhotoCropper } from "../components/PhotoCropper";
 import { GitHubEditing } from "../components/settings/GitHubEditing";
+import { SafetySettings } from "../components/settings/SafetySettings";
+import { Select } from "../components/ui/Select";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { UsernameField } from "../components/UsernameField";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -23,7 +25,9 @@ const SECTIONS = [
   ["account", "Account"],
   ["profile", "Profile"],
   ["availability", "Availability"],
+  ["challenges", "Challenges"],
   ["privacy", "Privacy"],
+  ["safety", "Blocked & muted"],
   ["notifications", "Notifications"],
   ["github", "GitHub"],
   ["appearance", "Appearance"],
@@ -39,19 +43,25 @@ const REACH = [
   ["connections", "Accepted connections"],
 ] as const;
 
-function SelectField({ label, value, onChange, options }: {
+function SelectField({ label, value, onChange, options, disabled }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   options: readonly (readonly [string, string])[];
+  disabled?: boolean;
 }) {
   return (
-    <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+    <div className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
       {label}
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={`${inputClass} mt-1 normal-case tracking-normal`}>
-        {options.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-      </select>
-    </label>
+      <Select
+        aria-label={label}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        options={options}
+        className={`${inputClass} mt-1 font-normal normal-case tracking-normal`}
+      />
+    </div>
   );
 }
 
@@ -84,7 +94,7 @@ export function SettingsPage() {
   const { user, login, refreshUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const { recruiter } = useAccount();
-  const sections = SECTIONS.filter(([id]) => !(recruiter && id === "availability"));
+  const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges")));
   const requested = params.get("section");
   const section: Section = sections.some(([id]) => id === requested) ? requested as Section : "account";
   const hasPassword = user?.has_password !== false;
@@ -117,6 +127,9 @@ export function SettingsPage() {
   const [notifyConnections, setNotifyConnections] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
   const [notifyCollaborations, setNotifyCollaborations] = useState(true);
+  const [challengeNotices, setChallengeNotices] = useState<"off" | "open_to_work" | "always">("off");
+  const [challengeInvites, setChallengeInvites] = useState<"off" | "open_to_work" | "always">("always");
+  const [startPage, setStartPage] = useState<"home" | "resume">("home");
   const [openToWork, setOpenToWork] = useState(false);
   const [workTypes, setWorkTypes] = useState<string[]>([]);
   const [workArrangements, setWorkArrangements] = useState<string[]>([]);
@@ -163,6 +176,9 @@ export function SettingsPage() {
         setNotifyConnections(profile.notifyConnections !== false);
         setNotifyMessages(profile.notifyMessages !== false);
         setNotifyCollaborations(profile.notifyCollaborations !== false);
+        setChallengeNotices(profile.challengeNotices === "always" || profile.challengeNotices === "open_to_work" ? profile.challengeNotices : "off");
+        setChallengeInvites(profile.challengeInvites === "off" || profile.challengeInvites === "open_to_work" ? profile.challengeInvites : "always");
+        setStartPage(profile.startPage === "resume" ? "resume" : "home");
         setOpenToWork(profile.openToWork === true);
         setWorkTypes(profile.workTypes ?? []);
         setWorkArrangements(profile.workArrangements ?? []);
@@ -248,6 +264,14 @@ export function SettingsPage() {
     });
   }
 
+  async function saveChallenges(e: FormEvent) {
+    e.preventDefault();
+    await run(async () => {
+      await updateMyProfile({ challengeInvites, challengeNotices });
+      setMessage({ text: "Challenge choices saved.", ok: true });
+    });
+  }
+
   async function savePhoto(file: File) {
     setPendingPhoto(null);
     await run(async () => {
@@ -323,6 +347,17 @@ export function SettingsPage() {
           <PasswordField value={next} onChange={setNext} className={inputClass} />
           <Save busy={busy} disabled={!passwordValid(next)}>Save password</Save>
         </form>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          void run(async () => {
+            await updateMyProfile({ startPage });
+            setMessage({ text: "Sign-in page saved.", ok: true });
+          });
+        }} className="space-y-3">
+          <h2 className="font-serif text-2xl text-stone-900">After you sign in</h2>
+          <SelectField label="Open" value={startPage} onChange={(value) => setStartPage(value === "resume" ? "resume" : "home")} options={[["home", recruiter ? "Recruiter home" : "Home"], ["resume", "The last page you had open"]]} />
+          <Save busy={busy} disabled={!ready}>Save</Save>
+        </form>
       </div>
     );
   } else if (section === "profile") {
@@ -344,13 +379,13 @@ export function SettingsPage() {
             </label>
           </>
         ) : (
-          <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+          <div className="relative block text-xs font-semibold uppercase tracking-wider text-stone-500">
             Role
-            <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputClass} mt-1 normal-case tracking-normal`} required>
-              <option value="">Choose a role</option>
-              {MEMBER_ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
+            <Select
+              aria-label="Role" required placeholder="Choose a role" value={role} onChange={setRole} options={MEMBER_ROLES}
+              className={`${inputClass} mt-1 font-normal normal-case tracking-normal`}
+            />
+          </div>
         )}
         <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
           Headline
@@ -381,12 +416,13 @@ export function SettingsPage() {
           Website
           <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className={`${inputClass} mt-1`} placeholder="https://" />
         </label>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+        <div className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
           Time zone
-          <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={`${inputClass} mt-1 normal-case tracking-normal`}>
-            {zones.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
-          </select>
-        </label>
+          <Select
+            aria-label="Time zone" value={timezone} onChange={setTimezone} options={zones}
+            className={`${inputClass} mt-1 font-normal normal-case tracking-normal`}
+          />
+        </div>
         <Save busy={busy} disabled={!ready || (recruiter ? company.trim().length < 2 : !role)}>Save profile</Save>
       </form>
     );
@@ -459,11 +495,64 @@ export function SettingsPage() {
         <SwitchRow label="Comments" checked={notifyComments} onChange={setNotifyComments} />
         <SwitchRow label="Shares" checked={notifyShares} onChange={setNotifyShares} />
         <SwitchRow label="Connections" hint="Requests and acceptances" checked={notifyConnections} onChange={setNotifyConnections} />
-        <SwitchRow label="Messages" checked={notifyMessages} onChange={setNotifyMessages} />
+        <SwitchRow label="Messages" hint="To silence one chat instead, mute it from the chat's ⋯ menu" checked={notifyMessages} onChange={setNotifyMessages} />
         <SwitchRow label="Collaboration" hint="Invites, requests, and people joining or leaving" checked={notifyCollaborations} onChange={setNotifyCollaborations} />
+        {!recruiter && (
+          <p className="text-xs text-stone-500">
+            Technical challenges have their own page: <button type="button" onClick={() => open("challenges")} className={ui.link}>choose whether you receive them</button>.
+          </p>
+        )}
         <Save busy={busy} disabled={!ready}>Save notifications</Save>
       </form>
     );
+  } else if (section === "challenges") {
+    const receiving = challengeInvites === "always" || (challengeInvites === "open_to_work" && openToWork);
+    panel = (
+      <form onSubmit={saveChallenges} className="space-y-4">
+        <h2 className="font-serif text-2xl text-stone-900">Challenges</h2>
+        <p className="text-sm text-stone-500">
+          Recruiters use technical challenges to see how you work. You decide whether you take part at all, and when.
+        </p>
+        <SelectField
+          label="Receive technical challenges"
+          value={challengeInvites}
+          onChange={(value) => setChallengeInvites(value as typeof challengeInvites)}
+          options={[
+            ["always", "Yes, always"],
+            ["open_to_work", "Only while I'm open to work"],
+            ["off", "No, I don't want challenges"],
+          ]}
+        />
+        <p className="-mt-2 text-xs text-stone-500">
+          This covers personal invitations from recruiters and the open public challenges listed on your Assessments page.
+          Challenges you already accepted or submitted stay available.
+        </p>
+        <SelectField
+          label="Tell me when a public challenge is posted"
+          value={challengeInvites === "off" ? "off" : challengeNotices}
+          disabled={challengeInvites === "off"}
+          onChange={(value) => setChallengeNotices(value as typeof challengeNotices)}
+          options={[
+            ["off", "Don't notify me"],
+            ["open_to_work", "Only while I'm open to work"],
+            ["always", "Every public challenge"],
+          ]}
+        />
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${receiving ? "border-forest-200 bg-forest-50 text-forest-800" : "border-stone-200 bg-[#f8f6f0] text-stone-600"}`}>
+          {receiving
+            ? "Right now recruiters can invite you, and open challenges appear on your Assessments page."
+            : challengeInvites === "off"
+              ? "Right now you receive no challenges. Recruiters can't invite you and public challenges are hidden."
+              : "You're not marked open to work, so challenges are paused until you turn availability on."}
+          {challengeInvites === "open_to_work" && (
+            <> <button type="button" onClick={() => open("availability")} className={ui.link}>Availability</button></>
+          )}
+        </div>
+        <Save busy={busy} disabled={!ready}>Save challenge choices</Save>
+      </form>
+    );
+  } else if (section === "safety") {
+    panel = <SafetySettings />;
   } else if (section === "github") {
     panel = <GitHubEditing />;
   } else {

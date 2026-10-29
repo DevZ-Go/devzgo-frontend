@@ -38,6 +38,7 @@ import { isProjectOwner } from "../utils/projectOwnership";
 import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
 import { inviteCollaborator } from "../api/collaborations";
 import { TeammatePicker, type Teammate } from "../components/TeammatePicker";
+import { Select } from "../components/ui/Select";
 
 const TOTAL_STEPS = 3;
 const STEP_META = [
@@ -736,22 +737,18 @@ export function ProjectFormPage() {
                   >
                     Category
                   </label>
-                  <select
+                  <Select
                     id="category"
+                    aria-label="Category"
+                    placeholder="Select category"
                     value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      if (e.target.value !== "Other") setCategoryOther("");
+                    onChange={(value) => {
+                      setCategory(value);
+                      if (value !== "Other") setCategoryOther("");
                     }}
+                    options={PROJECT_CATEGORIES}
                     className={fieldClass}
-                  >
-                    <option value="">Select category</option>
-                    {PROJECT_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label
@@ -760,20 +757,14 @@ export function ProjectFormPage() {
                   >
                     Visibility
                   </label>
-                  <select
+                  <Select
                     id="visibility"
+                    aria-label="Visibility"
                     value={visibility}
-                    onChange={(e) =>
-                      setVisibility(e.target.value as ProjectVisibility)
-                    }
+                    onChange={(value) => setVisibility(value as ProjectVisibility)}
+                    options={PROJECT_VISIBILITY_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
                     className={fieldClass}
-                  >
-                    {PROJECT_VISIBILITY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               </div>
               {isEdit && (

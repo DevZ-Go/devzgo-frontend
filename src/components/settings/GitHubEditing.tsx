@@ -3,13 +3,15 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { disconnectGitHubEditing, fetchConnection, startGitHubEditing } from "../../api/workspace";
 import { useAccount } from "../../auth/account";
+import { useAuth } from "../../auth/AuthContext";
 import { ui } from "../../styles/editorial";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 export function GitHubEditing() {
   const { recruiter } = useAccount();
+  const { user } = useAuth();
   const [params] = useSearchParams();
-  const connection = useQuery({ queryKey: ["github-connection"], queryFn: fetchConnection, enabled: !recruiter });
+  const connection = useQuery({ queryKey: ["github-connection", user?.id ?? ""], queryFn: fetchConnection, enabled: !recruiter });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const justConnected = params.get("connected") === "1";
@@ -56,7 +58,7 @@ export function GitHubEditing() {
         This connection is only for commits and pull requests you make. It is separate from sign-in and from importing a repository, and DevZ-Go never commits with someone else’s token.
       </p>
       {justConnected && <p className="text-sm font-medium text-forest-800">GitHub is connected for editing.</p>}
-      {denied && <p className={ui.error}>{denied === "denied" ? "GitHub authorization was cancelled." : "GitHub couldn’t be connected. Try again."}</p>}
+      {denied && <p className={ui.error}>{denied === "denied" ? "GitHub authorization was cancelled." : denied === "taken" ? "That GitHub account is already connected to another DevZ-Go account. Disconnect it there first." : "GitHub couldn’t be connected. Try again."}</p>}
       {row?.connected ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-[#f8f6f0] px-4 py-3">
           <p className="text-sm text-stone-700">Connected as <span className="font-semibold">{row.login}</span></p>

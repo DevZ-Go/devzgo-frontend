@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { destinationAfterLogin } from "../auth/session";
 
 /** Landing page after GitHub login: the backend puts the JWT after "#", which never reaches any server. */
 export function AuthCallbackPage() {
@@ -20,7 +21,8 @@ export function AuthCallbackPage() {
     }
     login(token);
     refreshUser()
-      .then(() => navigate("/home", { replace: true }))
+      .then((me) => destinationAfterLogin(me))
+      .then((path) => navigate(path, { replace: true }))
       .catch(() => {
         logout();
         navigate("/login?error=github", { replace: true });

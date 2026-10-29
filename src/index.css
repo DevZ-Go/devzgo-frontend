@@ -131,6 +131,53 @@ code {
   background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
 }
 
+/* Every dropdown uses the same chevron, padding, and focus ring as the editorial inputs. */
+@layer base {
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    padding-right: 2.25rem !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2378716c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  select:hover:not(:disabled),
+  .devz-select:hover:not(:disabled) {
+    border-color: #a8a29e;
+  }
+  select:focus-visible,
+  .devz-select:focus-visible,
+  .devz-select[aria-expanded="true"] {
+    outline: none;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 2px #4ade80;
+  }
+  .devz-select {
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  .dark .devz-select-list {
+    background-color: #0f172a;
+    border-color: #1e293b;
+    color: #f8fafc;
+  }
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  select option {
+    background-color: #ffffff;
+    color: #1c1917;
+  }
+  .dark select option {
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+}
+
 /* Subtle selection color */
 ::selection {
   background: rgba(139, 92, 246, 0.15);

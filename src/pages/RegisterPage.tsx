@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Zap } from "lucide-react";
 import { loginWithPassword, registerUser } from "../api";
 import { useAuth } from "../auth/AuthContext";
+import { destinationAfterLogin } from "../auth/session";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton } from "../components/GitHubButton";
@@ -36,8 +37,7 @@ export function RegisterPage() {
     try {
       await registerUser({ username, email, password, role, company: role === "Recruiter" ? company.trim() : undefined });
       login((await loginWithPassword(email, password)).access_token);
-      await refreshUser();
-      navigate("/home", { replace: true });
+      navigate(await destinationAfterLogin(await refreshUser()), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {

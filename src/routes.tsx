@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DeveloperRoute, RecruiterRoute } from "./components/RoleRoute";
+import { RouteError } from "./components/RouteError";
 
 const RELOADED_KEY = "devzgo.chunkReload";
 
@@ -71,9 +72,11 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <Navigate to="/home" replace />,
+    errorElement: <RouteError />,
   },
   {
     element: <AppLayout />,
+    errorElement: <RouteError />,
     children: [
       {
         path: "/home",
