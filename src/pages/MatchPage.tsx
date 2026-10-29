@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeftRight, ChevronDown, GitCommitHorizontal, Info, Loader2, Plus, Search, ScanText, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
+import { Select } from "../components/ui/Select";
 import { WORK_ARRANGEMENTS, WORK_TYPES } from "../api/recruiting";
 import {
   extractRequirements, matchDevelopers, type AmbiguousTerm, type MatchFilters, type MatchResult, type RequirementStatus,
@@ -236,14 +237,16 @@ export function MatchPage() {
               <legend className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Filters</legend>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-stone-600">Work type
-                  <select value={filters.work_type} onChange={(e) => setFilter("work_type", e.target.value)} className={`${ui.input} mt-1`}>
-                    <option value="">Any</option>{WORK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <Select
+                    aria-label="Work type" value={filters.work_type} onChange={(v) => setFilter("work_type", v)}
+                    options={[["", "Any"], ...WORK_TYPES.map((t) => [t, t] as const)]} className={`${ui.input} mt-1 font-normal`}
+                  />
                 </label>
                 <label className="text-xs font-semibold text-stone-600">Arrangement
-                  <select value={filters.arrangement} onChange={(e) => setFilter("arrangement", e.target.value)} className={`${ui.input} mt-1`}>
-                    <option value="">Any</option>{WORK_ARRANGEMENTS.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <Select
+                    aria-label="Arrangement" value={filters.arrangement} onChange={(v) => setFilter("arrangement", v)}
+                    options={[["", "Any"], ...WORK_ARRANGEMENTS.map((t) => [t, t] as const)]} className={`${ui.input} mt-1 font-normal`}
+                  />
                 </label>
                 <label className="text-xs font-semibold text-stone-600">Location contains
                   <input value={filters.location} onChange={(e) => setFilter("location", e.target.value)} maxLength={80} className={`${ui.input} mt-1`} placeholder="e.g. Toronto" />

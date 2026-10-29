@@ -62,11 +62,15 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout title="Forgot password" subtitle="We'll email you a link to choose a new one">
       <Card onSubmit={submit} busy={busy} label="Send reset link" notice={notice} error={error}>
-        <div className="relative">
-          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email" placeholder="you@example.com" className={inputClass} />
-        </div>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stone-500">Email or username</span>
+          <span className="relative block">
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+            <input type="text" required value={email} onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username" placeholder="you@example.com or your username" className={inputClass} />
+          </span>
+        </label>
+        <p className="text-xs text-stone-500">The link goes to the email address on your account. Check your spam folder too.</p>
       </Card>
     </AuthLayout>
   );

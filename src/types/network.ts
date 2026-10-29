@@ -48,6 +48,8 @@ export interface DeveloperProfile {
   notifyMessages?: boolean | null;
   notifyCollaborations?: boolean | null;
   notifyChallenges?: boolean | null;
+  challengeNotices?: "off" | "open_to_work" | "always" | null;
+  challengeInvites?: "off" | "open_to_work" | "always" | null;
   startPage?: "home" | "resume" | null;
   accountType?: "developer" | "recruiter";
   tourVersion?: number | null;
@@ -139,6 +141,12 @@ export interface Connection {
   partner: ConnectionUserSummary;
 }
 
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -149,13 +157,23 @@ export interface Message {
   isOutgoing?: boolean;
   senderUsername?: string;
   senderName?: string;
+  senderAvatarUrl?: string | null;
+  mediaKind?: "image" | "video" | "file" | null;
+  mediaUrl?: string | null;
+  mediaName?: string | null;
+  reactions?: MessageReaction[];
   roomId?: string;
 }
+
+export type SafetyRelation = "block" | "restrict";
 
 export interface Conversation {
   otherUser: ConnectionUserSummary;
   lastMessage: Message;
   unreadCount: number;
+  muted?: boolean;
+  relation?: SafetyRelation | null;
+  blockedMe?: boolean;
 }
 
 export interface CollaborationRequest {
@@ -227,6 +245,7 @@ export interface NotificationItem {
     | "challenge_invitation"
     | "challenge_posted"
     | "challenge_submission"
+    | "challenge_response"
     | "challenge_feedback"
     | "workspace_commit"
     | "workspace_pr";
