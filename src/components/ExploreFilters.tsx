@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { ProjectSort, TechStackItem } from "../api/projects";
 import { PROJECT_CATEGORIES } from "../data/projectFormOptions";
 import type { ExploreFilterState } from "../hooks/useExploreProjects";
+import { Select } from "./ui/Select";
 
 const SORT_OPTIONS: Array<{ value: ProjectSort; label: string }> = [
   { value: "newest", label: "Newest" },
@@ -53,44 +54,27 @@ export function ExploreFilters({
         onChange={(e) => update("search", e.target.value)}
         aria-label="Search projects by title or description"
       />
-      <select
+      <Select
         className={classes.select}
         value={filters.category}
-        onChange={(e) => update("category", e.target.value)}
+        onChange={(value) => update("category", value)}
         aria-label="Filter by category"
-      >
-        <option value="">All categories</option>
-        {PROJECT_CATEGORIES.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-      <select
+        options={[["", "All categories"], ...PROJECT_CATEGORIES.map((c) => [c, c] as const)]}
+      />
+      <Select
         className={classes.select}
         value={filters.techStackId}
-        onChange={(e) => update("techStackId", e.target.value)}
+        onChange={(value) => update("techStackId", value)}
         aria-label="Filter by technology"
-      >
-        <option value="">All tech</option>
-        {techStacks.map((t) => (
-          <option key={t.id} value={String(t.id)}>
-            {t.name}
-          </option>
-        ))}
-      </select>
-      <select
+        options={[["", "All tech"], ...techStacks.map((t) => [String(t.id), t.name] as const)]}
+      />
+      <Select
         className={classes.select}
         value={filters.sortBy}
-        onChange={(e) => update("sortBy", e.target.value as ProjectSort)}
+        onChange={(value) => update("sortBy", value as ProjectSort)}
         aria-label="Sort projects"
-      >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        options={SORT_OPTIONS}
+      />
       {hasFilters && (
         <button type="button" className={classes.button} onClick={onClear}>
           Clear

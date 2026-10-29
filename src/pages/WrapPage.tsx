@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CalendarDays, Volume2, VolumeX, ArrowDown } from "lucide-react";
 import { WrapChapter } from "../components/wrap/WrapChapter";
 import { PixelSprite } from "../components/wrap/PixelSprite";
+import { Select } from "../components/ui/Select";
 import { POTION, INVADER, CHERRIES, HEART, GHOST } from "../components/wrap/sprites";
 import { fetchCurrentWrap, fetchWrap, fetchWrapMonths, shareWrap, type Wrap } from "../api/wraps";
 import { queryKeys } from "../api/queryKeys";
@@ -113,11 +114,11 @@ export function WrapPage() {
         )}
 
         <div className="pointer-events-auto flex items-center gap-2">
-          <select value={picked ?? ""} aria-label="Wrap month" className={`px-3 py-1.5 text-xs text-stone-200 ${pill}`}
-            onChange={(e) => setParams(e.target.value ? { month: e.target.value } : {})}>
-            <option value="">This month (so far)</option>
-            {(months.data ?? []).map((m) => <option key={m} value={m}>{monthName(m)}</option>)}
-          </select>
+          <Select
+            value={picked ?? ""} aria-label="Wrap month" className={`px-3 py-1.5 text-xs text-stone-200 ${pill}`}
+            onChange={(value) => setParams(value ? { month: value } : {})}
+            options={[["", "This month (so far)"], ...(months.data ?? []).map((m) => [m, monthName(m)] as const)]}
+          />
           <button type="button" onClick={() => setSound((v) => !v)} aria-label="Toggle audio"
             className={`p-2 text-stone-300 hover:bg-stone-800 cursor-pointer ${pill}`}>
             {sound ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4" />}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Users, X, Loader2, CheckCircle } from "lucide-react";
 import { requestCollaboration } from "../api/collaborations";
 import { getApiErrorMessage } from "../utils/apiError";
+import { Select } from "./ui/Select";
 
 interface CollaborationModalProps {
   projectId: string;
@@ -120,18 +121,13 @@ export function CollaborationModal({
                 <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-2">
                   Role / Specialization
                 </label>
-                <select
+                <Select
+                  aria-label="Role / Specialization"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-[#1C1917] shadow-sm focus:border-forest-600 focus:outline-none focus:ring-2 focus:ring-forest-400"
-                >
-                  {COMMON_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                  <option value="Other">Other (Custom Role)</option>
-                </select>
+                  onChange={setRole}
+                  options={[...COMMON_ROLES.map((r) => [r, r] as const), ["Other", "Other (Custom Role)"] as const]}
+                  className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-[#1C1917] shadow-sm"
+                />
                 {role === "Other" && (
                   <input
                     type="text"

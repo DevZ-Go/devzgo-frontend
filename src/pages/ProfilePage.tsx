@@ -21,6 +21,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { Select } from "../components/ui/Select";
 import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject } from "../api/projects";
 import { accessLabel, fetchUserCollaborations } from "../api/collaborations";
@@ -834,16 +835,14 @@ export function ProfilePage() {
                   <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
                     Role
                   </label>
-                  <select
+                  <Select
+                    aria-label="Role"
+                    placeholder="Choose a role"
                     value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                  >
-                    <option value="">Choose a role</option>
-                    {MEMBER_ROLES.map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </select>
+                    onChange={setEditRole}
+                    options={MEMBER_ROLES}
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm text-stone-900"
+                  />
                 </div>
               )}
               {recruiter && (

@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Heart, MessageCircle, ArrowRight } from "lucide-react";
+import { Heart, MessageCircle, ArrowRight, Share2 } from "lucide-react";
 import { ImageWithFallback } from "./ImageWithFallback";
+import { ShareProjectDialog } from "./ShareProjectDialog";
+import { useAuth } from "../auth/AuthContext";
 import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 import type { Project } from "../types/project";
 import { useProjectLike } from "../hooks/useProjectLike";
@@ -13,13 +16,44 @@ interface ProjectCardProps {
   badge?: { label: string; strong?: boolean };
 }
 
+function CardTools({ project }: { project: Project }) {
+  const { token } = useAuth();
+  const { count, liked, busy, toggle } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
+  const [share, setShare] = useState(false);
+  const profile = project.author.id ? `/profile/${project.author.id}` : `/profile/${project.author.username}`;
+  return (
+    <>
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+        <button
+          type="button"
+          disabled={!token || busy}
+          title={token ? "Like" : "Log in to like projects"}
+          onClick={toggle}
+          className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-800 shadow-sm"
+        >
+          <Heart className={`h-3.5 w-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
+          {count}
+        </button>
+        <button type="button" title="Share" onClick={() => setShare(true)} className="rounded-full bg-white/95 p-1.5 text-stone-800 shadow-sm">
+          <Share2 className="h-3.5 w-3.5" />
+        </button>
+        <Link to={profile} title={`@${project.author.username}`} className="rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-800 shadow-sm">
+          @{project.author.username}
+        </Link>
+      </div>
+      <ShareProjectDialog projectId={project.id} title={project.title} open={share} onClose={() => setShare(false)} />
+    </>
+  );
+}
+
 export function ProjectCard({ project, variant = "compact", badge }: ProjectCardProps) {
   const techClass = (tech: string) => getTechStackChipClasses(tech, "onDark");
   const { count, liked } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
+  const tools = <CardTools project={project} />;
 
   if (variant === "hero") {
     return (
-      <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+      <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="relative">
         <Link
           to={`/project/${project.id}`}
           className="group block relative bg-white rounded-3xl shadow-soft-lg overflow-hidden border-2 border-cream-200/60 hover:shadow-soft-xl hover:border-lavender-200/40 transition-all"
@@ -65,13 +99,14 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
             </div>
           </div>
         </Link>
+        {tools}
       </motion.div>
     );
   }
 
   if (variant === "featured") {
     return (
-      <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+      <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="relative h-full">
         <Link
           to={`/project/${project.id}`}
           className="group block relative h-full rounded-3xl overflow-hidden bg-white border-2 border-cream-200/60 hover:shadow-soft-xl hover:border-lavender-200/40 transition-all"
@@ -123,13 +158,14 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
             </div>
           </div>
         </Link>
+        {tools}
       </motion.div>
     );
   }
 
   // ── Compact variant ──
   return (
-    <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+    <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="relative h-full">
       <Link
         to={`/project/${project.id}`}
         className="group block relative h-full rounded-2xl overflow-hidden bg-white border-2 border-cream-200/60 hover:shadow-soft-xl hover:border-lavender-200/40 transition-all"
@@ -180,6 +216,7 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
           </div>
         </div>
       </Link>
+      {tools}
     </motion.div>
   );
 }

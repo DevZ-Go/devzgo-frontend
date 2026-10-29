@@ -7,6 +7,7 @@ import { queryKeys } from "../../api/queryKeys";
 import { ui } from "../../styles/editorial";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { deadlineText } from "../../utils/challenges";
+import { Select } from "../ui/Select";
 
 /** Invite one developer to one of the recruiter's open challenges. */
 export function InviteToChallenge({ developerId }: { developerId: string }) {
@@ -34,9 +35,11 @@ export function InviteToChallenge({ developerId }: { developerId: string }) {
     <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); invite.mutate(); }}>
       <label className="block text-xs font-semibold text-stone-600">
         Challenge
-        <select value={challengeId} onChange={(e) => { setPicked(e.target.value); invite.reset(); }} className={`${ui.input} mt-1`}>
-          {open.map((c) => <option key={c.id} value={c.id}>{c.title} · {deadlineText(c.deadline_at)}</option>)}
-        </select>
+        <Select
+          aria-label="Challenge" value={challengeId} onChange={(v) => { setPicked(v); invite.reset(); }}
+          options={open.map((c) => ({ value: c.id, label: `${c.title} · ${deadlineText(c.deadline_at)}` }))}
+          className={`${ui.input} mt-1 font-normal`}
+        />
       </label>
       <label className="block text-xs font-semibold text-stone-600">
         Note <span className="font-normal text-stone-400">(optional)</span>

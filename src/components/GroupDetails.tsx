@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, Check, Loader2, LogOut, Pencil, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
+import { Camera, Check, Loader2, LogOut, Pencil, ShieldCheck, ShieldOff, ShieldPlus, UserMinus, UserPlus, X } from "lucide-react";
 import {
   addGroupMembers,
   fetchGroupDetails,
   leaveGroup,
   removeGroupMember,
   renameGroup,
+  setGroupAdmin,
   setGroupPhoto,
   type ChatRoomDetails,
 } from "../api/messages";
@@ -73,6 +74,8 @@ export function GroupDetails({ roomId, meId, connections, onClose, onChanged, on
 
   const custom = details ? !details.project_id : false;
   const memberIds = new Set(details?.members.map((m) => m.user_id));
+  const meFixed = Boolean(details?.members.find((m) => m.user_id === meId)?.admin_fixed);
+  const manage = Boolean(details?.is_admin && custom);
   const addable = connections.filter((c) => !memberIds.has(c.id));
 
   return (
@@ -179,6 +182,11 @@ export function GroupDetails({ roomId, meId, connections, onClose, onChanged, on
               </div>
             )}
 
+            {manage && (
+              <p className="mb-2 text-[11px] leading-relaxed text-stone-500">
+                Admins can rename the group, change its photo, add people and make others admins.
+              </p>
+            )}
             <ul className="space-y-1">
               {details.members.map((member) => {
                 const isMe = member.user_id === meId;
@@ -198,7 +206,27 @@ export function GroupDetails({ roomId, meId, connections, onClose, onChanged, on
                         <ShieldCheck className="h-3 w-3" aria-hidden /> Admin
                       </span>
                     )}
-                    {details.is_admin && custom && !isMe && !member.is_admin && (
+                    {manage && !member.admin_fixed && !member.is_admin && (
+                      <button
+                        type="button" disabled={busy} aria-label={`Make ${member.username} an admin`} title="Make admin"
+                        onClick={() => void act(() => setGroupAdmin(roomId, member.user_id, true))}
+                        className="shrink-0 rounded-full p-1.5 text-stone-400 hover:bg-amber-50 hover:text-maroon-800"
+                      >
+                        <ShieldPlus className="h-4 w-4" />
+                      </button>
+                    )}
+                    {manage && !member.admin_fixed && member.is_admin && (isMe || meFixed) && (
+                      <button
+                        type="button" disabled={busy}
+                        aria-label={isMe ? "Step down as admin" : `Remove ${member.username} as admin`}
+                        title={isMe ? "Step down as admin" : "Remove as admin"}
+                        onClick={() => void act(() => setGroupAdmin(roomId, member.user_id, false))}
+                        className="shrink-0 rounded-full p-1.5 text-stone-400 hover:bg-amber-50 hover:text-maroon-800"
+                      >
+                        <ShieldOff className="h-4 w-4" />
+                      </button>
+                    )}
+                    {manage && !isMe && !member.admin_fixed && (!member.is_admin || meFixed) && (
                       <button
                         type="button" disabled={busy} aria-label={`Remove ${member.username}`} title="Remove from group"
                         onClick={() => void act(() => removeGroupMember(roomId, member.user_id))}

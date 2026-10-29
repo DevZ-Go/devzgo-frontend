@@ -11,6 +11,7 @@ import {
 import { Navbar } from "../components/Navbar";
 import { FilePreview } from "../components/files/FilePreview";
 import { ProjectFileTree } from "../components/ProjectFileTree";
+import { Select } from "../components/ui/Select";
 import { CodeEditor, DiffView } from "../components/workspace/CodeEditor";
 import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -182,6 +183,7 @@ export function ProjectWorkspacePage() {
         </Link>
         <h1 className={`${ui.title} mt-4 text-4xl`}>Code</h1>
         {status.isLoading && <p className="mt-6 flex items-center gap-2 text-sm text-stone-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading workspace…</p>}
+        {status.isError && <p className="mt-6 text-sm text-stone-600">Only the owner and teammates who can edit files can open the code workspace. The GitHub link on the project page stays available.</p>}
         {info && (
           <div className="mt-6 space-y-4">
             <WorkspaceBanner info={info} onRefresh={(kind) => void refreshWorkspace(id, kind).then(() => status.refetch()).catch((err: unknown) => setError(getApiErrorMessage(err)))} />
@@ -200,11 +202,15 @@ export function ProjectWorkspacePage() {
                 <section className={`${ui.card} p-3`}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
                     Branch
-                    <select value={activeBranch} onChange={(event) => { setBranch(event.target.value); setPath(null); }} className={`${ui.input} mt-1`}>
-                      {(branches.data ?? [{ name: activeBranch, sha: headSha, protected: false, default: true }]).map((item) => (
-                        <option key={item.name} value={item.name}>{item.name}{item.protected ? " (protected)" : ""}</option>
-                      ))}
-                    </select>
+                    <Select
+                      aria-label="Branch"
+                      value={activeBranch}
+                      onChange={(value) => { setBranch(value); setPath(null); }}
+                      options={(branches.data ?? [{ name: activeBranch, sha: headSha, protected: false, default: true }]).map((item) => ({
+                        value: item.name, label: `${item.name}${item.protected ? " (protected)" : ""}`,
+                      }))}
+                      className={`${ui.input} mt-1 font-mono normal-case tracking-normal`}
+                    />
                   </label>
                   {tree.data?.truncated && <p className="mt-2 text-xs text-amber-800">GitHub truncated this file list.</p>}
                   <div className="mt-3 max-h-[32rem] overflow-auto">
