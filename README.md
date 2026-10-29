@@ -2,6 +2,8 @@
 
 React + TypeScript + Vite app for the DevZ-Go developer portfolio platform. Integrates with a **FastAPI** backend (default `http://127.0.0.1:8000`).
 
+**New to the team?** Follow [TEAM_SETUP.md](https://github.com/DevZ-Go/devzgo-backend/blob/feature/code-workspace/TEAM_SETUP.md) in the backend repository to set up the API, the website and the shared cloud services.
+
 ## Documentation
 
 | Document | Description |
