@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   CircleHelp,
@@ -27,6 +28,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { BrandMark } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
+import { queryKeys } from "../api/queryKeys";
 import { useAccount } from "../auth/account";
 import { openRecruiterTour } from "./tour/events";
 
@@ -55,6 +57,8 @@ const RECRUITER_NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/recruit/inbox", label: "Inbox", icon: Inbox },
 ];
 
+const UNREAD_KEY = [...queryKeys.messages, "unread-count"] as const;
+
 const tourKey = (to: string) => `nav-${to.split("/").filter(Boolean).pop() ?? "home"}`;
 
 function UnreadBadge({ count, className = "" }: { count: number; className?: string }) {
@@ -74,7 +78,12 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const homePath = recruiter ? "/recruit" : "/home";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const queryClient = useQueryClient();
+  const { data: unreadMessages = 0 } = useQuery({
+    queryKey: UNREAD_KEY,
+    queryFn: fetchUnreadMessagesCount,
+    enabled: Boolean(user),
+  });
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -98,27 +107,16 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   }, [mobileOpen]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function checkMessages() {
-      try {
-        const count = await fetchUnreadMessagesCount();
-        if (!cancelled) setUnreadMessages(count);
-      } catch {
-        // Ignore
-      }
-    }
-    checkMessages();
-    const handleUpdate = () => {
-      checkMessages();
-    };
-    window.addEventListener("devzgo:messages-updated", handleUpdate);
-    window.addEventListener("devzgo:unread-changed", handleUpdate);
+    const queryKey = UNREAD_KEY;
+    const onMessages = () => void queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false });
+    const onRead = () => void queryClient.invalidateQueries({ queryKey });
+    window.addEventListener("devzgo:messages-updated", onMessages);
+    window.addEventListener("devzgo:unread-changed", onRead);
     return () => {
-      cancelled = true;
-      window.removeEventListener("devzgo:messages-updated", handleUpdate);
-      window.removeEventListener("devzgo:unread-changed", handleUpdate);
+      window.removeEventListener("devzgo:messages-updated", onMessages);
+      window.removeEventListener("devzgo:unread-changed", onRead);
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (variant !== "editorial") return;
