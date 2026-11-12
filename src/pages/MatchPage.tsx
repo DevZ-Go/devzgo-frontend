@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { ArrowLeftRight, ChevronDown, GitCommitHorizontal, Info, Loader2, Plus, Search, ScanText, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { Select } from "../components/ui/Select";
+import { MatchAnimationModal } from "../components/recruiting/MatchAnimationModal";
 import { WORK_ARRANGEMENTS, WORK_TYPES } from "../api/recruiting";
 import {
   extractRequirements, matchDevelopers, type AmbiguousTerm, type MatchFilters, type MatchResult, type RequirementStatus,
@@ -131,6 +133,8 @@ export function MatchPage() {
   const [ambiguous, setAmbiguous] = useState<AmbiguousTerm[]>([]);
   const [draft, setDraft] = useState("");
   const [filters, setFilters] = useState<MatchFilters>(NO_FILTERS);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const resultsRef = useRef<HTMLElement>(null);
 
   const extract = useMutation({
     mutationFn: () => extractRequirements(text),
@@ -143,6 +147,18 @@ export function MatchPage() {
   const run = useMutation({ mutationFn: () => matchDevelopers({ ...lists, ...filters }) });
   const total = lists.required.length + lists.preferred.length;
   const data = run.data;
+
+  const handleStartMatching = () => {
+    setIsAnimating(true);
+    run.mutate();
+  };
+
+  const handleAnimationComplete = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  };
 
   const add = (to: keyof Requirements) => {
     setLists((l) => addRequirement(l, draft, to));
@@ -262,15 +278,41 @@ export function MatchPage() {
               </div>
             </fieldset>
 
-            <button type="button" onClick={() => run.mutate()} disabled={total === 0 || run.isPending} className={`${ui.btn} ${ui.primary} mt-5 w-full py-2.5 text-sm`}>
-              {run.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Find matching developers
+            <button
+              type="button"
+              onClick={handleStartMatching}
+              disabled={total === 0 || run.isPending || isAnimating}
+              className={`${ui.btn} ${ui.primary} mt-5 w-full py-2.5 text-sm`}
+            >
+              {run.isPending || isAnimating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Matching developers…
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4" /> Find matching developers
+                </>
+              )}
             </button>
             {run.isError && <p className={`${ui.error} mt-2`}>{getApiErrorMessage(run.error)}</p>}
           </section>
         </div>
 
-        {data && (
-          <section className="mt-8" aria-labelledby="results-title">
+        <MatchAnimationModal
+          isOpen={isAnimating}
+          onComplete={handleAnimationComplete}
+          onClose={() => setIsAnimating(false)}
+        />
+
+        {!isAnimating && data && (
+          <motion.section
+            ref={resultsRef}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mt-8"
+            aria-labelledby="results-title"
+          >
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 id="results-title" className="font-serif text-3xl text-stone-900">
@@ -290,7 +332,7 @@ export function MatchPage() {
             ) : (
               <ul className="mt-4 space-y-4">{data.results.map((r) => <ResultCard key={r.id} result={r} />)}</ul>
             )}
-          </section>
+          </motion.section>
         )}
       </main>
     </div>

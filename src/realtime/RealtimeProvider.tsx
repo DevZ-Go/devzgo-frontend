@@ -37,7 +37,17 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
     const connect = () => {
       if (stopped) return;
-      const socket = new WebSocket(`${API_BASE_URL.replace(/\/$/, "").replace(/^http/, "ws")}/ws`);
+      const base = API_BASE_URL.replace(/\/$/, "");
+      let wsUrl: string;
+      if (base.startsWith("ws://") || base.startsWith("wss://")) {
+        wsUrl = `${base}/ws`;
+      } else if (base.startsWith("http://") || base.startsWith("https://")) {
+        wsUrl = `${base.replace(/^http/, "ws")}/ws`;
+      } else {
+        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${proto}//${window.location.host}${base}/ws`;
+      }
+      const socket = new WebSocket(wsUrl);
       ws = socket;
       socket.onopen = () => {
         if (stopped) {
