@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Briefcase, CheckCheck, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
+import { queryKeys } from "../api/queryKeys";
 
 const HOURS = 48;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -92,30 +94,21 @@ function destination(notif: NotificationItem): string {
 
 export function NotificationsDropdown({ className = "text-stone-800 hover:bg-stone-200/80 hover:text-stone-950" }: { className?: string }) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: notifications = [] } = useQuery({ queryKey: queryKeys.notifications, queryFn: fetchNotifications });
+  const setNotifications = (update: (prev: NotificationItem[]) => NotificationItem[]) =>
+    queryClient.setQueryData<NotificationItem[]>(queryKeys.notifications, (prev) => update(prev ?? []));
   const recent = notifications.filter((n) => isRecent(n.createdAt));
   const unreadCount = recent.filter((n) => !n.read).length;
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const list = await fetchNotifications();
-        if (!cancelled) setNotifications(list);
-      } catch {
-        // The bell stays quiet when the list cannot load.
-      }
-    }
-    void load();
-    const handleUpdate = () => void load();
+    const handleUpdate = () =>
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications }, { cancelRefetch: false });
     window.addEventListener("devzgo:notifications-updated", handleUpdate);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("devzgo:notifications-updated", handleUpdate);
-    };
-  }, []);
+    return () => window.removeEventListener("devzgo:notifications-updated", handleUpdate);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!open) return;
