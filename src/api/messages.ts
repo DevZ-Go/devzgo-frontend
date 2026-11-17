@@ -51,9 +51,12 @@ export function mapMessage(m: Record<string, unknown>): Message {
     senderUsername: (m.sender_username || m.senderUsername || undefined) as string | undefined,
     senderName: (m.sender_name || m.senderName || undefined) as string | undefined,
     senderAvatarUrl: assetUrlOrNull(m.sender_avatar_url || m.senderAvatarUrl),
-    mediaKind: kind === "image" || kind === "video" || kind === "file" ? kind : null,
+    mediaKind: kind === "image" || kind === "video" || kind === "file" || kind === "audio" ? kind : null,
     mediaUrl: (m.media_url || m.mediaUrl || null) as string | null,
     mediaName: (m.media_name || m.mediaName || null) as string | null,
+    viewOnce: Boolean(m.view_once ?? m.viewOnce),
+    opened: Boolean(m.opened),
+    unsent: Boolean(m.unsent),
     reactions: mapReaction(m.reactions),
     roomId: (m.room_id || m.roomId || undefined) as string | undefined,
   };
@@ -150,11 +153,17 @@ export interface OutgoingAttachment {
   mediaName?: string | null;
 }
 
-export async function sendGroupMessage(roomId: string, content: string, media?: OutgoingAttachment): Promise<Message> {
+export async function sendGroupMessage(
+  roomId: string,
+  content: string,
+  media?: OutgoingAttachment,
+  viewOnce = false,
+): Promise<Message> {
   const res = await api.post(`/messages/groups/${roomId}`, {
     content,
     media_key: media?.mediaKey || undefined,
     media_name: media?.mediaName || undefined,
+    view_once: viewOnce,
   });
   return mapMessage(res.data);
 }
@@ -235,13 +244,19 @@ export async function fetchConversationThread(otherUserId: string): Promise<Mess
   return thread;
 }
 
-export async function sendMessage(receiverId: string, content: string, media?: OutgoingAttachment): Promise<Message> {
+export async function sendMessage(
+  receiverId: string,
+  content: string,
+  media?: OutgoingAttachment,
+  viewOnce = false,
+): Promise<Message> {
   try {
     const res = await api.post("/messages", {
       receiver_id: receiverId,
       content,
       media_key: media?.mediaKey || undefined,
       media_name: media?.mediaName || undefined,
+      view_once: viewOnce,
     });
     if (res.data) {
       return mapMessage(res.data);
@@ -315,7 +330,7 @@ export async function fetchUnreadMessagesCount(): Promise<number> {
   return count;
 }
 
-export type AttachmentKind = "image" | "video" | "file";
+export type AttachmentKind = "image" | "video" | "file" | "audio";
 
 export async function uploadChatAttachment(
   file: File,
@@ -325,8 +340,28 @@ export async function uploadChatAttachment(
   // Videos can take a while; avoid the browser aborting a successful transfer.
   const res = await api.post("/messages/attachments", body, { timeout: 120_000 });
   const raw = res.data?.media_kind;
-  const kind: AttachmentKind = raw === "video" || raw === "file" ? raw : "image";
+  const kind: AttachmentKind = raw === "video" || raw === "file" || raw === "audio" ? raw : "image";
   return { mediaKey: String(res.data.media_key), mediaKind: kind, mediaName: res.data?.media_name ?? null };
+}
+
+export async function hideMessage(messageId: string, roomId?: string): Promise<void> {
+  const url = roomId ? `/messages/groups/${roomId}/${messageId}/hide` : `/messages/${messageId}/hide`;
+  await api.post(url);
+}
+
+export async function unsendMessage(messageId: string, roomId?: string): Promise<Message> {
+  const url = roomId ? `/messages/groups/${roomId}/${messageId}/unsend` : `/messages/${messageId}/unsend`;
+  return mapMessage((await api.post(url)).data);
+}
+
+export async function openViewOnce(messageId: string, roomId?: string): Promise<Message> {
+  const url = roomId ? `/messages/groups/${roomId}/${messageId}/open` : `/messages/${messageId}/open`;
+  return mapMessage((await api.post(url)).data);
+}
+
+export async function consumeViewOnce(messageId: string, roomId?: string): Promise<Message> {
+  const url = roomId ? `/messages/groups/${roomId}/${messageId}/consume` : `/messages/${messageId}/consume`;
+  return mapMessage((await api.post(url)).data);
 }
 
 export async function reactToMessage(messageId: string, emoji: string, roomId?: string): Promise<Message> {
