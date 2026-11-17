@@ -4,6 +4,7 @@ import { ArrowLeft, BellOff, Loader2, MessageSquare, Paperclip, Plus, Search, Se
 import { Navbar } from "../components/Navbar";
 import { ChatActionsMenu } from "../components/ChatActionsMenu";
 import { ChatMessage } from "../components/ChatMessage";
+import { ChatMediaViewer, type ChatMediaItem } from "../components/ChatMediaViewer";
 import { GroupDetails } from "../components/GroupDetails";
 import { MemberAvatar } from "../components/MemberAvatar";
 import {
@@ -42,16 +43,30 @@ function threadPreview(content: string, kind?: string | null): string | null {
 }
 
 const ACCEPT = [
-  "image/png", "image/jpeg", "image/gif", "image/webp", "video/mp4", "video/webm",
+  "image/png", "image/jpeg", "image/gif", "image/webp",
+  "video/mp4", "video/webm", ".mp4", ".webm",
   ".pdf", ".txt", ".md", ".csv", ".json", ".docx", ".xlsx", ".pptx", ".zip",
 ].join(",");
 const LIMIT_MB: Record<AttachmentKind, number> = { image: 8, video: 25, file: 15 };
 const KIND_LABEL: Record<AttachmentKind, string> = { image: "Photo", video: "Video", file: "File" };
 
 function guessKind(file: File): AttachmentKind {
-  if (file.type.startsWith("video/")) return "video";
-  if (file.type.startsWith("image/")) return "image";
+  const name = file.name.toLowerCase();
+  if (file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|avi|mkv)$/.test(name)) return "video";
+  if (file.type.startsWith("image/") || /\.(png|jpe?g|gif|webp)$/.test(name)) return "image";
   return "file";
+}
+
+function unsupportedVideo(file: File): string | null {
+  const name = file.name.toLowerCase();
+  const type = (file.type || "").toLowerCase();
+  if (/\.(mov|m4v|avi|mkv|qt)$/.test(name) || type.includes("quicktime") || type === "video/x-msvideo") {
+    return "Videos must be MP4 or WebM (max 25 MB). Phone clips in MOV/HEVC aren’t supported yet.";
+  }
+  if (guessKind(file) === "video" && !(/\.(mp4|webm)$/.test(name) || type === "video/mp4" || type === "video/webm" || !type)) {
+    return "Videos must be MP4 or WebM (max 25 MB).";
+  }
+  return null;
 }
 
 const NO_SAFETY: PersonSafety = { relation: null, blockedMe: false, muted: false };
@@ -86,8 +101,26 @@ export function MessagesPage() {
   const [uploading, setUploading] = useState(false);
   const [paneSafety, setPaneSafety] = useState<PersonSafety>(NO_SAFETY);
   const [safetyBusy, setSafetyBusy] = useState(false);
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const mediaItems = useMemo<ChatMediaItem[]>(
+    () =>
+      messages.flatMap((msg) => {
+        if (!msg.mediaUrl || (msg.mediaKind !== "image" && msg.mediaKind !== "video")) return [];
+        const sender = msg.senderName || msg.senderUsername || "Member";
+        return [{
+          id: msg.id,
+          url: msg.mediaUrl,
+          kind: msg.mediaKind,
+          label: `${msg.mediaKind === "video" ? "Video" : "Photo"} from ${sender}`,
+          senderName: sender,
+          createdAt: msg.createdAt,
+        }];
+      }),
+    [messages],
+  );
 
   const loadLists = useCallback(async (openUserId?: string) => {
     try {
@@ -158,6 +191,7 @@ export function MessagesPage() {
     setLoadingThread(true);
     setMessages([]);
     setAttachment(null);
+    setMediaIndex(null);
     setPaneSafety(NO_SAFETY);
     if (pane.kind === "dm") {
       void fetchPersonSafety(pane.person.id)
@@ -243,6 +277,11 @@ export function MessagesPage() {
   async function handleFile(file: File | undefined) {
     if (!file) return;
     const kind = guessKind(file);
+    const blocked = unsupportedVideo(file);
+    if (blocked) {
+      setSendError(blocked);
+      return;
+    }
     if (file.size > LIMIT_MB[kind] * 1024 * 1024) {
       setSendError(`${KIND_LABEL[kind]}s must be ${LIMIT_MB[kind]} MB or smaller.`);
       return;
@@ -253,7 +292,12 @@ export function MessagesPage() {
       const stored = await uploadChatAttachment(file);
       setAttachment({ ...stored, name: file.name });
     } catch (err) {
-      setSendError(getApiErrorMessage(err));
+      const message = getApiErrorMessage(err);
+      setSendError(
+        message === "Network Error"
+          ? "Upload failed. Use an MP4 or WebM under 25 MB and try again."
+          : message,
+      );
     } finally {
       setUploading(false);
     }
@@ -351,7 +395,7 @@ export function MessagesPage() {
       <Navbar />
       <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-4 pb-4 pt-20 sm:px-8 lg:min-h-0 lg:pb-3">
         <div className="grid h-[calc(100dvh-7rem)] min-h-[420px] grid-cols-1 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm md:grid-cols-[340px_1fr] lg:h-auto lg:min-h-0 lg:flex-1">
-          <div className={`flex h-full flex-col border-r border-stone-100 ${pane ? "hidden md:flex" : "flex"}`}>
+          <div data-tour="messages-list" className={`flex h-full flex-col border-r border-stone-100 ${pane ? "hidden md:flex" : "flex"}`}>
             <div className="border-b border-stone-100 p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="font-serif text-2xl text-stone-900">Messages</h2>
@@ -574,7 +618,7 @@ export function MessagesPage() {
                 </div>
                 {pane.kind === "dm" && paneSafety.relation === "restrict" && (
                   <p className="border-b border-stone-200 bg-stone-50 px-4 py-2 text-xs text-stone-600">
-                    You restricted this person. You won't be notified about their messages, and they can't see when you've read them.
+                    You restricted this person. Neither of you can send DMs until you remove the restrict. Their public work stays findable.
                   </p>
                 )}
                 {pane.kind !== "dm" && room?.muted && (
@@ -596,11 +640,23 @@ export function MessagesPage() {
                         message={msg}
                         mine={Boolean(msg.isOutgoing || msg.senderId === user?.id)}
                         onReact={(emoji) => void handleReact(msg.id, emoji)}
+                        onOpenMedia={() => {
+                          const i = mediaItems.findIndex((item) => item.id === msg.id);
+                          if (i >= 0) setMediaIndex(i);
+                        }}
                       />
                     ))
                   )}
                   <div ref={messagesEndRef} />
                 </div>
+                {mediaIndex != null && mediaItems[mediaIndex] && (
+                  <ChatMediaViewer
+                    items={mediaItems}
+                    index={mediaIndex}
+                    onIndex={setMediaIndex}
+                    onClose={() => setMediaIndex(null)}
+                  />
+                )}
                 {sendError && <p className="px-4 text-xs text-rose-700">{sendError}</p>}
                 {attachment && (
                   <div className="mx-3 mb-2 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-700">
@@ -610,21 +666,23 @@ export function MessagesPage() {
                     </button>
                   </div>
                 )}
-                {pane.kind === "dm" && (paneSafety.relation === "block" || paneSafety.blockedMe) ? (
+                {pane.kind === "dm" && (paneSafety.relation === "block" || paneSafety.relation === "restrict" || paneSafety.blockedMe) ? (
                   <div className="flex items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 text-sm text-stone-600">
                     <span>
                       {paneSafety.relation === "block"
                         ? `You blocked @${pane.person.username}. Unblock them to send a message.`
-                        : "You can't reply to this conversation."}
+                        : paneSafety.relation === "restrict"
+                          ? `You restricted @${pane.person.username}. Remove the restrict to message them.`
+                          : "You can't reply to this conversation."}
                     </span>
-                    {paneSafety.relation === "block" && (
+                    {(paneSafety.relation === "block" || paneSafety.relation === "restrict") && (
                       <button
                         type="button"
                         disabled={safetyBusy}
                         onClick={() => void handleRelation(null)}
                         className="shrink-0 rounded-full border border-stone-200 px-3 py-1.5 text-xs font-semibold text-maroon-800 hover:bg-amber-50 disabled:opacity-50"
                       >
-                        Unblock
+                        {paneSafety.relation === "block" ? "Unblock" : "Unrestrict"}
                       </button>
                     )}
                   </div>

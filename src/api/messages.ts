@@ -322,7 +322,8 @@ export async function uploadChatAttachment(
 ): Promise<{ mediaKey: string; mediaKind: AttachmentKind; mediaName: string | null }> {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post("/messages/attachments", body);
+  // Videos can take a while; avoid the browser aborting a successful transfer.
+  const res = await api.post("/messages/attachments", body, { timeout: 120_000 });
   const raw = res.data?.media_kind;
   const kind: AttachmentKind = raw === "video" || raw === "file" ? raw : "image";
   return { mediaKey: String(res.data.media_key), mediaKind: kind, mediaName: res.data?.media_name ?? null };

@@ -75,6 +75,7 @@ export interface ProjectPreview {
   likesCount: number;
   isLiked: boolean;
   commentsCount: number;
+  likesHidden?: boolean;
 }
 
 export interface ActivityComment {

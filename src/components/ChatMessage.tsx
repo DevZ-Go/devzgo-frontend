@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, CheckCheck, Download, FileText, SmilePlus } from "lucide-react";
 import { api } from "../api/client";
 import type { Message } from "../types/network";
 import { MemberAvatar } from "./MemberAvatar";
+import { ChatMediaThumb } from "./ChatMediaViewer";
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "👀", "🔥", "👏", "✅"];
 
@@ -13,37 +14,6 @@ function formatMessageTime(isoString: string): string {
   } catch {
     return "";
   }
-}
-
-function ChatAttachment({ url, kind, label }: { url: string; kind: "image" | "video"; label: string }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let dead = false;
-    let objectUrl = "";
-    api
-      .get(url, { responseType: "blob" })
-      .then((res) => {
-        objectUrl = URL.createObjectURL(res.data);
-        if (dead) URL.revokeObjectURL(objectUrl);
-        else setSrc(objectUrl);
-      })
-      .catch(() => {
-        if (!dead) setFailed(true);
-      });
-    return () => {
-      dead = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [url]);
-
-  if (failed) return <p className="text-xs opacity-80">Couldn't load this file.</p>;
-  if (!src) return <p className="text-xs opacity-70">Loading…</p>;
-  if (kind === "video") {
-    return <video src={src} controls playsInline className="mt-1 max-h-64 w-full rounded-lg bg-black" />;
-  }
-  return <img src={src} alt={label} className="mt-1 max-h-64 w-full rounded-lg object-contain" />;
 }
 
 /** Documents never open inline: they download through the signed-in API with their original name. */
@@ -91,10 +61,11 @@ function ChatFile({ url, name, mine }: { url: string; name: string; mine: boolea
 }
 
 /** One chat bubble: who sent it, any photo, video or file, and emoji reactions. */
-export function ChatMessage({ message, mine, onReact }: {
+export function ChatMessage({ message, mine, onReact, onOpenMedia }: {
   message: Message;
   mine: boolean;
   onReact: (emoji: string) => void;
+  onOpenMedia?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const name = message.senderName || message.senderUsername || "Member";
@@ -121,7 +92,12 @@ export function ChatMessage({ message, mine, onReact }: {
           }`}
         >
           {message.mediaUrl && (kind === "image" || kind === "video") && (
-            <ChatAttachment url={message.mediaUrl} kind={kind} label={`${kind === "video" ? "Video" : "Photo"} from ${name}`} />
+            <ChatMediaThumb
+              url={message.mediaUrl}
+              kind={kind}
+              label={`${kind === "video" ? "Video" : "Photo"} from ${name}`}
+              onOpen={() => onOpenMedia?.()}
+            />
           )}
           {message.mediaUrl && kind === "file" && (
             <ChatFile url={message.mediaUrl} name={message.mediaName || "attachment"} mine={mine} />
