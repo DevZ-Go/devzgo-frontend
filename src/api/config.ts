@@ -1,6 +1,11 @@
 /** Base URL for the FastAPI backend (no trailing slash). Set VITE_API_BASE_URL at build time for production. */
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+function apiBaseFromEnv(): string {
+  const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (raw) return raw.replace(/\/$/, "");
+  return "http://localhost:8000";
+}
+
+export const API_BASE_URL = apiBaseFromEnv();
 
 if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
   console.error(
