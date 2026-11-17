@@ -38,7 +38,7 @@ import type { ApiProject, Project } from "../types/project";
 import type { DeveloperProfile, FeedActivity } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
 import { useAccount } from "../auth/account";
-import { openRecruiterTour } from "../components/tour/events";
+import { openDeveloperTour, openRecruiterTour } from "../components/tour/events";
 
 const TABS = ["projects", "collaborations", "portfolio", "activity"] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -135,7 +135,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (token && user == null) {
-      void refreshUser();
+      void refreshUser().catch(() => undefined);
     }
   }, [token, user, refreshUser]);
 
@@ -379,7 +379,7 @@ export function ProfilePage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div data-tour="profile-actions" className="mt-6 flex flex-wrap gap-3">
                   {isOwnProfile ? (
                     <>
                       <button
@@ -437,12 +437,21 @@ export function ProfilePage() {
                           </button>
                         </>
                       ) : (
-                        <Link
-                          to="/wrap"
-                          className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
-                        >
-                          <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
-                        </Link>
+                        <>
+                          <Link
+                            to="/wrap"
+                            className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition"
+                          >
+                            <CalendarDays className="w-3.5 h-3.5 text-amber-300" /> View your Wrap
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={openDeveloperTour}
+                            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
+                          >
+                            Developer tour
+                          </button>
+                        </>
                       )}
                     </>
                   ) : (

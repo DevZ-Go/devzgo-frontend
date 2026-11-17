@@ -159,7 +159,7 @@ export function SafetySettings() {
           <Group
             icon={<Ban className="h-4 w-4 text-rose-700" />}
             title="Blocked"
-            hint="Neither of you can message the other or send a connection request, and you can't be added to the same new group."
+            hint="Full cut: neither of you can message or connect, your connection ends, and you won't see each other in search or network lists."
             empty={data.blocked.length === 0}
           >
             {data.blocked.map((row) => (
@@ -173,7 +173,7 @@ export function SafetySettings() {
           <Group
             icon={<EyeOff className="h-4 w-4 text-stone-600" />}
             title="Restricted"
-            hint="They can still message you, but you aren't notified and they can't see when you've read their messages."
+            hint="No DMs either way while the restrict stands. Their profile and projects stay findable if you search, and they can still see your public work."
             empty={data.restricted.length === 0}
           >
             {data.restricted.map((row) => (

@@ -8,5 +8,9 @@ export interface AuthUser {
   username_needs_choice?: boolean;
   /** Fixed at sign-up. Recruiter accounts review work and cannot build projects. */
   account_type?: "developer" | "recruiter";
+  /** Set while the account is paused or pending deletion. */
+  deactivated_at?: string | null;
+  /** When set, permanent deletion is scheduled; signing in before this time cancels it. */
+  delete_after?: string | null;
   [key: string]: unknown;
 }
