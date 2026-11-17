@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import axios from "axios";
 import { fetchCurrentUser } from "../api";
 import { queryClient } from "../api/queryKeys";
 import type { AuthUser } from "../types/auth";
@@ -73,10 +74,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       return null;
     }
-    const me = await fetchCurrentUser();
-    setUser(me);
-    return me;
-  }, []);
+    try {
+      const me = await fetchCurrentUser();
+      setUser(me);
+      return me;
+    } catch (err) {
+      // 401 = dead session. Other failures (offline, 500) keep the token so a retry can succeed.
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        logout();
+      }
+      throw err;
+    }
+  }, [logout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

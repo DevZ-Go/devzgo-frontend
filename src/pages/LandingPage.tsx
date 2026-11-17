@@ -86,6 +86,7 @@ export function LandingPage() {
           </motion.h1>
 
           <motion.div
+            data-tour="home-cta"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}
@@ -227,42 +228,40 @@ export function LandingPage() {
                 <Link
                   key={project.id ?? idx}
                   to={linked ? `/project/${projectId}` : "/explore"}
-                  className="group flex flex-col justify-between rounded-3xl bg-[#f8f6f0] p-4 text-left shadow-xl border-2 border-white/20 hover:border-[#fced96] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#fced96]"
+                  className="group flex h-full min-h-0 flex-col rounded-3xl bg-[#f8f6f0] p-3 sm:p-4 text-left shadow-xl border-2 border-white/20 hover:border-[#fced96] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#fced96]"
                 >
-                  {/* Project Image Frame (Uncropped object-contain on soft pedestal so GitHub cards aren't cut off) */}
-                  <div className="aspect-[16/10] w-full rounded-2xl bg-white border border-stone-200/80 overflow-hidden flex items-center justify-center relative shadow-inner p-2">
+                  {/* Cover fills the card frame on every breakpoint */}
+                  <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200 shadow-inner">
                     {coverUrl ? (
                       <ImageWithFallback
                         src={coverUrl}
                         alt={project.title}
-                        className="w-full h-full object-contain rounded-xl group-hover:scale-[1.03] transition-transform duration-300"
+                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#f8f6f0] to-[#efe6d4] text-stone-700 rounded-xl">
-                        <FolderCode className="w-10 h-10 text-[#631726] mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="font-serif text-sm font-semibold text-center text-stone-800 line-clamp-2">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#f8f6f0] to-[#efe6d4] p-6 text-stone-700">
+                        <FolderCode className="mb-2 h-10 w-10 text-[#631726] transition-transform group-hover:scale-110" />
+                        <span className="line-clamp-2 text-center font-serif text-sm font-semibold text-stone-800">
                           {project.title}
                         </span>
                       </div>
                     )}
 
-                    {/* Top Category Tag */}
                     {project.category && (
-                      <span className="absolute top-2.5 left-2.5 text-[9px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full bg-[#631726] text-[#fced96] shadow-xs">
+                      <span className="absolute left-2.5 top-2.5 rounded-full bg-[#631726]/95 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#fced96] shadow-xs backdrop-blur-sm">
                         {project.category}
                       </span>
                     )}
                   </div>
 
-                  {/* Project Title and Metadata */}
-                  <div className="mt-4 px-1 pt-1">
-                    <h3 className="font-serif text-xl text-stone-900 font-semibold group-hover:text-[#631726] transition-colors truncate">
+                  <div className="mt-3 flex min-w-0 flex-1 flex-col justify-end px-0.5 pt-1 sm:mt-4 sm:px-1">
+                    <h3 className="truncate font-serif text-lg font-semibold text-stone-900 transition-colors group-hover:text-[#631726] sm:text-xl">
                       {project.title}
                     </h3>
-                    <div className="flex items-center justify-between text-xs text-stone-600 font-sans mt-1.5 pt-2 border-t border-stone-200/70">
-                      <span className="truncate max-w-[165px] font-medium">{stackLabel}</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-[#631726] font-semibold ml-2 shrink-0">
-                        <Heart className="w-3 h-3 text-[#631726] fill-[#631726]" />
+                    <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-stone-200/70 pt-2 text-xs text-stone-600">
+                      <span className="min-w-0 truncate font-medium">{stackLabel}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-[#631726]">
+                        <Heart className="h-3 w-3 fill-[#631726] text-[#631726]" />
                         <span>{project.likes ?? 0}</span>
                       </span>
                     </div>

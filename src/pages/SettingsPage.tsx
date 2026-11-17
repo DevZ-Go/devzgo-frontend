@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
-import { changePassword, changeUsername } from "../api/auth";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  cancelAccountDelete,
+  changePassword,
+  changeUsername,
+  deactivateAccount,
+  scheduleAccountDelete,
+} from "../api/auth";
 import { fetchMyProfile, MEMBER_ROLES, updateMyProfile, uploadAvatar } from "../api/profiles";
 import { WORK_ARRANGEMENTS, WORK_TYPES } from "../api/recruiting";
 import { useAuth } from "../auth/AuthContext";
@@ -12,6 +17,7 @@ import { PasswordInput } from "../components/PasswordInput";
 import { PhotoCropper } from "../components/PhotoCropper";
 import { GitHubEditing } from "../components/settings/GitHubEditing";
 import { SafetySettings } from "../components/settings/SafetySettings";
+import { openDeveloperTour, openRecruiterTour } from "../components/tour/events";
 import { Select } from "../components/ui/Select";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { UsernameField } from "../components/UsernameField";
@@ -31,6 +37,7 @@ const SECTIONS = [
   ["notifications", "Notifications"],
   ["github", "GitHub"],
   ["appearance", "Appearance"],
+  ["help", "Help"],
 ] as const;
 type Section = (typeof SECTIONS)[number][0];
 const AUDIENCE = [
@@ -90,8 +97,16 @@ function Save({ busy, disabled, children }: { busy: boolean; disabled?: boolean;
   );
 }
 
+function daysLeft(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (Number.isNaN(ms)) return null;
+  return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
 export function SettingsPage() {
-  const { user, login, refreshUser } = useAuth();
+  const { user, login, logout, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { recruiter } = useAccount();
   const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges")));
@@ -100,6 +115,11 @@ export function SettingsPage() {
   const hasPassword = user?.has_password !== false;
   const [ready, setReady] = useState(false);
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [pausePassword, setPausePassword] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteUsername, setDeleteUsername] = useState("");
+  const [confirmPause, setConfirmPause] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("");
   const [company, setCompany] = useState("");
@@ -358,6 +378,120 @@ export function SettingsPage() {
           <SelectField label="Open" value={startPage} onChange={(value) => setStartPage(value === "resume" ? "resume" : "home")} options={[["home", recruiter ? "Recruiter home" : "Home"], ["resume", "The last page you had open"]]} />
           <Save busy={busy} disabled={!ready}>Save</Save>
         </form>
+
+        <div className="space-y-4 border-t border-stone-200 pt-8" data-tour="settings-account">
+          <h2 className="font-serif text-2xl text-stone-900">Pause or delete</h2>
+          <p className="text-sm text-stone-500">
+            Pause hides your profile until you sign in again. Delete schedules permanent removal in 30 days — signing in before then cancels it.
+          </p>
+          {user?.delete_after && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <p>
+                Deletion is scheduled
+                {daysLeft(user.delete_after) != null ? ` · about ${daysLeft(user.delete_after)} day${daysLeft(user.delete_after) === 1 ? "" : "s"} left` : ""}.
+                Signing in again also cancels this.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void run(async () => {
+                  await cancelAccountDelete();
+                  await refreshUser();
+                  setMessage({ text: "Deletion cancelled.", ok: true });
+                })}
+                className="mt-2 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-maroon-800 hover:bg-amber-100 disabled:opacity-50"
+              >
+                Cancel deletion
+              </button>
+            </div>
+          )}
+          {!confirmPause ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => { setConfirmPause(true); setConfirmDelete(false); }}
+              className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+            >
+              Pause account
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-stone-200 bg-[#f8f6f0] p-4">
+              <p className="text-sm text-stone-700">Your profile and work stay hidden until you sign in again. Other sessions will be signed out.</p>
+              {hasPassword && (
+                <PasswordInput
+                  required value={pausePassword} onChange={(e) => setPausePassword(e.target.value)}
+                  autoComplete="current-password" placeholder="Current password" aria-label="Password to pause account" className={inputClass}
+                />
+              )}
+              {!hasPassword && (
+                <p className="text-xs text-stone-500">Confirm as @{user?.username} (GitHub sign-in).</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy || (hasPassword && !pausePassword)}
+                  onClick={() => void run(async () => {
+                    await deactivateAccount(hasPassword ? pausePassword : undefined, hasPassword ? undefined : user?.username);
+                    logout();
+                    navigate("/login", { replace: true });
+                  })}
+                  className={`${ui.btn} ${ui.primary} rounded-xl px-5 py-2.5 text-sm`}
+                >
+                  {busy ? "Pausing…" : "Pause now"}
+                </button>
+                <button type="button" disabled={busy} onClick={() => { setConfirmPause(false); setPausePassword(""); }} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-100">
+                  Never mind
+                </button>
+              </div>
+            </div>
+          )}
+          {!confirmDelete ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => { setConfirmDelete(true); setConfirmPause(false); }}
+              className="block rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-800 hover:bg-rose-50 disabled:opacity-50"
+            >
+              Delete account
+            </button>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+              <p className="text-sm text-rose-950">
+                Your account is hidden immediately and permanently deleted after 30 days. Sign in any time before then to cancel.
+              </p>
+              <input
+                value={deleteUsername}
+                onChange={(e) => setDeleteUsername(e.target.value)}
+                placeholder={`Type @${user?.username || "username"} to confirm`}
+                aria-label="Username to confirm deletion"
+                className={inputClass}
+              />
+              {hasPassword && (
+                <PasswordInput
+                  required value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)}
+                  autoComplete="current-password" placeholder="Current password" aria-label="Password to delete account" className={inputClass}
+                />
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !deleteUsername.trim() || (hasPassword && !deletePassword)}
+                  onClick={() => void run(async () => {
+                    await scheduleAccountDelete(deleteUsername.trim().replace(/^@/, ""), hasPassword ? deletePassword : undefined);
+                    logout();
+                    navigate("/login", { replace: true });
+                  })}
+                  className="rounded-xl bg-rose-800 px-5 py-2.5 text-sm font-semibold text-amber-50 hover:bg-rose-900 disabled:opacity-50"
+                >
+                  {busy ? "Scheduling…" : "Delete in 30 days"}
+                </button>
+                <button type="button" disabled={busy} onClick={() => { setConfirmDelete(false); setDeletePassword(""); setDeleteUsername(""); }} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-white">
+                  Never mind
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   } else if (section === "profile") {
@@ -555,6 +689,23 @@ export function SettingsPage() {
     panel = <SafetySettings />;
   } else if (section === "github") {
     panel = <GitHubEditing />;
+  } else if (section === "help") {
+    panel = (
+      <div className="space-y-4" data-tour="settings-tour">
+        <h2 className="font-serif text-2xl text-stone-900">Help</h2>
+        <p className="text-sm text-stone-500">
+          Take a short guided tour of DevZ-Go. You can also start it from Help in the top bar.
+          Blocked & muted, and pause or delete your account, live in Settings.
+        </p>
+        <button
+          type="button"
+          onClick={() => (recruiter ? openRecruiterTour() : openDeveloperTour())}
+          className={`${ui.btn} ${ui.primary} rounded-xl px-5 py-2.5 text-sm`}
+        >
+          Take the tour
+        </button>
+      </div>
+    );
   } else {
     panel = (
       <div>

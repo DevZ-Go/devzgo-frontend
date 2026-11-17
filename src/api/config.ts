@@ -1,9 +1,19 @@
-/** Base URL for the FastAPI backend (no trailing slash). */
+/** Base URL for the FastAPI backend (no trailing slash). Set VITE_API_BASE_URL at build time for production. */
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-/** Demo mode: social modules fall back to local demo data only when this is on. */
+if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
+  console.error(
+    "VITE_API_BASE_URL is missing from the production build; API calls will target localhost.",
+  );
+}
+
+/** Demo mode: local mock data only when VITE_MOCK_API=true. Must stay false in production builds. */
 export const USE_MOCK = import.meta.env.VITE_MOCK_API === "true";
+
+if (import.meta.env.PROD && USE_MOCK) {
+  console.error("VITE_MOCK_API=true in a production build — disable mock mode.");
+}
 
 /** Turn a relative API path (e.g. `/storage/covers/x.png`) into a full URL for `<img src>`. */
 export function resolveApiAssetUrl(pathOrUrl: string | null | undefined): string {

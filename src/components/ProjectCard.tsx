@@ -32,7 +32,7 @@ function CardTools({ project }: { project: Project }) {
           className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-800 shadow-sm"
         >
           <Heart className={`h-3.5 w-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
-          {count}
+          {!project.likesHidden && count}
         </button>
         <button type="button" title="Share" onClick={() => setShare(true)} className="rounded-full bg-white/95 p-1.5 text-stone-800 shadow-sm">
           <Share2 className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
               <div className="flex items-center gap-4 text-sm text-gray-400">
                 <div className="flex items-center gap-1">
                   <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
-                  <span>{count}</span>
+                  {!project.likesHidden && <span>{count}</span>}
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="w-3.5 h-3.5" />
@@ -148,7 +148,7 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
               <div className="flex items-center gap-5 text-white/60 text-sm">
                 <div className="flex items-center gap-1.5">
                   <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
-                  <span>{count.toLocaleString()}</span>
+                  {!project.likesHidden && <span>{count.toLocaleString()}</span>}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MessageCircle className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
             <div className="flex items-center gap-3 text-white/60 text-xs">
               <div className="flex items-center gap-1">
                 <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
-                <span>{count}</span>
+                {!project.likesHidden && <span>{count}</span>}
               </div>
               <div className="flex items-center gap-1">
                 <MessageCircle className="w-3.5 h-3.5" />

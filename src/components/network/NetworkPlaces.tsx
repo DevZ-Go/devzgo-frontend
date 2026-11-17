@@ -14,7 +14,7 @@ export function NetworkPlaces({ current }: { current: NetworkPlace }) {
   const { recruiter } = useAccount();
   const activeTab = current === "feed" ? "feed" : "people";
   return (
-    <nav aria-label="Network" className="mb-6 flex flex-wrap items-center gap-2.5">
+    <nav data-tour="network-places" aria-label="Network" className="mb-6 flex flex-wrap items-center gap-2.5">
       {PLACES.map((place) => {
         const active = place.id === activeTab;
         return (

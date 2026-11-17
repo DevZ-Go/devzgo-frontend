@@ -11,12 +11,12 @@ const itemClass =
 const COPY: Record<SafetyRelation, { title: string; body: string; action: string }> = {
   block: {
     title: "Block",
-    body: "Neither of you can message the other or send a connection request, and your connection ends. They aren't told.",
+    body: "Full cut: neither of you can message or connect, your connection ends, and you won't see each other in search. They aren't told.",
     action: "Block",
   },
   restrict: {
     title: "Restrict",
-    body: "They can still message you, but you won't be notified and they won't see when you've read their messages. They aren't told.",
+    body: "No DMs either way. Their work stays findable if you search, and they can still see your public projects. They aren't told.",
     action: "Restrict",
   },
 };

@@ -68,7 +68,7 @@ export function ProjectDetailPage() {
 
   useEffect(() => {
     if (token && user == null) {
-      void refreshUser();
+      void refreshUser().catch(() => undefined);
     }
   }, [token, user, refreshUser]);
 
@@ -288,6 +288,7 @@ export function ProjectDetailPage() {
                       count={project.likes_count ?? 0}
                       liked={Boolean(project.is_liked)}
                       canLike={Boolean(token)}
+                      hideCount={Boolean(project.likes_hidden) && !isOwner}
                     />
                   )}
                   {id && (isOwner || project.access?.edit) && (
@@ -474,11 +475,12 @@ export function ProjectDetailPage() {
   );
 }
 
-function ProjectLikeButton({ projectId, count: initialCount, liked: initialLiked, canLike }: {
+function ProjectLikeButton({ projectId, count: initialCount, liked: initialLiked, canLike, hideCount }: {
   projectId: string;
   count: number;
   liked: boolean;
   canLike: boolean;
+  hideCount?: boolean;
 }) {
   const { count, liked, busy, toggle } = useProjectLike(projectId, initialCount, initialLiked);
   return (
@@ -492,7 +494,7 @@ function ProjectLikeButton({ projectId, count: initialCount, liked: initialLiked
       }`}
     >
       <Heart className={`w-3.5 h-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
-      {count}
+      {!hideCount && count}
     </button>
   );
 }

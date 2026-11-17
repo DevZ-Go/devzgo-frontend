@@ -11,7 +11,8 @@ export function FeedProjectStats({ project }: { project: ProjectPreview }) {
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-semibold transition ${
           liked ? "border-[#DC2626] bg-[#FEE2E2] text-[#991B1B]" : "border-stone-200 hover:bg-stone-50"}`}>
         <Heart className={`w-3.5 h-3.5 ${liked ? "fill-crimson-600 text-crimson-600" : ""}`} />
-        {liked ? "Project liked" : "Like project"} · {count}
+        {liked ? "Project liked" : "Like project"}
+        {!project.likesHidden && <> · {count}</>}
       </button>
       <span className="inline-flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {project.commentsCount} project comment{project.commentsCount === 1 ? "" : "s"}</span>
     </div>

@@ -90,7 +90,7 @@ function CardFace({ project, suit, rank }: { project: TvProject; suit: (typeof S
             }}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold ${liked ? "bg-rose-600 text-white" : "bg-stone-100 text-stone-800"}`}
           >
-            {liked ? "Liked" : "Like"} · {count.toLocaleString()}
+            {liked ? "Liked" : "Like"}{!project.likesHidden && <> · {count.toLocaleString()}</>}
           </button>
           <Link to={`/project/${project.id}`} className="rounded-full bg-stone-950 px-3 py-1.5 text-xs font-semibold text-[#fced96]">
             Open

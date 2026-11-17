@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { rememberPath } from "../auth/session";
 import { Footer } from "./Footer";
+import { DeveloperTour } from "./tour/DeveloperTour";
 import { RecruiterTour } from "./tour/RecruiterTour";
 
 function PageLoading() {
@@ -38,6 +39,7 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
         <RecruiterTour />
+        <DeveloperTour />
       </div>
       {!fullScreen && <Footer />}
     </div>

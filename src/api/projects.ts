@@ -22,6 +22,10 @@ export interface CreateProjectPayload {
   live_url?: string;
   /** Outcomes the developer reports in their own words. Omit to leave it as it is. */
   impact_note?: string;
+  /** Allow comments on this project. */
+  comments_enabled?: boolean;
+  /** Hide the like count from everyone except you. */
+  likes_hidden?: boolean;
 }
 
 /** Response from POST /projects — enough to chain uploads by id */
@@ -231,6 +235,8 @@ export async function createProject(
     tech_stack_ids: payload.tech_stack_ids,
     live_url: payload.live_url,
     impact_note: payload.impact_note,
+    comments_enabled: payload.comments_enabled,
+    likes_hidden: payload.likes_hidden,
   };
   const { data } = await api.post<CreateProjectResponse>("/projects", body);
   return data;
@@ -239,8 +245,6 @@ export async function createProject(
 export interface UpdateProjectPayload extends CreateProjectPayload {
   cover_image_url?: string | null;
   demo_video_url?: string | null;
-  /** Omit to leave the owner's comments switch as it is. */
-  comments_enabled?: boolean;
 }
 
 export async function updateProject(
@@ -259,6 +263,7 @@ export async function updateProject(
     cover_image_url: payload.cover_image_url ?? null,
     demo_video_url: payload.demo_video_url ?? null,
     comments_enabled: payload.comments_enabled,
+    likes_hidden: payload.likes_hidden,
     live_url: payload.live_url,
     impact_note: payload.impact_note,
   };
@@ -293,7 +298,7 @@ export async function deleteProjectComment(projectId: string, commentId: string)
 export async function setProjectLiked(
   projectId: string,
   liked: boolean
-): Promise<{ likes_count: number; is_liked: boolean }> {
+): Promise<{ likes_count: number; is_liked: boolean; likes_hidden?: boolean }> {
   const url = `/projects/${encodeURIComponent(projectId)}/like`;
   const { data } = liked ? await api.post(url) : await api.delete(url);
   return data;
