@@ -267,7 +267,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       <Link
         to={to}
         aria-current={isActive(to) ? "page" : undefined}
-        className="text-white/90 hover:text-white drop-shadow-sm tracking-wide transition-colors font-sans hover:underline underline-offset-4 text-sm"
+        className={`font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-3.5 py-1 rounded-full ${
+          isActive(to)
+            ? "bg-[#fced96] text-stone-900 shadow-xs"
+            : "text-[#f8f6f0] hover:text-[#fced96] hover:bg-white/10 drop-shadow-sm"
+        }`}
       >
         {label}
       </Link>
@@ -278,19 +282,34 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          solid ? "bg-black/70 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
+          solid ? "bg-maroon-950/80 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
         }`}
       >
         <div
           className={`transition-all duration-300 overflow-hidden ${
             solid ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
-          } bg-black/25 backdrop-blur-xs text-[11px] text-white/80 text-center py-1 tracking-wider uppercase font-medium`}
+          } bg-black/25 backdrop-blur-xs text-[11px] text-white/85 text-center py-1 tracking-[0.2em] uppercase font-medium`}
         >
           DevZ-Go — Community Showcase
         </div>
 
-        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3.5 flex items-center justify-between relative" aria-label="Main">
-          <div className="hidden lg:flex items-center gap-6 font-medium">
+        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between relative" aria-label="Main">
+          {/* Left: Brand Logo */}
+          <div className="flex items-center">
+            <Link
+              to={homePath}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="flex items-center gap-2 font-serif text-2xl md:text-3xl font-semibold text-[#f8f6f0] tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
+            >
+              <span>DevZ</span>
+              <span className="font-cursive italic font-bold text-[#fced96] text-3xl md:text-[34px] -ml-1">
+                Go
+              </span>
+            </Link>
+          </div>
+
+          {/* Center: Network · Explore · Messages in Cursive Pill Bar */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/15 shadow-lg lg:absolute lg:left-1/2 lg:-translate-x-1/2">
             {recruiter ? (
               <>
                 {topLink("/recruit", "Dashboard")}
@@ -300,20 +319,12 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             ) : (
               <>
                 {topLink("/network", "Network")}
+                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
                 {topLink("/explore", "Explore")}
+                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
                 {topLink("/messages", "Messages")}
               </>
             )}
-          </div>
-
-          <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-            <Link
-              to={homePath}
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="font-serif text-2xl md:text-3xl text-white tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
-            >
-              DevZ-Go
-            </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 text-white/90">

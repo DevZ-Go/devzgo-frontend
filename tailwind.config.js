@@ -6,9 +6,9 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        cursive: ['"Caveat"', 'cursive'],
-        hand: ['"Caveat"', 'cursive'],
+        serif: ['"Fraunces"', '"Playfair Display"', 'Georgia', 'serif'],
+        cursive: ['"Dancing Script"', '"Cormorant Garamond"', 'cursive'],
+        hand: ['"Dancing Script"', '"Caveat"', 'cursive'],
       },
       colors: {
         // Rich Red and Green

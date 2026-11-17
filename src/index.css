@@ -184,12 +184,15 @@ code {
   color: #2d2b3a;
 }
 
-/* Whimsical cursive font utility */
+/* Whimsical cursive & Gift Guide editorial font utilities */
 .font-cursive {
-  font-family: 'Caveat', cursive;
+  font-family: 'Dancing Script', 'Cormorant Garamond', cursive;
 }
 .font-hand {
-  font-family: 'Caveat', cursive;
+  font-family: 'Dancing Script', 'Caveat', cursive;
+}
+.font-gift {
+  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
 }
 
 /* Authentic hand-drawn wobbly doodle borders */
