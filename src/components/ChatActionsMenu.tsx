@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { Ban, Bell, BellOff, EyeOff, Info, MoreHorizontal, ShieldCheck, User } from "lucide-react";
+import { Archive, Ban, Bell, BellOff, EyeOff, Info, LogOut, MoreVertical, Pin, ShieldCheck, Trash2, User } from "lucide-react";
 import type { SafetyRelation } from "../types/network";
 
 type Confirm = "block" | "restrict" | null;
@@ -29,9 +30,22 @@ export function ChatActionsMenu({
   muted,
   relation,
   busy,
+  openToken = 0,
+  pinned,
+  archived,
+  markedUnread,
   onMute,
+  onMuteFor,
   onRelation,
   onGroupInfo,
+  onCloseChat,
+  onUserInfo,
+  onPin,
+  onArchive,
+  onDeleteChat,
+  onMarkUnread,
+  onExitGroup,
+  align = "right",
 }: {
   kind: "dm" | "room";
   name: string;
@@ -39,21 +53,38 @@ export function ChatActionsMenu({
   muted: boolean;
   relation?: SafetyRelation | null;
   busy?: boolean;
+  openToken?: number;
+  pinned?: boolean;
+  archived?: boolean;
+  markedUnread?: boolean;
   onMute: (muted: boolean) => void;
+  onMuteFor?: (duration: "1h" | "8h" | "1w" | "always" | "off") => void;
   onRelation?: (relation: SafetyRelation | null) => void;
   onGroupInfo?: () => void;
+  onCloseChat?: () => void;
+  onUserInfo?: () => void;
+  onPin?: () => void;
+  onArchive?: () => void;
+  onDeleteChat?: () => void;
+  onMarkUnread?: () => void;
+  onExitGroup?: () => void;
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
+  const [muteMenu, setMuteMenu] = useState(false);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setConfirm(null);
-      }
+      const target = e.target as Node;
+      if (ref.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
+      setMuteMenu(false);
+      setConfirm(null);
     };
     const esc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -69,6 +100,10 @@ export function ChatActionsMenu({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (openToken) setOpen(true);
+  }, [openToken]);
+
   const run = (fn: () => void) => {
     fn();
     setOpen(false);
@@ -83,15 +118,21 @@ export function ChatActionsMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={busy}
-        onClick={() => setOpen((value) => !value)}
+        onClick={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setBox({ top: rect.bottom + 6, left: align === "left" ? rect.left : Math.max(8, rect.right - 288) });
+          setOpen((value) => !value);
+        }}
         className="rounded-full p-1.5 text-stone-500 transition hover:bg-stone-100 hover:text-maroon-800 disabled:opacity-50"
       >
-        <MoreHorizontal className="h-5 w-5" />
+        <MoreVertical className="h-5 w-5" />
       </button>
-      {open && (
+      {open && createPortal(
         <div
+          ref={menuRef}
           role="menu"
-          className="absolute right-0 top-10 z-30 w-72 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-lg shadow-stone-900/10"
+          className="fixed z-[70] w-72 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-lg shadow-stone-900/10"
+          style={{ top: box.top, left: Math.min(box.left, window.innerWidth - 296) }}
         >
           {confirm ? (
             <div className="space-y-3 p-2">
@@ -114,22 +155,65 @@ export function ChatActionsMenu({
                 </button>
               </div>
             </div>
+          ) : muteMenu ? (
+            <div className="p-1">
+              <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-stone-400">Mute</p>
+              {([
+                ["1h", "1 hour"],
+                ["8h", "8 hours"],
+                ["1w", "1 week"],
+                ["always", "Always"],
+              ] as const).map(([id, label]) => (
+                <button key={id} type="button" className={itemClass} onClick={() => run(() => (onMuteFor ? onMuteFor(id) : onMute(true)))}>
+                  {label}
+                </button>
+              ))}
+              {muted && (
+                <button type="button" className={itemClass} onClick={() => run(() => (onMuteFor ? onMuteFor("off") : onMute(false)))}>
+                  Unmute
+                </button>
+              )}
+              <button type="button" className={itemClass} onClick={() => setMuteMenu(false)}>Back</button>
+            </div>
           ) : (
             <>
+              {onCloseChat && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onCloseChat)}>Close chat</button>
+              )}
+              {onUserInfo && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onUserInfo)}>
+                  <User className="h-4 w-4 text-stone-500" /> {kind === "room" ? "Group info" : "User info"}
+                </button>
+              )}
               {kind === "dm" && profileHref && (
                 <Link role="menuitem" to={profileHref} className={itemClass} onClick={() => setOpen(false)}>
-                  <User className="h-4 w-4 text-stone-500" /> View profile
+                  <User className="h-4 w-4 text-stone-500" /> Open profile
                 </Link>
               )}
               {kind === "room" && onGroupInfo && (
                 <button role="menuitem" type="button" className={itemClass} onClick={() => run(onGroupInfo)}>
-                  <Info className="h-4 w-4 text-stone-500" /> Group info
+                  <Info className="h-4 w-4 text-stone-500" /> Members
                 </button>
               )}
-              <button role="menuitem" type="button" className={itemClass} onClick={() => run(() => onMute(!muted))}>
+              <button role="menuitem" type="button" className={itemClass} onClick={() => setMuteMenu(true)}>
                 {muted ? <Bell className="h-4 w-4 text-stone-500" /> : <BellOff className="h-4 w-4 text-stone-500" />}
-                {muted ? "Unmute notifications" : "Mute notifications"}
+                {muted ? "Muted" : "Mute"}
               </button>
+              {onPin && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onPin)}>
+                  <Pin className="h-4 w-4 text-stone-500" /> {pinned ? "Unpin" : "Pin"}
+                </button>
+              )}
+              {onArchive && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onArchive)}>
+                  <Archive className="h-4 w-4 text-stone-500" /> {archived ? "Unarchive" : "Archive"}
+                </button>
+              )}
+              {onMarkUnread && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onMarkUnread)}>
+                  {markedUnread ? "Mark as read" : "Mark as unread"}
+                </button>
+              )}
               {kind === "dm" && onRelation && (
                 <>
                   <div className="my-1 border-t border-stone-100" />
@@ -158,6 +242,16 @@ export function ChatActionsMenu({
                   )}
                 </>
               )}
+              {onExitGroup && (
+                <button role="menuitem" type="button" className={itemClass} onClick={() => run(onExitGroup)}>
+                  <LogOut className="h-4 w-4 text-stone-500" /> Exit group
+                </button>
+              )}
+              {onDeleteChat && (
+                <button role="menuitem" type="button" className={`${itemClass} !text-rose-700 hover:!bg-rose-50`} onClick={() => run(onDeleteChat)}>
+                  <Trash2 className="h-4 w-4" /> Delete chat
+                </button>
+              )}
               <p className="px-3 pb-1 pt-2 text-[11px] text-stone-400">
                 Manage everyone you've muted, restricted or blocked in{" "}
                 <Link to="/settings?section=safety" className="font-semibold text-maroon-800 hover:underline" onClick={() => setOpen(false)}>
@@ -167,7 +261,8 @@ export function ChatActionsMenu({
               </p>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
