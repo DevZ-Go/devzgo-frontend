@@ -83,7 +83,7 @@ export function ThemeSelectPage() {
       </header>
       <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col justify-center px-6 pb-6 sm:px-10">
         <h1 className="font-serif text-4xl text-white sm:text-5xl">Choose a room</h1>
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div data-tour="explore-rooms" className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {themes.map((theme) => (
             <Link
               key={theme.to}

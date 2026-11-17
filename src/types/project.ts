@@ -40,6 +40,7 @@ export interface ApiProject {
   is_liked?: boolean;
   comments_count?: number;
   comments_enabled?: boolean;
+  likes_hidden?: boolean;
   /** What this viewer may do (single project responses only) */
   access?: {
     owner: boolean; member: boolean; view: boolean; edit: boolean; files: boolean; secrets: boolean;
@@ -80,6 +81,7 @@ export interface Project {
   techStack: string[];
   likes: number;
   isLiked?: boolean;
+  likesHidden?: boolean;
   commentsCount: number;
   featured: boolean;
   author: {

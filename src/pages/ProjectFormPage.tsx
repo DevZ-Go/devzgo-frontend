@@ -69,6 +69,7 @@ export function ProjectFormPage() {
   const [categoryOther, setCategoryOther] = useState("");
   const [visibility, setVisibility] = useState<ProjectVisibility>("Public");
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [likesHidden, setLikesHidden] = useState(false);
   const [liveUrl, setLiveUrl] = useState("");
   const [impactNote, setImpactNote] = useState("");
   const [step, setStep] = useState(1);
@@ -167,6 +168,7 @@ export function ProjectFormPage() {
           setVisibility(vis);
         }
         setCommentsEnabled(p.comments_enabled !== false);
+        setLikesHidden(p.likes_hidden === true);
         setLiveUrl(p.live_url ?? "");
         setImpactNote(p.impact_note ?? "");
         setSelectedStackIds(
@@ -216,7 +218,7 @@ export function ProjectFormPage() {
     if (!token || user != null) return;
     if (!isEdit || !loadedProject) return;
     if (loadedProject.is_owner !== undefined) return;
-    void refreshUser();
+    void refreshUser().catch(() => undefined);
   }, [token, user, isEdit, loadedProject, refreshUser]);
 
   function stackNumericId(t: TechStackItem): number | null {
@@ -258,6 +260,8 @@ export function ProjectFormPage() {
       tech_stack_ids: selectedStackIds,
       live_url: liveUrl.trim(),
       impact_note: impactNote.trim(),
+      comments_enabled: commentsEnabled,
+      likes_hidden: likesHidden,
     };
   }
 
@@ -339,7 +343,6 @@ export function ProjectFormPage() {
           ...projectPayloadBase(),
           cover_image_url: coverForPut,
           demo_video_url: demoForPut,
-          comments_enabled: commentsEnabled,
         });
         projectId = editProjectId;
       } else {
@@ -514,7 +517,7 @@ export function ProjectFormPage() {
     <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
       <main className="relative z-10 max-w-2xl mx-auto px-6 sm:px-8 pt-28 pb-20">
-        <div className="mb-10">
+        <div data-tour="add-project-form" className="mb-10">
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-stone-900 tracking-tight">
             {isEdit ? "Edit project" : "New project"}
           </h1>
@@ -767,13 +770,25 @@ export function ProjectFormPage() {
                   />
                 </div>
               </div>
-              {isEdit && (
-                <label className="flex items-center gap-2 text-sm text-stone-700">
+              <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Engagement</p>
+                <label className="flex items-start gap-2 text-sm text-stone-700">
                   <input type="checkbox" checked={commentsEnabled} onChange={(e) => setCommentsEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-stone-300" />
-                  Allow comments on this project
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300" />
+                  <span>
+                    <span className="font-semibold">Allow comments</span>
+                    <span className="mt-0.5 block text-xs font-normal text-stone-500">Turn off to stop new comments on this project.</span>
+                  </span>
                 </label>
-              )}
+                <label className="flex items-start gap-2 text-sm text-stone-700">
+                  <input type="checkbox" checked={likesHidden} onChange={(e) => setLikesHidden(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300" />
+                  <span>
+                    <span className="font-semibold">Hide like count</span>
+                    <span className="mt-0.5 block text-xs font-normal text-stone-500">People can still like it; only you see the number.</span>
+                  </span>
+                </label>
+              </div>
               {category === "Other" && (
                 <div>
                   <label

@@ -160,7 +160,7 @@ export function AssessmentsPage() {
     <div className={ui.page}>
       <Navbar />
       <main className={`${ui.main} max-w-5xl`}>
-        <header className="mb-6">
+        <header data-tour="assessments-intro" className="mb-6">
           <h1 className="font-serif text-4xl text-stone-900 sm:text-5xl">Assessments</h1>
           <p className="mt-2 max-w-2xl text-sm text-stone-600">
             Technical challenges from recruiters. Your results are private: they reach your portfolio only if you choose to share them.

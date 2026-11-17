@@ -24,13 +24,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
-import { ThemeToggle } from "./ThemeToggle";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { BrandMark } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
 import { queryKeys } from "../api/queryKeys";
 import { useAccount } from "../auth/account";
-import { openRecruiterTour } from "./tour/events";
+import { openDeveloperTour, openRecruiterTour } from "./tour/events";
 
 interface NavbarProps {
   variant?: "default" | "editorial";
@@ -152,6 +151,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
   const close = () => setMobileOpen(false);
   const identity = user?.email ?? user?.username;
+  const startTour = () => {
+    if (recruiter) openRecruiterTour();
+    else openDeveloperTour();
+  };
+  const tourLabel = recruiter ? "Recruiter tour" : "Developer tour";
 
   const mobileLinkClass = (path: string, dark: boolean) =>
     `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
@@ -196,15 +200,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 <Settings className="w-4 h-4 shrink-0" /> Settings
               </Link>
             </div>
-            {recruiter ? (
-              <button
-                type="button"
-                onClick={() => { close(); openRecruiterTour(); }}
-                className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
-              >
-                <CircleHelp className="w-4 h-4" /> Take the recruiter tour
-              </button>
-            ) : (
+            {!recruiter && (
               <Link
                 to="/add-project"
                 onClick={close}
@@ -213,13 +209,25 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 <FolderPlus className="w-4 h-4" /> Add project
               </Link>
             )}
-            <div className={`mt-2 flex items-center justify-between gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-amber-100/60 dark:border-stone-800"}`}>
-              <ThemeToggle variant="pill" />
+            <button
+              type="button"
+              onClick={() => { close(); startTour(); }}
+              className={`mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl text-sm font-semibold ${
+                recruiter
+                  ? "bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white shadow-sm"
+                  : dark
+                    ? "bg-white/10 text-white hover:bg-white/15"
+                    : "bg-[#fced96] text-stone-900 hover:bg-amber-200"
+              }`}
+            >
+              <CircleHelp className="w-4 h-4" /> Take the {recruiter ? "recruiter" : "developer"} tour
+            </button>
+            <div className={`mt-2 flex justify-end gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-amber-100/60 dark:border-stone-800"}`}>
               <button
                 type="button"
                 onClick={handleLogout}
                 className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
-                  dark ? "text-red-300 hover:bg-white/10" : "text-maroon-700 dark:text-maroon-300 hover:bg-maroon-50 dark:hover:bg-maroon-950/30"
+                  dark ? "text-white/90 hover:bg-white/10 hover:text-red-400" : "text-stone-700 dark:text-stone-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                 }`}
               >
                 <LogOut className="w-4 h-4" /> Log out
@@ -237,9 +245,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
       title="Messages"
       aria-current={isActive("/messages") ? "page" : undefined}
-      className={`relative rounded-xl p-2 transition ${className}`}
+      className={`group/nav relative rounded-xl p-2 transition ${className}`}
     >
-      <MessageSquare className="h-5 w-5" />
+      <MessageSquare className="nav-icon-messages h-5 w-5 transition-colors group-hover/nav:text-[#f5d76e]" />
       {unreadMessages > 0 && (
         <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#d4a017] px-1 text-[10px] font-bold text-stone-950 ring-2 ring-white dark:ring-stone-900">
           {unreadMessages > 99 ? "99+" : unreadMessages}
@@ -267,7 +275,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       <Link
         to={to}
         aria-current={isActive(to) ? "page" : undefined}
-        className="text-white/90 hover:text-white drop-shadow-sm tracking-wide transition-colors font-sans hover:underline underline-offset-4 text-sm"
+        className={`font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-3.5 py-1 rounded-full ${
+          isActive(to)
+            ? "bg-[#fced96] text-stone-900 shadow-xs"
+            : "text-[#f8f6f0] hover:text-[#fced96] hover:bg-white/10 drop-shadow-sm"
+        }`}
       >
         {label}
       </Link>
@@ -278,19 +290,34 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          solid ? "bg-black/70 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
+          solid ? "bg-maroon-950/80 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
         }`}
       >
         <div
           className={`transition-all duration-300 overflow-hidden ${
             solid ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
-          } bg-black/25 backdrop-blur-xs text-[11px] text-white/80 text-center py-1 tracking-wider uppercase font-medium`}
+          } bg-black/25 backdrop-blur-xs text-[11px] text-white/85 text-center py-1 tracking-[0.2em] uppercase font-medium`}
         >
           DevZ-Go — Community Showcase
         </div>
 
-        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3.5 flex items-center justify-between relative" aria-label="Main">
-          <div className="hidden lg:flex items-center gap-6 font-medium">
+        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between relative" aria-label="Main">
+          {/* Left: Brand Logo */}
+          <div className="flex items-center">
+            <Link
+              to={homePath}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="flex items-center gap-2 font-serif text-2xl md:text-3xl font-semibold text-[#f8f6f0] tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
+            >
+              <span>DevZ</span>
+              <span className="font-cursive italic font-bold text-[#fced96] text-3xl md:text-[34px] -ml-1">
+                Go
+              </span>
+            </Link>
+          </div>
+
+          {/* Center: Network · Explore · Messages in Cursive Pill Bar */}
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/15 shadow-lg lg:absolute lg:left-1/2 lg:-translate-x-1/2">
             {recruiter ? (
               <>
                 {topLink("/recruit", "Dashboard")}
@@ -300,26 +327,15 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             ) : (
               <>
                 {topLink("/network", "Network")}
+                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
                 {topLink("/explore", "Explore")}
+                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
                 {topLink("/messages", "Messages")}
               </>
             )}
           </div>
 
-          <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-            <Link
-              to={homePath}
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="font-serif text-2xl md:text-3xl text-white tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
-            >
-              DevZ-Go
-            </Link>
-          </div>
-
           <div className="flex items-center gap-2 sm:gap-3 text-white/90">
-            <div className="hidden lg:block">
-              <ThemeToggle variant="editorial" />
-            </div>
             {!recruiter && (
               <Link
                 to="/wrap"
@@ -332,13 +348,23 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             )}
             {messagesButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white")}
             <NotificationsDropdown className="bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white" />
-            <Link to="/profile" className={iconLink} title="My account" aria-label="My account">
-              <User className="w-5 h-5 drop-shadow-sm" />
+            <button
+              type="button"
+              onClick={startTour}
+              data-tour="nav-help"
+              className={`group/nav ${iconLink}`}
+              aria-label={`Help: ${tourLabel}`}
+              title={tourLabel}
+            >
+              <CircleHelp className="nav-icon-help w-5 h-5 drop-shadow-sm" />
+            </button>
+            <Link to="/profile" className={`group/nav ${iconLink}`} title="My account" aria-label="My account">
+              <User className="nav-icon-profile w-5 h-5 drop-shadow-sm" />
             </Link>
-            <Link to="/settings" className={iconLink} title="Settings" aria-label="Settings">
-              <Settings className="w-5 h-5 drop-shadow-sm" />
+            <Link to="/settings" className={`group/nav ${iconLink}`} title="Settings" aria-label="Settings">
+              <Settings className="nav-icon-gear w-5 h-5 drop-shadow-sm" />
             </Link>
-            <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-300`} title="Log out" aria-label="Log out">
+            <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-400`} title="Log out" aria-label="Log out">
               <LogOut className="w-5 h-5 drop-shadow-sm" />
             </button>
             {menuButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950")}
@@ -381,16 +407,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           ))}
         </div>
 
-        <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1">
           {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
-          {recruiter ? (
-            <>
-              {messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
-              <button type="button" onClick={openRecruiterTour} data-tour="nav-help" className={iconButton} aria-label="Help: recruiter tour" title="Help: recruiter tour">
-                <CircleHelp className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
+          {recruiter && messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
+          {!recruiter && (
             <Link
               to="/add-project"
               className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
@@ -399,23 +419,51 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               Add project
             </Link>
           )}
-          <ThemeToggle variant="ghost" />
-          <Link to="/settings" aria-label="Settings" title="Settings" aria-current={isActive("/settings") ? "page" : undefined} className={iconButton}>
-            <Settings className="w-4 h-4" />
+          <button
+            type="button"
+            onClick={startTour}
+            data-tour="nav-help"
+            className={`group/nav ${iconButton}`}
+            aria-label={`Help: ${tourLabel}`}
+            title={tourLabel}
+          >
+            <CircleHelp className="nav-icon-help w-4 h-4" />
+          </button>
+          <Link
+            to="/profile"
+            className={`group/nav ${iconButton}`}
+            title="My account"
+            aria-label="My account"
+            aria-current={isActive("/profile") ? "page" : undefined}
+          >
+            <User className="nav-icon-profile w-4 h-4" />
           </Link>
-          <button type="button" onClick={handleLogout} className={`${iconButton} hover:text-coral-500`} aria-label="Log out" title="Log out">
+          <Link to="/settings" aria-label="Settings" title="Settings" aria-current={isActive("/settings") ? "page" : undefined} className={`group/nav ${iconButton}`}>
+            <Settings className="nav-icon-gear w-4 h-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-2.5 text-stone-800 dark:text-stone-100 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:hover:text-red-400 rounded-xl transition-all"
+            aria-label="Log out"
+            title="Log out"
+          >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
 
         <div className="lg:hidden flex items-center gap-1">
-          {messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
+          {messagesButton("text-stone-800 hover:bg-stone-200/80 dark:text-stone-100 dark:hover:bg-stone-800")}
           {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
-          {recruiter && (
-            <button type="button" onClick={openRecruiterTour} className="p-2 rounded-xl text-stone-800 hover:bg-stone-200/80 dark:text-stone-100 dark:hover:bg-stone-800" aria-label="Help: recruiter tour" title="Help: recruiter tour">
-              <CircleHelp className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={startTour}
+            className={`group/nav ${iconButton}`}
+            aria-label={`Help: ${tourLabel}`}
+            title={tourLabel}
+          >
+            <CircleHelp className="nav-icon-help w-4 h-4" />
+          </button>
           {menuButton("text-stone-900 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-800")}
         </div>
       </div>

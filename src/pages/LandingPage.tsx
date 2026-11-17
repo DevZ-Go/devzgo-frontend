@@ -7,25 +7,9 @@ import { ExploreLink } from "../components/tvworld/ExploreLink";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import type { ApiProject } from "../types/project";
-import dreamBigApples from "../assets/editorial/dream_big_apples.jpg";
+import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
-
-// Decorative corner gingham / washi tape accent for the media card
-function CornerTape() {
-  return (
-    <div
-      className="absolute -top-3 -right-3 w-32 h-10 z-20 shadow-md rotate-[28deg] pointer-events-none opacity-90"
-      style={{
-        backgroundColor: "#5a6b5c",
-        backgroundImage: `
-          repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.35) 0, rgba(255, 255, 255, 0.35) 6px, transparent 0, transparent 12px),
-          repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.25) 0, rgba(0, 0, 0, 0.25) 6px, transparent 0, transparent 12px)
-        `,
-      }}
-    />
-  );
-}
 
 export function LandingPage() {
   const [useVideoBg, setUseVideoBg] = useState(true);
@@ -53,12 +37,12 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f7f5ed] text-stone-800 selection:bg-amber-200 lg:h-dvh lg:overflow-y-auto lg:snap-y lg:snap-mandatory">
+    <div className="min-h-screen bg-[#f8f6f0] text-stone-800 selection:bg-amber-200 overflow-x-hidden">
       {/* ── Top Editorial Navigation ── */}
       <Navbar variant="editorial" />
 
-      {/* ── SECTION 1: HERO (Pasture Landscape, "Where coders code. Like, Really.", "EXPLORE", & Badges) ── */}
-      <section className="relative w-full h-dvh snap-start flex items-center justify-center overflow-hidden bg-[#2a211c]">
+      {/* ── SECTION 1: HERO ── */}
+      <section className="relative w-full h-dvh flex items-center justify-center overflow-hidden bg-[#2a211c]">
         {/* Pastoral Hero Background Image / Video Container */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {useVideoBg ? (
@@ -72,28 +56,37 @@ export function LandingPage() {
             />
           ) : (
             <img
-              src={dreamBigApples}
-              alt="dream BIG apple artwork"
+              src={lockInImage}
+              alt="Lock in artwork"
               className="w-full h-full object-cover object-[center_40%]"
             />
           )}
 
           {/* Gentle vignette overlay for crisp typography */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/45 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/50 pointer-events-none" />
         </div>
 
         {/* Center Content: Headline & "EXPLORE" Pill Button */}
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
+          <motion.span
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="font-cursive text-2xl sm:text-3xl text-[#fced96] drop-shadow-md mb-2"
+          >
+            Where coders code. Like, really.
+          </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-[#f5eedc] drop-shadow-[0_2px_15px_rgba(0,0,0,0.7)] tracking-tight leading-[1.08]"
           >
-            dream <span className="italic font-medium">BIG</span>
+            dream <span className="font-cursive italic font-bold text-[#fced96]">BIG</span>
           </motion.h1>
 
           <motion.div
+            data-tour="home-cta"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}
@@ -122,54 +115,99 @@ export function LandingPage() {
             </button>
           </motion.div>
         </div>
+
+        {/* ── WAVE 1: Dollop-Style Curved Text Wave Ribbon into Maroon Section ── */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none leading-none">
+          <svg
+            viewBox="0 0 1440 130"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-[70px] sm:h-[95px] md:h-[120px] block"
+            preserveAspectRatio="none"
+          >
+            {/* Cream Wave Band Behind Text */}
+            <path
+              d="M0,45 C240,95 480,5 720,45 C960,85 1200,10 1440,45 L1440,130 L0,130 Z"
+              fill="#f8f6f0"
+            />
+            {/* Maroon Wave Fill Below */}
+            <path
+              d="M0,82 C240,132 480,42 720,82 C960,122 1200,47 1440,82 L1440,130 L0,130 Z"
+              fill="#631726"
+            />
+            {/* Curved Path for Wave Text */}
+            <path
+              id="top-wave-text-path"
+              d="M-60,67 C220,117 470,27 720,67 C970,107 1210,32 1500,67"
+              fill="none"
+            />
+            <text
+              fill="#631726"
+              className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
+            >
+              <textPath href="#top-wave-text-path" startOffset="0%">
+                FRESH BUILDS, IN CODE. ✿ DREAM BIG, BUILD BOLD. ✿ FRESH BUILDS, IN CODE. ✿ DREAM BIG, BUILD BOLD. ✿ FRESH BUILDS, IN CODE. ✿
+              </textPath>
+            </text>
+          </svg>
+        </div>
       </section>
 
-      {/* ── SECTION 2: OVERLAPPING SHEET & FEATURED PROJECTS CARDS ── */}
-      <section className="relative z-10 -mt-10 rounded-t-[2.5rem] bg-[#f8f6f0] px-6 md:px-14 py-10 border-t border-stone-200/50 shadow-2xl lg:mt-0 lg:rounded-none lg:min-h-dvh lg:snap-start lg:flex lg:items-center lg:py-8">
+      {/* ── SECTION 2: MAROON FEATURED PROJECTS SECTION ── */}
+      <section className="relative z-10 bg-[#631726] text-[#f8f6f0] px-6 md:px-14 pt-8 pb-16 sm:pt-12 sm:pb-20">
         <div className="max-w-[1360px] mx-auto">
-          {/* Section Header */}
-          <div className="mb-8 lg:mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <h2 className="font-serif text-3xl sm:text-4xl text-stone-900 font-normal tracking-tight">
+          {/* Section Header: Left Title/Subtitle + Right View All Projects (Clean Center) */}
+          <div className="mb-10 sm:mb-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div className="text-left">
+              <span className="font-cursive text-2xl sm:text-3xl text-[#fced96] block mb-0.5">
+                Find your new fav build
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#f8f6f0] font-semibold tracking-tight">
                 Featured Projects
               </h2>
-              <p className="text-xs sm:text-sm text-stone-500 font-sans mt-1 tracking-wide">
+              <p className="text-xs sm:text-sm text-[#f8f6f0]/75 font-sans mt-2 tracking-wide">
                 Fresh student projects, open-source tools, and developer creations.
               </p>
             </div>
             <Link
               to="/explore"
-              className="text-xs font-semibold uppercase tracking-wider text-stone-600 hover:text-stone-900 underline underline-offset-4"
+              className="self-start sm:self-end inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#f8f6f0]/10 hover:bg-[#fced96] text-[#fced96] hover:text-stone-900 border border-[#fced96]/40 text-xs font-semibold uppercase tracking-wider transition-all shrink-0"
             >
               View all projects &rarr;
             </Link>
           </div>
 
           {/* Cards Grid: 1 Special Promo Card + 3 Dynamic Project Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {/* 1. Feature / Promo Card (Brown package style with "TOP PROJECTS" & "EXPLORE ALL") */}
-            <div className="group relative rounded-2xl bg-[#eee8db] border border-[#dfd6c5] p-6 flex flex-col justify-between overflow-hidden min-h-[280px] lg:min-h-0 lg:h-full shadow-sm hover:shadow-md transition-shadow">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 items-stretch">
+            {/* 1. Feature / Promo Card */}
+            <div className="group relative rounded-3xl bg-[#f8f6f0] text-stone-900 border-2 border-[#fced96]/40 p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
               {/* Top Tag */}
               <div className="flex items-center justify-between z-10">
-                <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded bg-[#a79479] text-white shadow-xs">
+                <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-[#631726] text-[#fced96] shadow-xs">
                   TOP PROJECTS
+                </span>
+                <span className="font-cursive text-lg text-[#631726] font-bold">
+                  curated ✦
                 </span>
               </div>
 
               {/* Packaged Boxes / Community Kit Artwork */}
-              <div className="my-auto flex items-center justify-center py-4">
+              <div className="my-auto flex flex-col items-center justify-center py-4">
                 <img
                   src={bestSellersBoxes}
                   alt="Curated student projects and community kits"
-                  className="w-36 h-36 lg:w-32 lg:h-32 object-cover rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
+                  className="w-36 h-36 object-cover rounded-2xl shadow-md group-hover:scale-105 transition-transform duration-300"
                 />
+                <p className="font-serif text-sm text-stone-700 mt-3 text-center">
+                  Hand-picked builds from the community
+                </p>
               </div>
 
               {/* Bottom "EXPLORE ALL" Pill Button */}
               <div className="z-10">
                 <Link
                   to="/explore"
-                  className="w-full block text-center py-2.5 px-4 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs font-semibold uppercase tracking-wider transition-colors shadow-xs"
+                  className="w-full block text-center py-2.5 px-4 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
                 >
                   EXPLORE ALL
                 </Link>
@@ -190,42 +228,40 @@ export function LandingPage() {
                 <Link
                   key={project.id ?? idx}
                   to={linked ? `/project/${projectId}` : "/explore"}
-                  className="group flex flex-col text-left focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-2xl"
+                  className="group flex h-full min-h-0 flex-col rounded-3xl bg-[#f8f6f0] p-3 sm:p-4 text-left shadow-xl border-2 border-white/20 hover:border-[#fced96] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#fced96]"
                 >
-                  {/* Project Image Square (matching the editorial pedestal aspect) */}
-                  <div className="aspect-[4/3] lg:aspect-[5/4] lg:max-h-[34vh] rounded-2xl bg-[#dbe6df] border border-[#cbdbd0] overflow-hidden flex items-center justify-center relative shadow-xs transition-transform duration-300 group-hover:-translate-y-1">
+                  {/* Cover fills the card frame on every breakpoint */}
+                  <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200 shadow-inner">
                     {coverUrl ? (
                       <ImageWithFallback
                         src={coverUrl}
                         alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#dbe6df] to-[#cbdbd0] text-stone-700">
-                        <FolderCode className="w-10 h-10 text-stone-500 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="font-serif text-sm font-semibold text-center text-stone-800 line-clamp-2">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#f8f6f0] to-[#efe6d4] p-6 text-stone-700">
+                        <FolderCode className="mb-2 h-10 w-10 text-[#631726] transition-transform group-hover:scale-110" />
+                        <span className="line-clamp-2 text-center font-serif text-sm font-semibold text-stone-800">
                           {project.title}
                         </span>
                       </div>
                     )}
 
-                    {/* Subtle top category tag */}
                     {project.category && (
-                      <span className="absolute top-3 left-3 text-[9px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-white/85 backdrop-blur-xs text-stone-700 shadow-xs">
+                      <span className="absolute left-2.5 top-2.5 rounded-full bg-[#631726]/95 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#fced96] shadow-xs backdrop-blur-sm">
                         {project.category}
                       </span>
                     )}
                   </div>
 
-                  {/* Project Title and Metadata */}
-                  <div className="mt-3.5">
-                    <h3 className="font-serif text-lg text-stone-900 font-normal group-hover:text-amber-800 transition-colors truncate">
+                  <div className="mt-3 flex min-w-0 flex-1 flex-col justify-end px-0.5 pt-1 sm:mt-4 sm:px-1">
+                    <h3 className="truncate font-serif text-lg font-semibold text-stone-900 transition-colors group-hover:text-[#631726] sm:text-xl">
                       {project.title}
                     </h3>
-                    <div className="flex items-center justify-between text-xs text-stone-500 font-sans mt-0.5">
-                      <span className="truncate max-w-[150px]">{stackLabel}</span>
-                      <span className="flex items-center gap-1 text-stone-400 ml-2 shrink-0">
-                        <Heart className="w-3 h-3 text-red-400 fill-red-400/40" />
+                    <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-stone-200/70 pt-2 text-xs text-stone-600">
+                      <span className="min-w-0 truncate font-medium">{stackLabel}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-[#631726]">
+                        <Heart className="h-3 w-3 fill-[#631726] text-[#631726]" />
                         <span>{project.likes ?? 0}</span>
                       </span>
                     </div>
@@ -237,33 +273,99 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#f8f6f0] px-6 md:px-14 py-12 lg:min-h-dvh lg:snap-start lg:flex lg:items-center lg:py-10">
-        <div className="max-w-[1360px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-            {/* Left Column: Soft Pastel Blue Story Card */}
-            <div className="rounded-3xl bg-[#cde1f2] p-8 sm:p-12 md:p-14 flex flex-col justify-center text-center shadow-xs">
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 mb-6 block">
-                DREAM BIG · BUILD BOLD
-              </span>
-              <p className="font-serif text-xl sm:text-2xl md:text-[1.7rem] text-stone-800 leading-relaxed font-normal max-w-lg mx-auto">
-                Our community is about turning ideas into reality. It's thinking
-                long-term about what inspires developers, creators, and students.
-                And it's crafting the tools and experiences that make a real
-                difference—celebrating creativity and the craft of dreaming big.
+      {/* ── WAVE 2: Maroon-to-Cream Curved Text Wave Divider into DevSpace Section ── */}
+      <div className="relative z-10 bg-[#631726] leading-none pointer-events-none -mt-1">
+        <svg
+          viewBox="0 0 1440 130"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-[70px] sm:h-[95px] md:h-[120px] block"
+          preserveAspectRatio="none"
+        >
+          {/* Butter-Yellow / Cream Wave Band */}
+          <path
+            d="M0,40 C240,0 480,90 720,40 C960,-10 1200,85 1440,40 L1440,130 L0,130 Z"
+            fill="#fced96"
+          />
+          {/* Bottom Cream Section Fill */}
+          <path
+            d="M0,78 C240,38 480,128 720,78 C960,28 1200,123 1440,78 L1440,130 L0,130 Z"
+            fill="#f8f6f0"
+          />
+          <path
+            id="bottom-wave-text-path"
+            d="M-60,62 C220,22 470,112 720,62 C970,12 1210,107 1500,62"
+            fill="none"
+          />
+          <text
+            fill="#631726"
+            className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
+          >
+            <textPath href="#bottom-wave-text-path" startOffset="0%">
+              CRAFTED BY STUDENTS, FOR CREATORS. ✿ LOCKED IN &amp; BUILDING. ✿ CRAFTED BY STUDENTS, FOR CREATORS. ✿ LOCKED IN &amp; BUILDING. ✿
+            </textPath>
+          </text>
+        </svg>
+      </div>
+
+      {/* ── SECTION 3: DEVSPACE FISHEYE BANNER SECTION ── */}
+      <section className="bg-[#f8f6f0] px-6 md:px-14 pt-6 pb-14 lg:py-10">
+        <div className="max-w-[1360px] mx-auto w-full">
+          {/* Tall Banner Card: 3-Column Layout (Left Story | Centered Fisheye Image | Right DevSpace 🪐) */}
+          <div className="relative w-full rounded-3xl bg-black border border-stone-300/40 overflow-hidden min-h-[540px] sm:min-h-[660px] lg:min-h-[82vh] px-6 sm:px-10 lg:px-12 py-8 flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-8 shadow-lg group">
+            {/* Subtle Ambient Starlight Accents in the Black Space */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-40"
+              style={{
+                backgroundImage:
+                  "radial-gradient(1.5px 1.5px at 8% 18%, #f5eedc 100%, transparent), radial-gradient(1px 1px at 88% 16%, #fced96 100%, transparent), radial-gradient(1.5px 1.5px at 82% 76%, #f5eedc 100%, transparent), radial-gradient(1px 1px at 14% 78%, #fced96 100%, transparent), radial-gradient(1.5px 1.5px at 92% 46%, #f5eedc 100%, transparent)",
+              }}
+            />
+
+            {/* Left Column: Clean Editorial Story Text (No Grey Box, Centered in Left Black Space) */}
+            <div className="relative z-10 max-w-[290px] mx-auto flex flex-col items-center text-center">
+              <div className="inline-flex items-center justify-center gap-2 mb-4">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#fced96] animate-pulse" />
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#fced96] whitespace-nowrap">
+                  DREAM BIG · BUILD BOLD
+                </span>
+              </div>
+
+              <p className="font-serif text-sm sm:text-[15px] text-[#f5eedc]/90 leading-relaxed font-normal tracking-wide">
+                Our community is about turning ideas into reality. It&apos;s
+                thinking long-term about what inspires developers, creators, and
+                students. And it&apos;s crafting the tools and experiences that
+                make a real difference—celebrating creativity and the{" "}
+                <span className="italic text-[#fced96]">
+                  craft of dreaming big
+                </span>
+                . <span className="not-italic text-[#fced96] whitespace-nowrap">(„• ֊ •„)੭</span>
               </p>
             </div>
 
-            {/* Right Column: Photo Box with Corner Gingham Tape */}
-            <div className="relative rounded-3xl bg-stone-200/60 border border-stone-300/40 overflow-hidden min-h-[280px] lg:min-h-[46vh] lg:max-h-[62vh] flex items-center justify-center shadow-xs group">
-              {/* Decorative Corner Washi/Gingham Tape */}
-              <CornerTape />
-
-              {/* Dream Big Apples Artwork */}
+            {/* Center Column: Truly Centered Uncropped Fisheye Image */}
+            <div className="relative z-10 flex items-center justify-center">
               <img
-                src={dreamBigApples}
-                alt="dream BIG apple artwork"
-                className="w-full h-full object-cover min-h-[280px] lg:min-h-0 lg:max-h-[62vh] group-hover:scale-105 transition-transform duration-500"
+                src={lockInImage}
+                alt="Lock in artwork"
+                className="w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] lg:w-[58vh] lg:h-[58vh] xl:w-[64vh] xl:h-[64vh] max-w-full object-contain object-center group-hover:scale-[1.02] transition-transform duration-700"
               />
             </div>
+
+            {/* Right Column: DevSpace 🪐 Outside the Fisheye Circle (Zero Overlap on Code or Cat) */}
+            <div className="relative z-10 max-w-[260px] mx-auto flex flex-col items-center lg:items-end text-center lg:text-right lg:self-start lg:mt-16">
+              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#fced96]/85 block mb-2 whitespace-nowrap">
+                LATE NIGHT SESSIONS ✦
+              </span>
+              <h3 className="font-serif text-4xl sm:text-5xl xl:text-6xl font-normal text-[#f5eedc] tracking-tight leading-none">
+                Dev<span className="italic font-medium text-[#fced96]">Space</span>{" "}
+                <span className="not-italic inline-block animate-pulse">🪐</span>
+              </h3>
+              <p className="font-serif italic text-xs sm:text-sm text-[#f5eedc]/75 mt-2.5 leading-relaxed tracking-wide">
+                where caffeine, cats &amp; midnight code orbit together.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

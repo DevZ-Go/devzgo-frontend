@@ -89,3 +89,27 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>("/auth/me");
   return data;
 }
+
+/** Pause the account until the next successful sign-in. Invalidates every session. */
+export async function deactivateAccount(password?: string, username?: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>("/auth/deactivate", {
+    password: password || undefined,
+    username: username || undefined,
+  });
+  return data;
+}
+
+/** Schedule permanent deletion in 30 days. Signing in before then cancels it. */
+export async function scheduleAccountDelete(username: string, password?: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>("/auth/schedule-delete", {
+    username,
+    password: password || undefined,
+  });
+  return data;
+}
+
+/** Clear a pending deletion while still authenticated. */
+export async function cancelAccountDelete(): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>("/auth/cancel-delete");
+  return data;
+}

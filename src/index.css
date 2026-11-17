@@ -184,12 +184,15 @@ code {
   color: #2d2b3a;
 }
 
-/* Whimsical cursive font utility */
+/* Whimsical cursive & Gift Guide editorial font utilities */
 .font-cursive {
-  font-family: 'Caveat', cursive;
+  font-family: 'Dancing Script', 'Cormorant Garamond', cursive;
 }
 .font-hand {
-  font-family: 'Caveat', cursive;
+  font-family: 'Dancing Script', 'Caveat', cursive;
+}
+.font-gift {
+  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
 }
 
 /* Authentic hand-drawn wobbly doodle borders */
@@ -252,6 +255,61 @@ code {
 .animate-gentle-sway {
   transform-origin: top center;
   animation: gentle-sway 6s ease-in-out infinite;
+}
+
+/* Navbar icon hover flourishes */
+@keyframes nav-gear-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(1800deg); } /* five full turns */
+}
+
+@keyframes nav-bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  12% { transform: rotate(16deg); }
+  24% { transform: rotate(-14deg); }
+  36% { transform: rotate(12deg); }
+  48% { transform: rotate(-10deg); }
+  60% { transform: rotate(7deg); }
+  72% { transform: rotate(-4deg); }
+  84% { transform: rotate(2deg); }
+}
+
+@keyframes nav-help-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-2px) scale(1.08); }
+  70% { transform: translateY(1px) scale(0.98); }
+}
+
+@keyframes nav-profile-pop {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.14); }
+  70% { transform: scale(0.96); }
+}
+
+.group\/nav:hover .nav-icon-gear {
+  animation: nav-gear-spin 1.35s cubic-bezier(0.4, 0.05, 0.2, 1);
+  transform-origin: center;
+}
+
+.group\/nav:hover .nav-icon-bell {
+  animation: nav-bell-ring 0.85s ease-in-out;
+  transform-origin: top center;
+}
+
+.group\/nav:hover .nav-icon-help {
+  animation: nav-help-bob 0.55s ease-out;
+}
+
+.group\/nav:hover .nav-icon-profile {
+  animation: nav-profile-pop 0.45s ease-out;
+}
+
+.nav-icon-gear,
+.nav-icon-bell,
+.nav-icon-help,
+.nav-icon-profile,
+.nav-icon-messages {
+  transition: color 0.2s ease;
 }
 
 
