@@ -159,9 +159,12 @@ export interface Message {
   senderUsername?: string;
   senderName?: string;
   senderAvatarUrl?: string | null;
-  mediaKind?: "image" | "video" | "file" | null;
+  mediaKind?: "image" | "video" | "file" | "audio" | null;
   mediaUrl?: string | null;
   mediaName?: string | null;
+  viewOnce?: boolean;
+  opened?: boolean;
+  unsent?: boolean;
   reactions?: MessageReaction[];
   roomId?: string;
 }

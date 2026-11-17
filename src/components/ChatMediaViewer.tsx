@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import { api } from "../api/client";
 
@@ -251,11 +251,13 @@ export function ChatMediaThumb({
   kind,
   label,
   onOpen,
+  stamp,
 }: {
   url: string;
   kind: "image" | "video";
   label: string;
   onOpen: () => void;
+  stamp?: ReactNode;
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -287,13 +289,13 @@ export function ChatMediaThumb({
       type="button"
       onClick={onOpen}
       aria-label={`Open ${label}`}
-      className="group relative mt-1 block w-full overflow-hidden rounded-xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+      className="group relative block overflow-hidden rounded-[1.15rem] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fced96]"
     >
       {kind === "video" ? (
         <>
-          <video src={src} muted playsInline preload="metadata" className="max-h-64 w-full bg-black object-cover" />
-          <span className="absolute inset-0 flex items-center justify-center bg-stone-950/25 transition group-hover:bg-stone-950/35">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-stone-900 shadow-lg backdrop-blur-sm">
+          <video src={src} muted playsInline preload="metadata" className="h-56 w-[min(72vw,280px)] bg-black object-cover sm:h-64" />
+          <span className="absolute inset-0 flex items-center justify-center bg-stone-950/20">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-stone-900 shadow-lg">
               <Play className="h-5 w-5 fill-current" />
             </span>
           </span>
@@ -302,8 +304,13 @@ export function ChatMediaThumb({
         <img
           src={src}
           alt={label}
-          className="max-h-64 w-full cursor-zoom-in object-contain transition duration-300 group-hover:scale-[1.02]"
+          className="h-56 w-[min(72vw,280px)] cursor-zoom-in object-cover sm:h-64"
         />
+      )}
+      {stamp && (
+        <span className="pointer-events-none absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-[2px]">
+          {stamp}
+        </span>
       )}
     </button>
   );
