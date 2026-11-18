@@ -53,6 +53,7 @@ function rowPreview(message: { content: string; mediaKind?: string | null; viewO
 function threadPreview(content: string, kind?: string | null): string | null {
   const parsed = parseChatContent(content || "");
   if (parsed.voice || kind === "audio") return "Voice note";
+  if (parsed.project && !parsed.text.trim()) return `Shared ${parsed.project.title}`;
   const text = parsed.text.trim();
   if (text) return text.length > 80 ? `${text.slice(0, 80)}…` : text;
   if (kind === "video") return "Video";
@@ -113,6 +114,7 @@ type Pane = { kind: "dm"; person: ConnectionUserSummary } | { kind: "room"; room
 export function MessagesPage() {
   const [searchParams] = useSearchParams();
   const targetUserParam = searchParams.get("user");
+  const targetRoomParam = searchParams.get("room");
   const { user } = useAuth();
   const { prefs, update, toggle } = useChatPrefs(user?.id ? String(user.id) : undefined);
 
@@ -180,7 +182,7 @@ export function MessagesPage() {
     [messages],
   );
 
-  const loadLists = useCallback(async (openUserId?: string) => {
+  const loadLists = useCallback(async (openUserId?: string, openRoomId?: string) => {
     try {
       const [conversations, connections, groups] = await Promise.all([
         fetchConversations(),
@@ -211,7 +213,9 @@ export function MessagesPage() {
       setContacts(connections.accepted.map((c) => c.partner));
       setRooms(groups);
 
-      if (openUserId) {
+      const openedRoom = openRoomId ? groups.find((room) => room.id === openRoomId) : undefined;
+      if (openedRoom) setPane({ kind: "room", room: openedRoom });
+      else if (openUserId) {
         const found = list.find(
           (row) => row.person.id === openUserId || row.person.username.toLowerCase() === openUserId.toLowerCase()
         );
@@ -238,11 +242,11 @@ export function MessagesPage() {
   }, []);
 
   useEffect(() => {
-    void loadLists(targetUserParam || undefined);
+    void loadLists(targetUserParam || undefined, targetRoomParam || undefined);
     const refresh = () => void loadLists();
     window.addEventListener("devzgo:messages-updated", refresh);
     return () => window.removeEventListener("devzgo:messages-updated", refresh);
-  }, [loadLists, targetUserParam]);
+  }, [loadLists, targetUserParam, targetRoomParam]);
 
   useEffect(() => {
     if (!pane) return;

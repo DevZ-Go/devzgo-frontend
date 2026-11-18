@@ -64,7 +64,7 @@ export function NetworkPage() {
 
   // Quick post state
   const [postContent, setPostContent] = useState("");
-  const [postType, setPostType] = useState<string>("post");
+  const [postType, setPostType] = useState<string>("spark");
   const [posting, setPosting] = useState(false);
 
   // Connections sidebar state
@@ -173,7 +173,7 @@ export function NetworkPage() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-full bg-[#2D120D] text-[#FFF8CA] px-5 py-2.5 text-sm font-semibold font-sans shadow-xl flex items-center gap-2 border border-[#CDE3E8] animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 left-4 right-4 z-50 flex items-center gap-2 rounded-full border border-[#CDE3E8] bg-[#2D120D] px-5 py-2.5 font-sans text-sm font-semibold text-[#FFF8CA] shadow-xl sm:left-auto sm:right-6 sm:max-w-sm">
           <Check className="w-4 h-4 text-[#CDE3E8]" />
           <span>{toastMessage}</span>
         </div>
@@ -260,7 +260,7 @@ export function NetworkPage() {
               <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2F0CB] border border-[#284E45]/30 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#284E45] mb-2">
                 ★ COMMUNITY SPACE ★
               </span>
-              <h1 className="font-cake text-6xl sm:text-7xl md:text-8xl font-bold uppercase text-[#3E2217] tracking-tight leading-none">
+              <h1 className="font-cake text-5xl sm:text-7xl md:text-8xl font-bold uppercase text-[#3E2217] tracking-tight leading-none break-words">
                 DEV SOCIAL
               </h1>
               <p className="font-cursive text-3xl sm:text-4xl text-[#284E45] mt-1">
@@ -359,7 +359,7 @@ export function NetworkPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
             {/* Main Social Feed Column */}
             <div className="space-y-6">
-              <div className="flex items-baseline justify-between px-1">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
                 <h2 className="font-gift text-3xl sm:text-4xl text-[#284E45] font-bold tracking-wide leading-none">
                   02. Community Notes
                 </h2>
@@ -371,7 +371,7 @@ export function NetworkPage() {
               {/* Quick Post Composer */}
               <div id="note-composer" className="relative rounded-3xl border-2 border-[#284E45]/25 bg-white p-5 sm:p-6 shadow-2xs">
                 <div className="absolute -top-2.5 left-6 px-3 py-0.5 rounded-full bg-[#E2F0CB] text-[#284E45] text-[9px] font-bold font-sans tracking-widest uppercase border border-[#284E45]/25">
-                  SHARE A NOTE
+                  SHARE A THOUGHT
                 </div>
 
                 <div className="flex gap-3.5">
@@ -381,19 +381,20 @@ export function NetworkPage() {
                   <div className="flex-1 min-w-0">
                     <div className="bg-[#F2F8FB] p-3.5 rounded-2xl border border-[#7D94B5]/30">
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={postContent}
-                        onChange={(e) => setPostContent(e.target.value)}
-                        placeholder="Share a project milestone, question, or technology update..."
-                        className="w-full font-sans text-sm text-[#3E2217] placeholder-[#3E2217]/50 bg-transparent resize-none focus:outline-none leading-relaxed"
+                        onChange={(e) => setPostContent(e.target.value.slice(0, 5000))}
+                        placeholder="Share a thought, a question, or anything you're working on…"
+                        className="w-full min-h-[72px] font-sans text-sm text-[#3E2217] placeholder-[#3E2217]/50 bg-transparent resize-y focus:outline-none leading-relaxed"
                       />
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-[#3E2217]/10 flex flex-wrap items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-sans text-xs text-[#3E2217]/70 font-semibold mr-1">Tag:</span>
+                    <div className="mt-3 pt-3 border-t border-[#3E2217]/10 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-sans text-xs text-[#3E2217]/70 font-semibold mr-1">Share as:</span>
                         {[
-                          { id: "post", label: "Quick Note" },
+                          { id: "spark", label: "Spark" },
+                          { id: "post", label: "Note" },
                           { id: "milestone", label: "Milestone" },
                           { id: "collab_call", label: "Collab Call" },
                         ].map((t) => (
@@ -401,7 +402,7 @@ export function NetworkPage() {
                             key={t.id}
                             type="button"
                             onClick={() => setPostType(t.id)}
-                            className={`font-sans text-xs px-3 py-1 rounded-full transition font-medium ${
+                            className={`min-h-9 font-sans text-xs px-3 py-1.5 rounded-full transition font-medium ${
                               postType === t.id
                                 ? "bg-[#E2F0CB] text-[#284E45] font-semibold border border-[#284E45]/30"
                                 : "text-[#3E2217]/70 hover:bg-[#DAEBF2]/60 border border-transparent"
@@ -416,14 +417,14 @@ export function NetworkPage() {
                         type="button"
                         disabled={!postContent.trim() || posting}
                         onClick={handleCreatePost}
-                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#284E45] hover:bg-[#3E2217] text-[#FAF6EC] font-sans text-xs font-semibold shadow-2xs transition disabled:opacity-50"
+                        className="inline-flex min-h-10 items-center justify-center gap-1.5 self-end px-4 py-2 rounded-full bg-[#284E45] hover:bg-[#3E2217] text-[#FAF6EC] font-sans text-xs font-semibold shadow-2xs transition disabled:opacity-50 sm:self-auto"
                       >
                         {posting ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Send className="w-3.5 h-3.5" />
                         )}
-                        Post Note
+                        {postType === "spark" ? "Post spark" : "Post"}
                       </button>
                     </div>
                   </div>

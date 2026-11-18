@@ -141,6 +141,17 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     };
   }, [variant]);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [moreOpen]);
+
   function handleLogout() {
     setMobileOpen(false);
     logout();
@@ -383,17 +394,6 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       </header>
     );
   }
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    const onOutside = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
-  }, [moreOpen]);
 
   const primaryItems = items.slice(0, 4);
   const overflowItems = items.slice(4);
