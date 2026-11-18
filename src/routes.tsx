@@ -64,6 +64,7 @@ const AssessmentsPage = page(() => import("./pages/AssessmentsPage"), "Assessmen
 const AssessmentChallengePage = page(() => import("./pages/AssessmentsPage"), "AssessmentChallengePage");
 const PersonActivityPage = page(() => import("./pages/ActivityLogPage"), "PersonActivityPage");
 const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "ProjectActivityPage");
+const AboutDevelopersPage = page(() => import("./pages/AboutDevelopersPage"), "AboutDevelopersPage");
 
 const developer = (element: ReactElement) => <ProtectedRoute><DeveloperRoute>{element}</DeveloperRoute></ProtectedRoute>;
 const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{element}</RecruiterRoute></ProtectedRoute>;
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
       {
         path: "/home",
         element: developer(<LandingPage />),
+      },
+      {
+        path: "/about-developers",
+        element: <AboutDevelopersPage />,
       },
       {
         path: "/login",

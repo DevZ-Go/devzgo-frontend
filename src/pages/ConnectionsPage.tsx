@@ -28,6 +28,7 @@ import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { Connection, ConnectionUserSummary } from "../types/network";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
+import { StickerBadge } from "../components/StickerBadge";
 import { ui } from "../styles/editorial";
 
 type Tab = "connections" | "requests" | "collaboration" | "suggestions";
@@ -212,13 +213,22 @@ export function ConnectionsPage() {
       <Navbar />
       <main className={`${ui.main} max-w-4xl`}>
         <NetworkPlaces current={tab === "suggestions" ? "people" : tab === "requests" ? "requests" : "connections"} />
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-maroon-800">Your network</p>
-            <h1 className="mt-1 font-serif text-4xl text-stone-900 sm:text-5xl">People and projects</h1>
-            <p className="mt-2 max-w-xl text-sm text-stone-600">
-              Connections, requests, collaboration invites, and people you may know.
-            </p>
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <StickerBadge
+              name="offlineDino"
+              size="md"
+              variant="polaroid"
+              caption="talk to people ✦"
+              className="-rotate-3 hover:rotate-0 transition-transform shrink-0"
+            />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-maroon-800">Your network</p>
+              <h1 className="mt-1 font-serif text-4xl text-stone-900 sm:text-5xl">People and projects</h1>
+              <p className="mt-2 max-w-xl text-sm text-stone-600">
+                Connections, requests, collaboration invites, and people you may know.
+              </p>
+            </div>
           </div>
           <Link to="/network" className="text-sm font-semibold text-maroon-800 hover:underline">Back to feed</Link>
         </header>

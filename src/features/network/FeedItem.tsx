@@ -25,11 +25,11 @@ function formatTimeAgo(isoString: string): string {
   return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
 }
 
-const LAVENDER = "bg-[#EFEBF9] text-[#42356B] border border-[#D4C9EC]";
-const PEACH = "bg-[#FFF3E8] text-[#7C3E1D] border border-[#F0D3BA]";
-const BLUSH = "bg-[#FBE9EE] text-[#721C2A] border border-[#EBCAD3]";
+const LAVENDER = "bg-[#CDE3E8] text-[#2D120D] border border-[#2D120D]/20";
+const PEACH = "bg-[#FFF8CA] text-[#2D120D] border border-[#2D120D]/25";
+const BLUSH = "bg-[#6B0B0C] text-[#FFF8CA] border border-[#6B0B0C]";
 const BADGES: Record<string, [string, string]> = {
-  post: ["SHARED SPARK", "bg-[#F5F2FC] text-[#4A3E70] border border-[#DDD4F0]"],
+  post: ["SHARED SPARK", "bg-[#CDE3E8] text-[#2D120D] border border-[#2D120D]/20"],
   milestone: ["MILESTONE", PEACH],
   collab_call: ["COLLAB CALL", LAVENDER],
   project_update: ["PROJECT UPDATE", PEACH],
@@ -44,7 +44,7 @@ function Avatar({ name, url, className }: { name: string; url?: string | null; c
   return url ? (
     <img src={url} alt={name} className={`${className} object-cover`} />
   ) : (
-    <div className={`${className} bg-[#EFEBF9] text-[#42356B] font-bold flex items-center justify-center border border-[#D4C9EC]`}>
+    <div className={`${className} bg-[#CDE3E8] text-[#2D120D] font-bold flex items-center justify-center border border-[#2D120D]/25`}>
       {name.slice(0, 2).toUpperCase()}
     </div>
   );
@@ -115,8 +115,8 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
   const iconButton = "p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-50 transition";
 
   return (
-    <article id={activity.id} className="relative rounded-3xl border border-[#E2DAF5] bg-white shadow-2xs hover:shadow-md transition-all duration-200">
-      <div className={`${green ? "bg-[#E8E2FA] text-[#42356B] border-[#D0C4EE]" : "bg-[#FAE5EB] text-[#721C2A] border-[#EBCAD3]"} absolute -top-2.5 right-6 px-3 py-0.5 rounded-full z-10 flex items-center justify-center text-[9px] font-bold font-sans tracking-widest uppercase border shadow-2xs`}>
+    <article id={activity.id} className="relative rounded-3xl border border-[#2D120D]/15 bg-white shadow-2xs hover:shadow-md transition-all duration-200">
+      <div className={`${green ? "bg-[#CDE3E8] text-[#2D120D] border-[#2D120D]/20" : "bg-[#6B0B0C] text-[#FFF8CA] border-[#6B0B0C]"} absolute -top-2.5 right-6 px-3 py-0.5 rounded-full z-10 flex items-center justify-center text-[9px] font-bold font-sans tracking-widest uppercase border shadow-2xs`}>
         {green ? "01 · NOTE" : "02 · SPARK"}
       </div>
 
@@ -128,16 +128,16 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
             </Link>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Link to={profile} className="font-gift text-2xl sm:text-[26px] text-[#721C2A] hover:text-[#42356B] transition leading-none">
+                <Link to={profile} className="font-gift text-xl sm:text-2xl text-[#2D120D] font-bold hover:text-[#6B0B0C] transition leading-none">
                   {activity.authorName}
                 </Link>
-                <span className="font-sans text-xs text-[#6B5B95] font-medium">@{activity.authorUsername}</span>
+                <span className="font-sans text-xs text-[#6B0B0C] font-semibold">@{activity.authorUsername}</span>
                 <span className={`font-sans text-[10px] font-bold tracking-wider px-2.5 py-0.5 rounded-full ${color}`}>{label}</span>
               </div>
               {activity.authorHeadline && (
-                <p className="font-sans text-xs text-stone-600 mt-0.5 truncate font-normal">{activity.authorHeadline}</p>
+                <p className="font-sans text-xs text-[#2D120D]/70 mt-0.5 truncate font-normal">{activity.authorHeadline}</p>
               )}
-              <Link to={`/network/post/${activity.id}`} className="flex items-center gap-1.5 text-[11px] text-stone-400 mt-0.5 font-sans hover:underline">
+              <Link to={`/network/post/${activity.id}`} className="flex items-center gap-1.5 text-[11px] text-[#2D120D]/55 mt-0.5 font-sans hover:underline">
                 <Clock className="w-3 h-3" />
                 <span>{formatTimeAgo(activity.createdAt)}</span>
               </Link>
@@ -163,7 +163,7 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
         </div>
 
         {activity.title && (
-          <h3 className="font-gift text-2xl sm:text-3xl text-[#721C2A] mb-2 leading-tight">{activity.title}</h3>
+          <h3 className="font-gift text-2xl sm:text-3xl text-[#2D120D] font-bold mb-2 leading-tight">{activity.title}</h3>
         )}
         {editing !== null ? (
           <form className="mb-3.5 space-y-2" onSubmit={(e) => {
@@ -171,16 +171,16 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
             void run(async () => { await updatePost(activity.id, { content: editing.trim() }); setEditing(null); }, "Could not save post");
           }}>
             <textarea value={editing} onChange={(e) => setEditing(e.target.value)} rows={3} aria-label="Edit post"
-              className="w-full rounded-xl border border-[#D8CFE8] bg-[#FAF8FE] p-3 font-sans text-sm" />
+              className="w-full rounded-xl border border-[#2D120D]/20 bg-[#FFF8CA]/40 p-3 font-sans text-sm text-[#2D120D]" />
             <div className="flex gap-2">
               <button type="submit" disabled={busy || !editing.trim()}
-                className="rounded-lg bg-[#E5DFFA] border border-[#C9BEF0] px-3 py-1.5 font-sans text-xs font-semibold text-[#42356B] disabled:opacity-50">Save</button>
+                className="rounded-lg bg-[#6B0B0C] px-3 py-1.5 font-sans text-xs font-semibold text-[#FFF8CA] disabled:opacity-50">Save</button>
               <button type="button" onClick={() => setEditing(null)}
                 className="rounded-lg border border-stone-300 px-3 py-1.5 font-sans text-xs font-semibold">Cancel</button>
             </div>
           </form>
         ) : activity.content && (
-          <p className="font-sans text-sm text-stone-800 whitespace-pre-wrap leading-relaxed mb-3.5">{activity.content}</p>
+          <p className="font-sans text-sm text-[#2D120D] whitespace-pre-wrap leading-relaxed mb-3.5">{activity.content}</p>
         )}
 
         {activity.mediaUrl && !activity.project && (
@@ -191,7 +191,7 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
 
         {activity.project && (
           <Link to={`/project/${activity.project.id}`}
-            className="group block my-3 rounded-2xl border border-[#DFD7F2] bg-[#FAF8FE] text-[#1C1917] overflow-hidden hover:border-[#721C2A]/50 transition shadow-2xs">
+            className="group block my-3 rounded-2xl border border-[#2D120D]/15 bg-[#FFF8CA]/45 text-[#2D120D] overflow-hidden hover:border-[#6B0B0C] transition shadow-2xs">
             {activity.project.coverImageUrl && (
               <div className="aspect-[2.6/1] w-full overflow-hidden bg-gray-100">
                 <img src={activity.project.coverImageUrl} alt={activity.project.title}
@@ -210,36 +210,36 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
                     </span>
                   )}
                 </div>
-                <span className="font-sans text-xs text-[#721C2A] font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
+                <span className="font-sans text-xs text-[#6B0B0C] font-semibold group-hover:translate-x-1 transition flex items-center gap-1">
                   Open project <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
-              <h4 className="font-gift text-2xl text-[#721C2A] group-hover:text-[#42356B] transition">{activity.project.title}</h4>
+              <h4 className="font-gift text-2xl font-bold text-[#2D120D] group-hover:text-[#6B0B0C] transition">{activity.project.title}</h4>
               {activity.project.shortDescription && (
-                <p className="font-sans text-xs text-stone-600 mt-1 line-clamp-2 leading-relaxed">{activity.project.shortDescription}</p>
+                <p className="font-sans text-xs text-[#2D120D]/75 mt-1 line-clamp-2 leading-relaxed">{activity.project.shortDescription}</p>
               )}
             </div>
           </Link>
         )}
         {activity.project && !activity.isDemo && <FeedProjectStats project={activity.project} />}
 
-        <div className="mt-3.5 pt-3 border-t border-[#EFEBF7] flex items-center justify-between">
+        <div className="mt-3.5 pt-3 border-t border-[#2D120D]/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <button type="button" onClick={() => void toggleLike()} aria-label="Like post"
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold transition ${
-                shown.isLiked ? BLUSH : "text-stone-700 hover:bg-[#FAF8FE] border border-[#E2DAF5]"}`}>
-              <Heart className={`w-3.5 h-3.5 ${shown.isLiked ? "fill-[#721C2A] text-[#721C2A]" : ""}`} />
+                shown.isLiked ? BLUSH : "text-[#2D120D] hover:bg-[#FFF8CA]/60 border border-[#2D120D]/20"}`}>
+              <Heart className={`w-3.5 h-3.5 ${shown.isLiked ? "fill-[#FFF8CA] text-[#FFF8CA]" : ""}`} />
               <span>{shown.likesCount}</span>
             </button>
             <button type="button" onClick={() => setCommentsOpen((o) => !o)} aria-label="Comments"
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold transition ${
-                commentsOpen ? LAVENDER : "text-stone-700 hover:bg-[#FAF8FE] border border-[#E2DAF5]"}`}>
+                commentsOpen ? LAVENDER : "text-[#2D120D] hover:bg-[#FFF8CA]/60 border border-[#2D120D]/20"}`}>
               <MessageSquare className="w-3.5 h-3.5" />
               <span>{activity.commentsCount} notes</span>
             </button>
           </div>
           <button type="button" onClick={() => navigate(`/messages?user=${activity.userId || activity.authorUsername}`)}
-            className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#42356B] px-4 py-1.5 rounded-full bg-[#E5DFFA] hover:bg-[#D9D0F7] border border-[#C9BEF0] shadow-2xs transition">
+            className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-[#2D120D] px-4 py-1.5 rounded-full bg-[#CDE3E8] hover:bg-[#FFF8CA] border border-[#2D120D]/20 shadow-2xs transition">
             <Send className="w-3 h-3" />
             <span>Message</span>
           </button>
@@ -247,7 +247,7 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
       </div>
 
       {commentsOpen && (
-        <div className="bg-[#FAF8FE] border-t border-[#E8E2F5] px-5 sm:px-6 py-4 rounded-b-3xl">
+        <div className="bg-[#FFF8CA]/55 border-t border-[#2D120D]/10 px-5 sm:px-6 py-4 rounded-b-3xl">
           <form className="flex items-center gap-2.5 mb-3" onSubmit={(e) => {
             e.preventDefault();
             void run(async () => {
@@ -257,32 +257,32 @@ export function FeedItem({ activity, expanded = false, notify, index = 0 }: {
           }}>
             <input type="text" placeholder="Write a constructive note..." value={draft} aria-label="Write a comment"
               onChange={(e) => setDraft(e.target.value)}
-              className="flex-1 rounded-full border border-[#D8CFE8] bg-white px-4 py-1.5 font-sans text-xs text-[#1C1917] shadow-2xs focus:border-[#721C2A] focus:outline-none" />
+              className="flex-1 rounded-full border border-[#2D120D]/20 bg-white px-4 py-1.5 font-sans text-xs text-[#2D120D] shadow-2xs focus:border-[#6B0B0C] focus:outline-none" />
             <button type="submit" disabled={!draft.trim() || busy}
-              className="px-4 py-1.5 rounded-full bg-[#E5DFFA] hover:bg-[#D9D0F7] text-[#42356B] border border-[#C9BEF0] font-sans text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1">
+              className="px-4 py-1.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] font-sans text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1">
               {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : "Reply"}
             </button>
           </form>
 
           {expanded && allComments.hasNextPage && (
-            <button type="button" className="mb-3 font-sans text-xs font-semibold text-[#721C2A]" disabled={allComments.isFetchingNextPage}
+            <button type="button" className="mb-3 font-sans text-xs font-semibold text-[#6B0B0C]" disabled={allComments.isFetchingNextPage}
               onClick={() => void allComments.fetchNextPage()}>
               Load older notes
             </button>
           )}
           <div className={`space-y-2.5 ${expanded ? "" : "max-h-[240px] overflow-y-auto"}`}>
             {comments.length === 0 ? (
-              <p className="font-gift italic text-lg text-[#6B5B95] py-1">No notes yet. Leave a kind word ~</p>
+              <p className="font-cursive italic text-lg text-[#6B0B0C] py-1">No notes yet. Leave a kind word ~</p>
             ) : comments.map((comment) => (
-              <div key={comment.id} className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-[#E8E2F5] shadow-2xs">
+              <div key={comment.id} className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-[#2D120D]/15 shadow-2xs">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <Avatar name={comment.authorName} url={comment.authorAvatar} className="w-7 h-7 rounded-full shrink-0 mt-0.5 text-[10px]" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-gift text-lg text-[#721C2A]">{comment.authorName}</span>
-                      <span className="text-[11px] text-stone-400 font-sans">@{comment.authorUsername} · {formatTimeAgo(comment.createdAt)}</span>
+                      <span className="font-gift text-lg font-bold text-[#2D120D]">{comment.authorName}</span>
+                      <span className="text-[11px] text-[#2D120D]/60 font-sans">@{comment.authorUsername} · {formatTimeAgo(comment.createdAt)}</span>
                     </div>
-                    <p className="font-sans text-xs text-stone-700 mt-0.5 leading-relaxed">{comment.commentText}</p>
+                    <p className="font-sans text-xs text-[#2D120D] mt-0.5 leading-relaxed">{comment.commentText}</p>
                   </div>
                 </div>
                 {comment.canDelete && (

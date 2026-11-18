@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { stableContext } from "../utils/stableContext";
 
 export type Theme = "dark" | "light";
@@ -12,40 +12,17 @@ interface ThemeContextType {
 const ThemeContext = stableContext<ThemeContextType | undefined>("ThemeContext", undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("devzgo_theme");
-      if (saved === "light" || saved === "dark") {
-        return saved;
-      }
-      // Check system preference, default to dark for DevZ-Go's cinematic world
-      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-        return "light";
-      }
-    }
-    return "dark";
-  });
+  const theme: Theme = "light";
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("devzgo_theme", theme);
-  }, [theme]);
+    root.classList.remove("dark");
+    root.classList.add("light");
+    localStorage.setItem("devzgo_theme", "light");
+  }, []);
 
-  const toggleTheme = () => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
-  };
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
+  const toggleTheme = () => {};
+  const setTheme = () => {};
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
