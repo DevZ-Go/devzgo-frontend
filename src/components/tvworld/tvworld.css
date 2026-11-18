@@ -645,6 +645,19 @@
     right: 12px;
     bottom: 12px;
     max-height: min(72vh, 560px);
+    padding: 18px 14px 16px;
+  }
+  .tvw-open-row {
+    gap: 6px;
+  }
+  .tvw-open-row .tvw-btn--primary {
+    padding: 8px 10px;
+    letter-spacing: 0;
+  }
+  .tvw-open-row .tvw-inline-social button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
   }
 }
 .tvw-panel-kicker {
@@ -728,6 +741,26 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+.tvw-open-row {
+  flex-wrap: nowrap;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.tvw-open-row .tvw-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.tvw-open-row .tvw-btn--primary {
+  padding: 8px 12px;
+}
+.tvw-open-row .tvw-inline-social {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
 }
 .tvw-sep {
   height: 1px;

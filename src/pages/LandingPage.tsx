@@ -127,7 +127,7 @@ export function LandingPage() {
               className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
             >
               <textPath href="#top-wave-text-path" startOffset="0%">
-                FRESH BUILDS, IN CODE. ✿ DREAM BIG, BUILD BOLD. ✿ FRESH BUILDS, IN CODE. ✿ DREAM BIG, BUILD BOLD. ✿ FRESH BUILDS, IN CODE. ✿
+                FRESH BUILDS, IN CODE. DREAM BIG, BUILD BOLD. FRESH BUILDS, IN CODE. DREAM BIG, BUILD BOLD. FRESH BUILDS, IN CODE.
               </textPath>
             </text>
           </svg>
@@ -168,7 +168,7 @@ export function LandingPage() {
                   TOP PROJECTS
                 </span>
                 <span className="font-cursive text-lg text-[#6B0B0C] font-bold">
-                  curated ✦
+                  curated
                 </span>
               </div>
 
@@ -284,7 +284,7 @@ export function LandingPage() {
             className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
           >
             <textPath href="#bottom-wave-text-path" startOffset="0%">
-              CRAFTED BY STUDENTS, FOR CREATORS. ✿ LOCKED IN &amp; BUILDING. ✿ CRAFTED BY STUDENTS, FOR CREATORS. ✿ LOCKED IN &amp; BUILDING. ✿
+              CRAFTED BY STUDENTS, FOR CREATORS. LOCKED IN AND BUILDING. CRAFTED BY STUDENTS, FOR CREATORS. LOCKED IN AND BUILDING.
             </textPath>
           </text>
         </svg>
@@ -293,7 +293,7 @@ export function LandingPage() {
       {/* ── SECTION 3: DEVSPACE FISHEYE BANNER SECTION ── */}
       <section className="bg-[#FFF8CA] px-4 sm:px-6 md:px-14 pt-20 pb-20 sm:pt-24 lg:py-20">
         <div className="max-w-[1360px] mx-auto w-full">
-          {/* Tall Banner Card: 3-Column Layout (Left Story | Centered Fisheye Image | Right DevSpace 🪐) */}
+          {/* Tall banner: story, artwork, and DevSpace */}
           <div className="relative w-full rounded-3xl bg-black border-2 border-[#2D120D]/25 overflow-hidden min-h-[540px] sm:min-h-[640px] lg:min-h-[76vh] px-6 sm:px-10 lg:px-12 py-10 flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] items-center gap-8 shadow-2xl group">
             {/* Subtle Ambient Starlight Accents in the Black Space */}
             <div
@@ -321,7 +321,7 @@ export function LandingPage() {
                 <span className="italic text-[#CDE3E8]">
                   craft of dreaming big
                 </span>
-                . <span className="not-italic text-[#FFF8CA] whitespace-nowrap">(„• ֊ •„)੭</span>
+                .
               </p>
             </div>
 
@@ -334,14 +334,13 @@ export function LandingPage() {
               />
             </div>
 
-            {/* Right Column: DevSpace 🪐 Centered in Right Black Space (Never Wraps or Overlaps) */}
+            {/* Right column: DevSpace */}
             <div className="relative z-10 max-w-[280px] mx-auto flex flex-col items-center lg:items-end text-center lg:text-right">
               <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#CDE3E8] block mb-2 whitespace-nowrap">
-                LATE NIGHT SESSIONS ✦
+                LATE NIGHT SESSIONS
               </span>
-              <h3 className="font-serif text-3xl sm:text-4xl xl:text-5xl font-normal text-[#FFF8CA] tracking-tight leading-none whitespace-nowrap">
-                Dev<span className="italic font-medium text-[#CDE3E8]">Space</span>{" "}
-                <span className="not-italic inline-block animate-pulse">🪐</span>
+              <h3 className="font-serif text-3xl sm:text-4xl xl:text-5xl font-normal text-[#FFF8CA] tracking-tight leading-none">
+                Dev<span className="italic font-medium text-[#CDE3E8]">Space</span>
               </h3>
               <p className="font-serif italic text-xs sm:text-sm text-[#FFF8CA]/80 mt-2.5 leading-relaxed tracking-wide">
                 where caffeine, cats &amp; midnight code orbit together.

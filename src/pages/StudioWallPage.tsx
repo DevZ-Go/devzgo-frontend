@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderCode,
-  Sparkles,
 } from "lucide-react";
 import { ExploreStage } from "../components/explore/ExploreStage";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
@@ -106,11 +105,10 @@ export function StudioWallPage({
             <StickerBadge name="blueMiffy" size="sm" variant="circle" className="-rotate-6 shrink-0 !w-11 !h-11" />
             <div>
               <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#DA6844]">
-                <Sparkles className="w-3 h-3" />
                 PROJECTS STUDIO · {projects.length} BUILDS
               </span>
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#5B233B] leading-tight m-0">
-                Explore Student Creations ★
+                Explore Student Creations
               </h2>
             </div>
           </div>

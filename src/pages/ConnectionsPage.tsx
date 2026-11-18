@@ -219,7 +219,7 @@ export function ConnectionsPage() {
               name="offlineDino"
               size="md"
               variant="polaroid"
-              caption="talk to people ✦"
+              caption="talk to people"
               className="-rotate-3 hover:rotate-0 transition-transform shrink-0"
             />
             <div>

@@ -22,7 +22,7 @@ export function PixelJunction({
           }}
         />
         <span className="font-sans text-[10px] font-semibold tracking-[0.2em] uppercase text-white/60">
-          ✦ scroll ✦
+          scroll
         </span>
         <div
           className="flex-1 h-px"
