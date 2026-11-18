@@ -11,7 +11,7 @@ interface Props {
 
 const KNOB_ANGLES = [-40, -10, 25, 60];
 
-/** One project as a dark pixel-art CRT television, placed at its world coordinates. */
+/** One project as a retro CRT television, placed at its world coordinates. */
 export const PixelTV = memo(function PixelTV({ tv, focused, onSelect }: Props) {
   const { project } = tv;
   const [imageFailed, setImageFailed] = useState(false);
@@ -111,7 +111,7 @@ export const PixelTV = memo(function PixelTV({ tv, focused, onSelect }: Props) {
       <div className="tv-label">
         <b>{project.title}</b>
         <small>
-          {num} · {project.likes}
+          CH {num} · ♥ {project.likes}
         </small>
       </div>
     </div>

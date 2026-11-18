@@ -4,17 +4,17 @@
 
 
 :root {
-  --text: #5c5470;
-  --text-h: #2d2b3a;
-  --bg: #FFFDF7;
-  --border: #f0e6d6;
-  --code-bg: #faf6ee;
-  --accent: #8B5CF6;
-  --accent-bg: rgba(139, 92, 246, 0.08);
-  --accent-border: rgba(139, 92, 246, 0.25);
-  --social-bg: rgba(244, 243, 236, 0.5);
+  --text: #3E2217;
+  --text-h: #284E45;
+  --bg: #FAF6EC;
+  --border: #DFCFB9;
+  --code-bg: #DAEBF2;
+  --accent: #284E45;
+  --accent-bg: rgba(40, 78, 69, 0.08);
+  --accent-border: rgba(40, 78, 69, 0.25);
+  --social-bg: rgba(205, 227, 232, 0.45);
   --shadow:
-    rgba(0, 0, 0, 0.04) 0 4px 15px -3px, rgba(0, 0, 0, 0.02) 0 2px 6px -1px;
+    rgba(62, 34, 23, 0.08) 0 4px 15px -3px, rgba(62, 34, 23, 0.04) 0 2px 6px -1px;
 
   --sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -32,15 +32,15 @@
 }
 
 .dark {
-  --text: #cbd5e1;
-  --text-h: #f8fafc;
-  --bg: #090d16;
-  --border: #1e293b;
-  --code-bg: #0f172a;
-  --accent: #a78bfa;
-  --accent-bg: rgba(167, 139, 250, 0.12);
-  --accent-border: rgba(167, 139, 250, 0.3);
-  --social-bg: rgba(30, 41, 59, 0.6);
+  --text: #FFF8CA;
+  --text-h: #FFF8CA;
+  --bg: #2D120D;
+  --border: #6B0B0C;
+  --code-bg: #3D1812;
+  --accent: #CDE3E8;
+  --accent-bg: rgba(205, 227, 232, 0.12);
+  --accent-border: rgba(205, 227, 232, 0.3);
+  --social-bg: rgba(107, 11, 12, 0.4);
   --shadow:
     rgba(0, 0, 0, 0.35) 0 4px 20px -3px, rgba(0, 0, 0, 0.2) 0 2px 8px -1px;
   color-scheme: dark;
@@ -59,35 +59,36 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--heading);
-  font-weight: 700;
-  color: var(--text-h);
-}
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--heading);
+    font-weight: 700;
+  }
 
-h1 {
-  font-size: 48px;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  margin: 24px 0;
-  @media (max-width: 1024px) {
-    font-size: 32px;
-    margin: 16px 0;
+  h1 {
+    font-size: 48px;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin: 24px 0;
+    @media (max-width: 1024px) {
+      font-size: 32px;
+      margin: 16px 0;
+    }
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  h2 {
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+    @media (max-width: 1024px) {
+      font-size: 20px;
+    }
   }
-}
-p {
-  margin: 0;
+  p {
+    margin: 0;
+  }
 }
 
 code,
@@ -160,9 +161,9 @@ code {
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
   .dark .devz-select-list {
-    background-color: #0f172a;
-    border-color: #1e293b;
-    color: #f8fafc;
+    background-color: #FAF6EC;
+    border-color: #284E45;
+    color: #2D120D;
   }
   select:disabled {
     cursor: not-allowed;
@@ -184,15 +185,19 @@ code {
   color: #2d2b3a;
 }
 
-/* Whimsical cursive & Gift Guide editorial font utilities */
+/* Whimsical cursive & Cake Social display font utilities */
 .font-cursive {
-  font-family: 'Dancing Script', 'Cormorant Garamond', cursive;
+  font-family: 'Lobster Two', 'Dancing Script', cursive;
 }
 .font-hand {
   font-family: 'Dancing Script', 'Caveat', cursive;
 }
 .font-gift {
-  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'League Spartan', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}
+.font-cake {
+  font-family: 'Antonio', 'League Spartan', sans-serif;
 }
 
 /* Authentic hand-drawn wobbly doodle borders */
@@ -310,6 +315,63 @@ code {
 .nav-icon-profile,
 .nav-icon-messages {
   transition: color 0.2s ease;
+}
+
+/* ── Signature Scrapbook & Flipbook Patterns (Blue Gingham, Mint Stripes, Espresso Polka Dots) ── */
+.pattern-blue-gingham {
+  background-color: #F2F8FB;
+  background-image:
+    linear-gradient(90deg, rgba(168, 206, 224, 0.35) 50%, transparent 50%),
+    linear-gradient(rgba(168, 206, 224, 0.35) 50%, transparent 50%);
+  background-size: 44px 44px;
+}
+
+.pattern-mint-stripes {
+  background-color: #EEF6E0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #E3EFCE 0px,
+    #E3EFCE 28px,
+    #F3F9E8 28px,
+    #F3F9E8 56px
+  );
+}
+
+.pattern-brown-dots {
+  background-color: #4A2A1C;
+  background-image: radial-gradient(#F7EFE0 2px, transparent 2px);
+  background-size: 22px 22px;
+}
+
+.pattern-cream-dots {
+  background-color: #FAF6EC;
+  background-image: radial-gradient(#4A2A1C 2px, transparent 2px);
+  background-size: 24px 24px;
+}
+
+.pattern-sky-stars {
+  background-color: #C5DDF0;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.55) 1.5px, transparent 2px),
+    radial-gradient(circle at 76% 68%, rgba(255, 255, 255, 0.55) 1.5px, transparent 2px);
+  background-size: 64px 64px;
+}
+
+/* Aesthetic Sage-Greenish Textured Paper (Lovebug Clover Reference) */
+.pattern-sage-paper {
+  background-color: #DDE8D5;
+  background-image:
+    radial-gradient(circle at 20% 25%, rgba(35, 99, 41, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 80% 75%, rgba(127, 152, 192, 0.08) 0%, transparent 50%),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.25) 0px, rgba(255, 255, 255, 0.25) 1px, transparent 1px, transparent 14px);
+}
+
+/* Periwinkle Studio Card Texture (Projects Studio Reference) */
+.pattern-periwinkle-studio {
+  background-color: #7E97BF;
+  background-image:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.14) 0%, transparent 55%),
+    radial-gradient(circle at 75% 80%, rgba(35, 55, 90, 0.16) 0%, transparent 55%);
 }
 
 

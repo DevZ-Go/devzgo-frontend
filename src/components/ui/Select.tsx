@@ -230,7 +230,7 @@ export function Select({
               maxHeight: place.maxHeight,
               transform: place.above ? "translateY(-100%)" : undefined,
             }}
-            className="devz-select-list z-[1000] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-1.5 text-sm text-stone-800 shadow-lg shadow-stone-900/10"
+            className="devz-select-list z-[1000] overflow-y-auto rounded-2xl border-2 border-[#284E45] bg-[#FAF6EC] p-2 text-sm text-[#2D120D] shadow-2xl"
           >
             {items.map((item, index) => {
               const isSelected = index === selectedIndex;
@@ -246,23 +246,33 @@ export function Select({
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => !item.disabled && setActive(index)}
                   onClick={() => choose(index)}
-                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2 ${
+                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 font-medium transition-colors ${
                     item.disabled
-                      ? "cursor-not-allowed text-stone-400"
-                      : isActive
-                        ? "bg-amber-50 text-stone-900"
-                        : "text-stone-700"
-                  } ${isSelected ? "font-semibold text-maroon-800" : ""}`}
+                      ? "cursor-not-allowed text-[#2D120D]/40"
+                      : isSelected
+                        ? "bg-[#6B0B0C] text-[#FFF8CA] font-bold shadow-2xs"
+                        : isActive
+                          ? "bg-[#CBE4EE] text-[#26415E] font-semibold"
+                          : "text-[#2D120D] hover:bg-[#CBE4EE]/60"
+                  }`}
                 >
                   <span className="min-w-0">
                     <span className="block break-words">{item.label}</span>
-                    {item.hint && <span className="mt-0.5 block text-xs font-normal leading-snug text-stone-500">{item.hint}</span>}
+                    {item.hint && (
+                      <span
+                        className={`mt-0.5 block text-xs font-normal leading-snug ${
+                          isSelected ? "text-[#FFF8CA]/85" : "text-[#2D120D]/70"
+                        }`}
+                      >
+                        {item.hint}
+                      </span>
+                    )}
                   </span>
-                  {isSelected && <Check className="h-4 w-4 shrink-0 text-maroon-800" aria-hidden />}
+                  {isSelected && <Check className="h-4 w-4 shrink-0 text-[#FFF8CA]" aria-hidden />}
                 </li>
               );
             })}
-            {items.length === 0 && <li className="px-3 py-2 text-stone-400">Nothing to choose</li>}
+            {items.length === 0 && <li className="px-3 py-2 text-[#2D120D]/60">Nothing to choose</li>}
           </ul>,
           document.body,
         )}

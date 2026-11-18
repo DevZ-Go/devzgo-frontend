@@ -13,15 +13,15 @@ export function SwipeExitArrow({ onReplay }: SwipeExitArrowProps) {
   const [copied, setCopied] = useState(false);
 
   const y = useMotionValue(0);
-  const opacity = useTransform(y, [0, -70], [1, 0.2]);
-  const scale = useTransform(y, [0, -70], [1, 0.9]);
+  const opacity = useTransform(y, [0, -60], [1, 0.25]);
+  const scale = useTransform(y, [0, -60], [1, 0.94]);
 
   const handleExit = () => {
     if (exiting) return;
     setExiting(true);
     setTimeout(() => {
       navigate("/home");
-    }, 350);
+    }, 260);
   };
 
   const handleShare = () => {
@@ -33,72 +33,50 @@ export function SwipeExitArrow({ onReplay }: SwipeExitArrowProps) {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-6 mt-8 select-none">
-      {/* Action Buttons: Share & Replay */}
-      <div className="flex items-center gap-3">
+    <div className="w-full flex flex-col items-center justify-center gap-3 mt-1 select-none">
+      {/* Clean 2000s Pill Buttons: Share, Replay, and Back to Home in one tidy row */}
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
         <button
           type="button"
           onClick={handleShare}
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/80 hover:bg-stone-900 text-stone-200 border border-stone-700 text-xs font-semibold tracking-wide transition-all shadow-md active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/25 font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-stone-400" />}
-          <span>{copied ? "Link Copied!" : "Share Wrap"}</span>
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Share2 className="w-3.5 h-3.5 text-sky-300" />}
+          <span>{copied ? "Link copied!" : "Share Wrap"}</span>
         </button>
 
         {onReplay && (
           <button
             type="button"
             onClick={onReplay}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900/80 hover:bg-stone-900 text-stone-200 border border-stone-700 text-xs font-semibold tracking-wide transition-all shadow-md active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/25 font-sans text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-95 cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-purple-300" />
             <span>Replay</span>
           </button>
         )}
-      </div>
 
-      {/* Interactive Swipe Up to Exit Pill */}
-      <motion.div
-        style={{ y, opacity, scale }}
-        drag="y"
-        dragConstraints={{ top: -100, bottom: 0 }}
-        dragElastic={0.4}
-        onDragEnd={(_, info) => {
-          if (info.offset.y < -50 || info.velocity.y < -200) {
-            handleExit();
-          }
-        }}
-        onClick={handleExit}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="group relative flex flex-col items-center gap-1.5 px-8 py-3.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-white font-mono text-xs font-bold tracking-widest uppercase shadow-2xl hover:shadow-orange-500/40 cursor-grab active:cursor-grabbing transition-shadow"
-      >
-        {/* Pulsing Animated Arrows */}
-        <motion.div
-          animate={{
-            y: [-3, -9, -3],
-            opacity: [0.6, 1, 0.6],
+        <motion.button
+          type="button"
+          style={{ y, opacity, scale }}
+          drag="y"
+          dragConstraints={{ top: -80, bottom: 0 }}
+          dragElastic={0.35}
+          onDragEnd={(_, info) => {
+            if (info.offset.y < -45 || info.velocity.y < -180) {
+              handleExit();
+            }
           }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.4,
-            ease: "easeInOut",
-          }}
-          className="flex flex-col items-center -space-y-2 text-white"
+          onClick={handleExit}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-[#A5B4FC] via-[#C4B5FD] to-[#93C5FD] text-[#0F172A] font-sans text-xs font-bold tracking-wide shadow-[0_6px_20px_rgba(165,180,252,0.35)] cursor-pointer transition-all"
         >
-          <ChevronUp className="w-5 h-5 drop-shadow-sm" />
-          <ChevronUp className="w-4 h-4 opacity-70 drop-shadow-sm" />
-        </motion.div>
-
-        <span className="flex items-center gap-2 drop-shadow-md">
           <Home className="w-3.5 h-3.5" />
-          <span>SWIPE UP OR CLICK TO EXIT</span>
-        </span>
-      </motion.div>
-
-      <span className="text-[10px] font-mono text-stone-400 tracking-wider uppercase">
-        End of Monthly Wrap · OCT 2026
-      </span>
+          <span>Back to Home</span>
+          <ChevronUp className="w-3.5 h-3.5" />
+        </motion.button>
+      </div>
     </div>
   );
 }

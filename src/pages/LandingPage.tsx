@@ -12,7 +12,6 @@ import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
 export function LandingPage() {
-  const [useVideoBg, setUseVideoBg] = useState(true);
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [, setLoading] = useState(true);
 
@@ -37,30 +36,22 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8f6f0] text-stone-800 selection:bg-amber-200 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FFF8CA] text-[#2D120D] selection:bg-[#CDE3E8] overflow-x-hidden">
       {/* ── Top Editorial Navigation ── */}
       <Navbar variant="editorial" />
 
       {/* ── SECTION 1: HERO ── */}
-      <section className="relative w-full h-dvh flex items-center justify-center overflow-hidden bg-[#2a211c]">
-        {/* Pastoral Hero Background Image / Video Container */}
+      <section className="relative w-full h-dvh flex items-center justify-center overflow-hidden bg-[#2D120D]">
+        {/* Pastoral Hero Video Container */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-          {useVideoBg ? (
-            <video
-              src={pixelCatBackground}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover object-center"
-            />
-          ) : (
-            <img
-              src={lockInImage}
-              alt="Lock in artwork"
-              className="w-full h-full object-cover object-[center_40%]"
-            />
-          )}
+          <video
+            src={pixelCatBackground}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover object-center"
+          />
 
           {/* Gentle vignette overlay for crisp typography */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/50 pointer-events-none" />
@@ -103,20 +94,10 @@ export function LandingPage() {
             >
               Add project
             </Link>
-
-            {/* Optional subtle background switcher button */}
-            <button
-              type="button"
-              onClick={() => setUseVideoBg((v) => !v)}
-              className="px-3 py-2 rounded-full bg-white/40 hover:bg-white/60 backdrop-blur-xs text-[10px] font-sans uppercase tracking-wider text-stone-800 transition-colors shadow-xs"
-              title="Switch the home background"
-            >
-              {useVideoBg ? "Photo" : "Pixelcat"}
-            </button>
           </motion.div>
         </div>
 
-        {/* ── WAVE 1: Dollop-Style Curved Text Wave Ribbon into Maroon Section ── */}
+        {/* ── WAVE 1: Dollop-Style Curved Text Wave Ribbon into Rosewood Section ── */}
         <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none leading-none">
           <svg
             viewBox="0 0 1440 130"
@@ -125,15 +106,15 @@ export function LandingPage() {
             className="w-full h-[70px] sm:h-[95px] md:h-[120px] block"
             preserveAspectRatio="none"
           >
-            {/* Cream Wave Band Behind Text */}
+            {/* Lemon Chiffon Wave Band Behind Text */}
             <path
               d="M0,45 C240,95 480,5 720,45 C960,85 1200,10 1440,45 L1440,130 L0,130 Z"
-              fill="#f8f6f0"
+              fill="#FFF8CA"
             />
-            {/* Maroon Wave Fill Below */}
+            {/* Rosewood Wave Fill Below */}
             <path
               d="M0,82 C240,132 480,42 720,82 C960,122 1200,47 1440,82 L1440,130 L0,130 Z"
-              fill="#631726"
+              fill="#6B0B0C"
             />
             {/* Curved Path for Wave Text */}
             <path
@@ -142,7 +123,7 @@ export function LandingPage() {
               fill="none"
             />
             <text
-              fill="#631726"
+              fill="#6B0B0C"
               className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
             >
               <textPath href="#top-wave-text-path" startOffset="0%">
@@ -153,25 +134,25 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── SECTION 2: MAROON FEATURED PROJECTS SECTION ── */}
-      <section className="relative z-10 bg-[#631726] text-[#f8f6f0] px-6 md:px-14 pt-8 pb-16 sm:pt-12 sm:pb-20">
+      {/* ── SECTION 2: ROSEWOOD FEATURED PROJECTS SECTION ── */}
+      <section className="relative z-10 bg-[#6B0B0C] text-[#FFF8CA] px-6 md:px-14 pt-8 pb-16 sm:pt-12 sm:pb-20">
         <div className="max-w-[1360px] mx-auto">
           {/* Section Header: Left Title/Subtitle + Right View All Projects (Clean Center) */}
           <div className="mb-10 sm:mb-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="text-left">
-              <span className="font-cursive text-2xl sm:text-3xl text-[#fced96] block mb-0.5">
+              <span className="font-cursive text-2xl sm:text-3xl text-[#CDE3E8] block mb-0.5">
                 Find your new fav build
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#f8f6f0] font-semibold tracking-tight">
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#FFF8CA] font-semibold tracking-tight">
                 Featured Projects
               </h2>
-              <p className="text-xs sm:text-sm text-[#f8f6f0]/75 font-sans mt-2 tracking-wide">
+              <p className="text-xs sm:text-sm text-[#FFF8CA]/80 font-sans mt-2 tracking-wide">
                 Fresh student projects, open-source tools, and developer creations.
               </p>
             </div>
             <Link
               to="/explore"
-              className="self-start sm:self-end inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#f8f6f0]/10 hover:bg-[#fced96] text-[#fced96] hover:text-stone-900 border border-[#fced96]/40 text-xs font-semibold uppercase tracking-wider transition-all shrink-0"
+              className="self-start sm:self-end inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#2D120D]/60 hover:bg-[#CDE3E8] text-[#FFF8CA] hover:text-[#2D120D] border border-[#CDE3E8]/50 text-xs font-semibold uppercase tracking-wider transition-all shrink-0"
             >
               View all projects &rarr;
             </Link>
@@ -180,13 +161,13 @@ export function LandingPage() {
           {/* Cards Grid: 1 Special Promo Card + 3 Dynamic Project Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 items-stretch">
             {/* 1. Feature / Promo Card */}
-            <div className="group relative rounded-3xl bg-[#f8f6f0] text-stone-900 border-2 border-[#fced96]/40 p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+            <div className="group relative rounded-3xl bg-[#FFF8CA] text-[#2D120D] border-2 border-[#CDE3E8] p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
               {/* Top Tag */}
               <div className="flex items-center justify-between z-10">
-                <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-[#631726] text-[#fced96] shadow-xs">
+                <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA] shadow-xs">
                   TOP PROJECTS
                 </span>
-                <span className="font-cursive text-lg text-[#631726] font-bold">
+                <span className="font-cursive text-lg text-[#6B0B0C] font-bold">
                   curated ✦
                 </span>
               </div>
@@ -198,7 +179,7 @@ export function LandingPage() {
                   alt="Curated student projects and community kits"
                   className="w-36 h-36 object-cover rounded-2xl shadow-md group-hover:scale-105 transition-transform duration-300"
                 />
-                <p className="font-serif text-sm text-stone-700 mt-3 text-center">
+                <p className="font-serif text-sm text-[#2D120D]/80 mt-3 text-center">
                   Hand-picked builds from the community
                 </p>
               </div>
@@ -207,7 +188,7 @@ export function LandingPage() {
               <div className="z-10">
                 <Link
                   to="/explore"
-                  className="w-full block text-center py-2.5 px-4 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                  className="w-full block text-center py-2.5 px-4 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] font-sans text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
                 >
                   EXPLORE ALL
                 </Link>
@@ -228,10 +209,10 @@ export function LandingPage() {
                 <Link
                   key={project.id ?? idx}
                   to={linked ? `/project/${projectId}` : "/explore"}
-                  className="group flex h-full min-h-0 flex-col rounded-3xl bg-[#f8f6f0] p-3 sm:p-4 text-left shadow-xl border-2 border-white/20 hover:border-[#fced96] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#fced96]"
+                  className="group flex flex-col justify-between rounded-3xl bg-[#FFF8CA] p-4 text-left shadow-xl border-2 border-[#CDE3E8]/70 hover:border-[#CDE3E8] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#CDE3E8]"
                 >
-                  {/* Cover fills the card frame on every breakpoint */}
-                  <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-2xl bg-stone-200 shadow-inner">
+                  {/* Project Image Frame (Uncropped object-contain on soft pedestal so GitHub cards aren't cut off) */}
+                  <div className="aspect-[16/10] w-full rounded-2xl bg-white border border-[#2D120D]/15 overflow-hidden flex items-center justify-center relative shadow-inner p-2">
                     {coverUrl ? (
                       <ImageWithFallback
                         src={coverUrl}
@@ -239,29 +220,30 @@ export function LandingPage() {
                         className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#f8f6f0] to-[#efe6d4] p-6 text-stone-700">
-                        <FolderCode className="mb-2 h-10 w-10 text-[#631726] transition-transform group-hover:scale-110" />
-                        <span className="line-clamp-2 text-center font-serif text-sm font-semibold text-stone-800">
+                      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#CDE3E8]/50 to-[#FFF8CA] text-[#2D120D] rounded-xl">
+                        <FolderCode className="w-10 h-10 text-[#6B0B0C] mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-serif text-sm font-semibold text-center text-[#2D120D] line-clamp-2">
                           {project.title}
                         </span>
                       </div>
                     )}
 
                     {project.category && (
-                      <span className="absolute left-2.5 top-2.5 rounded-full bg-[#631726]/95 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#fced96] shadow-xs backdrop-blur-sm">
+                      <span className="absolute top-2.5 left-2.5 text-[9px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full bg-[#2D120D] text-[#FFF8CA] shadow-xs">
                         {project.category}
                       </span>
                     )}
                   </div>
 
-                  <div className="mt-3 flex min-w-0 flex-1 flex-col justify-end px-0.5 pt-1 sm:mt-4 sm:px-1">
-                    <h3 className="truncate font-serif text-lg font-semibold text-stone-900 transition-colors group-hover:text-[#631726] sm:text-xl">
+                  {/* Project Title and Metadata */}
+                  <div className="mt-4 px-1 pt-1">
+                    <h3 className="font-serif text-xl text-[#2D120D] font-semibold group-hover:text-[#6B0B0C] transition-colors truncate">
                       {project.title}
                     </h3>
-                    <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-stone-200/70 pt-2 text-xs text-stone-600">
-                      <span className="min-w-0 truncate font-medium">{stackLabel}</span>
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-[#631726]">
-                        <Heart className="h-3 w-3 fill-[#631726] text-[#631726]" />
+                    <div className="flex items-center justify-between text-xs text-[#2D120D]/75 font-sans mt-1.5 pt-2 border-t border-[#2D120D]/15">
+                      <span className="truncate max-w-[165px] font-medium">{stackLabel}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CDE3E8] text-[#2D120D] font-semibold ml-2 shrink-0">
+                        <Heart className="w-3 h-3 text-[#6B0B0C] fill-[#6B0B0C]" />
                         <span>{project.likes ?? 0}</span>
                       </span>
                     </div>
@@ -273,8 +255,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── WAVE 2: Maroon-to-Cream Curved Text Wave Divider into DevSpace Section ── */}
-      <div className="relative z-10 bg-[#631726] leading-none pointer-events-none -mt-1">
+      {/* ── WAVE 2: Rosewood-to-Botticelli-to-Lemon-Chiffon Curved Wave Divider into DevSpace Section ── */}
+      <div className="relative z-10 bg-[#6B0B0C] leading-none pointer-events-none -mt-1">
         <svg
           viewBox="0 0 1440 130"
           fill="none"
@@ -282,15 +264,15 @@ export function LandingPage() {
           className="w-full h-[70px] sm:h-[95px] md:h-[120px] block"
           preserveAspectRatio="none"
         >
-          {/* Butter-Yellow / Cream Wave Band */}
+          {/* Botticelli Blue Wave Band */}
           <path
             d="M0,40 C240,0 480,90 720,40 C960,-10 1200,85 1440,40 L1440,130 L0,130 Z"
-            fill="#fced96"
+            fill="#CDE3E8"
           />
-          {/* Bottom Cream Section Fill */}
+          {/* Bottom Lemon Chiffon Section Fill */}
           <path
             d="M0,78 C240,38 480,128 720,78 C960,28 1200,123 1440,78 L1440,130 L0,130 Z"
-            fill="#f8f6f0"
+            fill="#FFF8CA"
           />
           <path
             id="bottom-wave-text-path"
@@ -298,7 +280,7 @@ export function LandingPage() {
             fill="none"
           />
           <text
-            fill="#631726"
+            fill="#2D120D"
             className="font-sans font-extrabold uppercase text-[13px] tracking-[0.18em]"
           >
             <textPath href="#bottom-wave-text-path" startOffset="0%">
@@ -309,37 +291,37 @@ export function LandingPage() {
       </div>
 
       {/* ── SECTION 3: DEVSPACE FISHEYE BANNER SECTION ── */}
-      <section className="bg-[#f8f6f0] px-6 md:px-14 pt-6 pb-14 lg:py-10">
+      <section className="bg-[#FFF8CA] px-4 sm:px-6 md:px-14 pt-20 pb-20 sm:pt-24 lg:py-20">
         <div className="max-w-[1360px] mx-auto w-full">
           {/* Tall Banner Card: 3-Column Layout (Left Story | Centered Fisheye Image | Right DevSpace 🪐) */}
-          <div className="relative w-full rounded-3xl bg-black border border-stone-300/40 overflow-hidden min-h-[540px] sm:min-h-[660px] lg:min-h-[82vh] px-6 sm:px-10 lg:px-12 py-8 flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-8 shadow-lg group">
+          <div className="relative w-full rounded-3xl bg-black border-2 border-[#2D120D]/25 overflow-hidden min-h-[540px] sm:min-h-[640px] lg:min-h-[76vh] px-6 sm:px-10 lg:px-12 py-10 flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] items-center gap-8 shadow-2xl group">
             {/* Subtle Ambient Starlight Accents in the Black Space */}
             <div
               className="absolute inset-0 pointer-events-none opacity-40"
               style={{
                 backgroundImage:
-                  "radial-gradient(1.5px 1.5px at 8% 18%, #f5eedc 100%, transparent), radial-gradient(1px 1px at 88% 16%, #fced96 100%, transparent), radial-gradient(1.5px 1.5px at 82% 76%, #f5eedc 100%, transparent), radial-gradient(1px 1px at 14% 78%, #fced96 100%, transparent), radial-gradient(1.5px 1.5px at 92% 46%, #f5eedc 100%, transparent)",
+                  "radial-gradient(1.5px 1.5px at 8% 18%, #FFF8CA 100%, transparent), radial-gradient(1px 1px at 88% 16%, #CDE3E8 100%, transparent), radial-gradient(1.5px 1.5px at 82% 76%, #FFF8CA 100%, transparent), radial-gradient(1px 1px at 14% 78%, #CDE3E8 100%, transparent), radial-gradient(1.5px 1.5px at 92% 46%, #FFF8CA 100%, transparent)",
               }}
             />
 
-            {/* Left Column: Clean Editorial Story Text (No Grey Box, Centered in Left Black Space) */}
+            {/* Left Column: Clean Editorial Story Text (Centered in Left Black Space) */}
             <div className="relative z-10 max-w-[290px] mx-auto flex flex-col items-center text-center">
               <div className="inline-flex items-center justify-center gap-2 mb-4">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#fced96] animate-pulse" />
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#fced96] whitespace-nowrap">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#CDE3E8] animate-pulse" />
+                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#FFF8CA] whitespace-nowrap">
                   DREAM BIG · BUILD BOLD
                 </span>
               </div>
 
-              <p className="font-serif text-sm sm:text-[15px] text-[#f5eedc]/90 leading-relaxed font-normal tracking-wide">
+              <p className="font-serif text-sm sm:text-[15px] text-[#FFF8CA]/90 leading-relaxed font-normal tracking-wide">
                 Our community is about turning ideas into reality. It&apos;s
                 thinking long-term about what inspires developers, creators, and
                 students. And it&apos;s crafting the tools and experiences that
                 make a real difference—celebrating creativity and the{" "}
-                <span className="italic text-[#fced96]">
+                <span className="italic text-[#CDE3E8]">
                   craft of dreaming big
                 </span>
-                . <span className="not-italic text-[#fced96] whitespace-nowrap">(„• ֊ •„)੭</span>
+                . <span className="not-italic text-[#FFF8CA] whitespace-nowrap">(„• ֊ •„)੭</span>
               </p>
             </div>
 
@@ -348,22 +330,33 @@ export function LandingPage() {
               <img
                 src={lockInImage}
                 alt="Lock in artwork"
-                className="w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] lg:w-[58vh] lg:h-[58vh] xl:w-[64vh] xl:h-[64vh] max-w-full object-contain object-center group-hover:scale-[1.02] transition-transform duration-700"
+                className="w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] lg:w-[52vh] lg:h-[52vh] xl:w-[58vh] xl:h-[58vh] max-w-full object-contain object-center group-hover:scale-[1.02] transition-transform duration-700"
               />
             </div>
 
-            {/* Right Column: DevSpace 🪐 Outside the Fisheye Circle (Zero Overlap on Code or Cat) */}
-            <div className="relative z-10 max-w-[260px] mx-auto flex flex-col items-center lg:items-end text-center lg:text-right lg:self-start lg:mt-16">
-              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#fced96]/85 block mb-2 whitespace-nowrap">
+            {/* Right Column: DevSpace 🪐 Centered in Right Black Space (Never Wraps or Overlaps) */}
+            <div className="relative z-10 max-w-[280px] mx-auto flex flex-col items-center lg:items-end text-center lg:text-right">
+              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#CDE3E8] block mb-2 whitespace-nowrap">
                 LATE NIGHT SESSIONS ✦
               </span>
-              <h3 className="font-serif text-4xl sm:text-5xl xl:text-6xl font-normal text-[#f5eedc] tracking-tight leading-none">
-                Dev<span className="italic font-medium text-[#fced96]">Space</span>{" "}
+              <h3 className="font-serif text-3xl sm:text-4xl xl:text-5xl font-normal text-[#FFF8CA] tracking-tight leading-none whitespace-nowrap">
+                Dev<span className="italic font-medium text-[#CDE3E8]">Space</span>{" "}
                 <span className="not-italic inline-block animate-pulse">🪐</span>
               </h3>
-              <p className="font-serif italic text-xs sm:text-sm text-[#f5eedc]/75 mt-2.5 leading-relaxed tracking-wide">
+              <p className="font-serif italic text-xs sm:text-sm text-[#FFF8CA]/80 mt-2.5 leading-relaxed tracking-wide">
                 where caffeine, cats &amp; midnight code orbit together.
               </p>
+            </div>
+
+            {/* Bottom-Right Inside Card: About Developers Link */}
+            <div className="lg:absolute lg:bottom-6 lg:right-8 z-20 flex justify-end w-full lg:w-auto">
+              <Link
+                to="/about-developers"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2D120D]/90 hover:bg-[#6B0B0C] text-[#FFF8CA] border border-[#CDE3E8]/40 font-sans text-xs font-semibold tracking-wider uppercase shadow-lg transition-all hover:scale-[1.02]"
+              >
+                <span className="h-2 w-2 rounded-full bg-[#CDE3E8]" />
+                <span>About Developers</span>
+              </Link>
             </div>
           </div>
         </div>
