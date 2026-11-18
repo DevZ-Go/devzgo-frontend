@@ -184,17 +184,17 @@ export function ThemeSelectPage() {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#ECE0F5] text-[#5B233B] relative">
       {/* Clean Upper Bar in Olive/Clover Green & Cream */}
-      <header className="flex shrink-0 items-center justify-between px-6 py-3.5 sm:px-10 bg-[#5B233B] text-[#FCFBF4] border-b-2 border-[#D5BEEA]/40 shadow-sm z-20">
+      <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-3 sm:px-10 sm:py-3.5 bg-[#5B233B] text-[#FCFBF4] border-b-2 border-[#D5BEEA]/40 shadow-sm z-20">
         <Link
           to="/home"
-          className="px-4 py-1.5 rounded-full bg-[#D5BEEA] hover:bg-[#FCFBF4] text-[#5B233B] text-xs font-bold uppercase tracking-[0.16em] transition-colors"
+          className="shrink-0 px-3 py-1.5 rounded-full bg-[#D5BEEA] hover:bg-[#FCFBF4] text-[#5B233B] text-xs font-bold uppercase tracking-[0.16em] transition-colors sm:px-4"
         >
           &larr; Home
         </Link>
-        <p className="font-cursive text-2xl sm:text-3xl text-[#D5BEEA]">projects studio ✦</p>
+        <p className="min-w-0 truncate px-2 text-center font-cursive text-xl text-[#D5BEEA] sm:text-3xl">projects studio</p>
         <Link
           to="/explore/developers"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#DA6844] hover:bg-[#C05532] text-[#FCFBF4] text-xs font-bold uppercase tracking-[0.14em] transition-colors"
+          className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#DA6844] hover:bg-[#C05532] text-[#FCFBF4] text-xs font-bold uppercase tracking-[0.14em] transition-colors sm:px-4"
         >
           <Search className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Developers</span>
@@ -205,7 +205,7 @@ export function ThemeSelectPage() {
         name="snoopyMeadow"
         size="lg"
         variant="polaroid"
-        caption="cozy studio ♥"
+        caption="cozy studio"
         className="hidden xl:inline-flex absolute top-24 left-8 -rotate-6 z-10"
       />
       <StickerBadge
@@ -225,7 +225,7 @@ export function ThemeSelectPage() {
         <div className="mb-8 text-center">
           <ProjectsStudioEmblem />
           <p className="mt-4 font-serif italic text-xl sm:text-2xl font-bold text-[#B81D27]">
-            Choose a studio space to explore student builds ♥
+            Choose a studio space to explore student builds
           </p>
         </div>
 

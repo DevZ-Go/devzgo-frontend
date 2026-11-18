@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Pencil, Check, Plus, Trash2, Sparkles } from "lucide-react";
+import { ArrowLeft, ExternalLink, Pencil, Check, Plus, Trash2 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 
 export interface TeamDeveloper {
@@ -141,7 +141,6 @@ export function AboutDevelopersPage() {
 
           <div className="text-center max-w-2xl mx-auto">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#CBE4EE] border border-[#284E45]/30 text-[#284E45] font-mono text-[10px] font-bold uppercase tracking-[0.22em] mb-3">
-              <Sparkles className="w-3 h-3" />
               MEET THE BUILDERS
             </span>
             <h1 className="font-cake text-5xl sm:text-6xl md:text-7xl font-bold uppercase text-[#3E2217] tracking-tight leading-none">

@@ -16,8 +16,10 @@ interface ProjectSocialBarProps {
   commentsCount?: number;
   commentsEnabled?: boolean;
   className?: string;
-  /** Show the words Like and Share, not only icons. Used on the TV panel. */
+  /** Show the words Like and Share, not only icons. */
   labeled?: boolean;
+  /** Heart, comment, and share icons with no words or counts. */
+  iconsOnly?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function ProjectSocialBar({
   commentsEnabled = true,
   className = "",
   labeled = false,
+  iconsOnly = false,
 }: ProjectSocialBarProps) {
   const { token } = useAuth();
   const signedIn = Boolean(token);
@@ -54,7 +57,7 @@ export function ProjectSocialBar({
 
   return (
     <>
-      <div className={`flex flex-wrap items-center gap-1.5 ${className}`} data-ui>
+      <div className={`flex items-center gap-1.5 ${iconsOnly ? "flex-nowrap" : "flex-wrap"} ${className}`} data-ui>
         {/* Like Button */}
         <button
           type="button"
@@ -62,17 +65,17 @@ export function ProjectSocialBar({
           disabled={!signedIn || busy}
           aria-pressed={liked}
           title={signedIn ? (liked ? "Unlike project" : "Like project") : "Sign in to like projects"}
-          className={`inline-flex items-center gap-1.5 rounded-full font-semibold border transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-            labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+          className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
           } ${
             liked
               ? "bg-[#B81D27] text-[#FCFBF4] border-[#B81D27] shadow-xs"
               : "bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#FCE7F3] hover:border-[#B81D27]/40"
           }`}
         >
-          <Heart className={`${labeled ? "w-4 h-4" : "w-3.5 h-3.5"} ${liked ? "fill-current" : ""}`} />
-          {labeled && <span>{liked ? "Liked" : "Like"}</span>}
-          {showLikeCount && <span className="tabular-nums">{count}</span>}
+          <Heart className={`${labeled || iconsOnly ? "w-4 h-4" : "w-3.5 h-3.5"} ${liked ? "fill-current" : ""}`} />
+          {labeled && !iconsOnly && <span>{liked ? "Liked" : "Like"}</span>}
+          {showLikeCount && !iconsOnly && <span className="tabular-nums">{count}</span>}
         </button>
 
         {/* Comment Button */}
@@ -80,18 +83,18 @@ export function ProjectSocialBar({
           type="button"
           onClick={() => setCommentsOpen(true)}
           title="View and post comments"
-          className={`inline-flex items-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#E9DCF6] transition-all cursor-pointer ${
-            labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+          className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#E9DCF6] transition-all cursor-pointer ${
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
           }`}
         >
-          <MessageCircle className={labeled ? "w-4 h-4" : "w-3.5 h-3.5"} />
-          {commentsCount > 0 ? (
+          <MessageCircle className={labeled || iconsOnly ? "w-4 h-4" : "w-3.5 h-3.5"} />
+          {!iconsOnly && (commentsCount > 0 ? (
             <span className="tabular-nums">{commentsCount}</span>
           ) : labeled ? (
             <span>Comment</span>
           ) : (
             <span className="hidden sm:inline">Comment</span>
-          )}
+          ))}
         </button>
 
         {/* Share Button */}
@@ -99,12 +102,12 @@ export function ProjectSocialBar({
           type="button"
           onClick={() => setShareOpen(true)}
           title="Share project"
-          className={`inline-flex items-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#DCE7F7] transition-all cursor-pointer ${
-            labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+          className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#DCE7F7] transition-all cursor-pointer ${
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
           }`}
         >
-          <Share2 className={labeled ? "w-4 h-4" : "w-3.5 h-3.5"} />
-          <span className={labeled ? "" : "hidden sm:inline"}>Share</span>
+          <Share2 className={labeled || iconsOnly ? "w-4 h-4" : "w-3.5 h-3.5"} />
+          {!iconsOnly && <span className={labeled ? "" : "hidden sm:inline"}>Share</span>}
         </button>
       </div>
 

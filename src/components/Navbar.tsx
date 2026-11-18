@@ -346,9 +346,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             ) : (
               <>
                 {topLink("/network", "Network")}
-                <span className="text-[#CDE3E8]/80 text-xs select-none">✦</span>
+                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
                 {topLink("/explore", "Explore")}
-                <span className="text-[#CDE3E8]/80 text-xs select-none">✦</span>
+                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
                 {topLink("/messages", "Messages")}
               </>
             )}

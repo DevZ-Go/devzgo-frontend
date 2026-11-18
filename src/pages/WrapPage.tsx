@@ -6,13 +6,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
-  PartyPopper,
   Volume2,
   VolumeX,
   ArrowDown,
   FolderPlus,
   Users,
-  Sparkles,
 } from "lucide-react";
 import { WrapChapter, type WrapThemeVariant } from "../components/wrap/WrapChapter";
 import { Select } from "../components/ui/Select";
@@ -465,7 +463,7 @@ function chapters(w: Wrap): Chapter[] {
     "Fresh builds, in code",
     `You started ${plural(m.projects_created, "project")}`,
     "Every build is compiled and showcased on your profile.",
-    <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="shipped ♥" />,
+    <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="shipped" />,
     formatWrapCode(lang, "projects", [["projectsCreated", m.projects_created]])
   );
   add(
@@ -483,7 +481,7 @@ function chapters(w: Wrap): Chapter[] {
     "Community applause",
     "People noticed your work",
     `Your builds received ${plural(m.project_likes_received, "like")} and ${plural(m.project_comments_received, "comment")} across the community.`,
-    <StickerBadge name="starHatKid" size="md" variant="polaroid" caption="crowd favorite ✦" />,
+    <StickerBadge name="starHatKid" size="md" variant="polaroid" caption="crowd favorite" />,
     formatWrapCode(lang, "feedback", [
       ["likes", m.project_likes_received],
       ["comments", m.project_comments_received],
@@ -495,7 +493,7 @@ function chapters(w: Wrap): Chapter[] {
     "Dev Social highlights",
     `You shared ${plural(m.posts_published, "note")}`,
     `${plural(m.post_likes_received, "like")} and ${plural(m.post_comments_received, "reply", "replies")} came back from the community.`,
-    <StickerBadge name="blueMiffy" size="md" variant="polaroid" caption="dev social ✦" />,
+    <StickerBadge name="blueMiffy" size="md" variant="polaroid" caption="dev social" />,
     formatWrapCode(lang, "posts", [
       ["posts", m.posts_published],
       ["reactions", m.post_likes_received + m.post_comments_received],
@@ -507,7 +505,7 @@ function chapters(w: Wrap): Chapter[] {
     "Creators & connections",
     `${plural(m.connections_made, "new connection")}`,
     "Your creative circle grew this month.",
-    <StickerBadge name="offlineDino" size="md" variant="polaroid" caption="connected ✦" />,
+    <StickerBadge name="offlineDino" size="md" variant="polaroid" caption="connected" />,
     formatWrapCode(lang, "network", [["newConnections", m.connections_made]])
   );
   add(
@@ -539,7 +537,7 @@ function chapters(w: Wrap): Chapter[] {
         cursiveKicker: "Ready for takeoff",
         title: "Fresh Canvas Unlocked",
         text: "Your monthly wrap is initialized and ready for your first shipped build.",
-        visual: <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="you got this ♥" />,
+        visual: <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="you got this" />,
         ...formatWrapCode(lang, "status", [["status", "READY_TO_BUILD"]]),
       },
       {
@@ -662,11 +660,10 @@ export function WrapPage() {
       <PartyConfetti burstKey={burstKey} />
 
       {/* ── CLEAN TOP BAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 pointer-events-none">
+      <header className="fixed top-0 left-0 right-0 z-50 flex flex-wrap items-center justify-between gap-2 px-3 py-2 pointer-events-none sm:px-6 sm:py-3">
         <div
-          className={`pointer-events-auto flex items-center gap-2 px-4 py-1.5 text-[#FFF8CA] text-xs font-sans ${pill}`}
+          className={`pointer-events-auto flex min-w-0 items-center gap-2 px-3 py-1.5 text-[#FFF8CA] text-xs font-sans sm:px-4 ${pill}`}
         >
-          <PartyPopper className="w-4 h-4 text-[#FDE047]" />
           <span className="font-serif font-bold tracking-tight text-base text-[#FFF8CA]">DevZ</span>
           <span className="font-cursive italic font-bold text-xl text-[#CDE3E8] -ml-1">Go</span>
           <span className="text-white/30">·</span>
@@ -705,7 +702,7 @@ export function WrapPage() {
           </div>
         )}
 
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => {
@@ -715,14 +712,13 @@ export function WrapPage() {
             title="Pop party confetti!"
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-sans font-bold text-[#FFF8CA] hover:bg-white/15 cursor-pointer transition-transform active:scale-95 ${pill}`}
           >
-            <PartyPopper className="w-3.5 h-3.5 text-[#FDE047]" />
-            <span className="hidden sm:inline">Celebrate</span>
+            <span>Celebrate</span>
           </button>
 
           <Select
             value={picked ?? ""}
             aria-label="Wrap month"
-            className={`px-3.5 py-1.5 text-xs font-sans font-medium text-[#FFF8CA] ${pill}`}
+            className={`max-w-[9.5rem] px-3 py-1.5 text-xs font-sans font-medium text-[#FFF8CA] sm:max-w-none ${pill}`}
             onChange={(value) => setParams(value ? { month: value } : {})}
             options={[
               ["", "This month (so far)"],
@@ -767,7 +763,8 @@ export function WrapPage() {
             exit={{ opacity: 0, y: 8 }}
             className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-1 font-sans text-xs font-medium text-[#FFF8CA]/80 tracking-wide"
           >
-            <span>Scroll or use ↑ ↓ keys</span>
+            <span className="sm:hidden">Scroll</span>
+            <span className="hidden sm:inline">Scroll or use the arrow keys</span>
             <motion.div
               animate={{ y: [0, 4, 0] }}
               transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
@@ -827,19 +824,19 @@ export function WrapPage() {
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="relative z-10 w-full max-w-xl rounded-[2.2rem] bg-[#2D120D]/90 backdrop-blur-xl border-2 border-[#CDE3E8]/50 shadow-[0_24px_60px_rgba(0,0,0,0.65)] overflow-hidden text-center"
+                className="relative z-10 max-h-[calc(100dvh-6.5rem)] w-full max-w-xl overflow-y-auto rounded-[2.2rem] border-2 border-[#CDE3E8]/50 bg-[#2D120D]/90 text-center shadow-[0_24px_60px_rgba(0,0,0,0.65)] backdrop-blur-xl"
               >
                 {/* Rosewood Header Bar */}
-                <div className="flex items-center justify-between px-5 py-2.5 bg-[#6B0B0C] border-b border-[#FFF8CA]/25">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
-                    <span className="ml-1.5 font-sans text-xs font-semibold tracking-wide text-[#FFF8CA]">
-                      DevZ-Go · Monthly Celebration 🎉
+                <div className="flex items-center justify-between gap-2 border-b border-[#FFF8CA]/25 bg-[#6B0B0C] px-4 py-2.5 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#FF5F56]" />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#FFBD2E]" />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#27C93F]" />
+                    <span className="ml-1.5 truncate font-sans text-xs font-semibold tracking-wide text-[#FFF8CA]">
+                      DevZ-Go · Monthly Wrap
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#CDE3E8]">
+                  <span className="shrink-0 whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-widest text-[#CDE3E8]">
                     {w!.status === "completed" ? "COMPLETED" : "LIVE WRAP"}
                   </span>
                 </div>
@@ -853,15 +850,14 @@ export function WrapPage() {
                     whileTap={{ scale: 0.94 }}
                     className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFF8CA] text-[#6B0B0C] font-sans text-xs font-bold uppercase tracking-wider shadow-md cursor-pointer"
                   >
-                    <PartyPopper className="w-4 h-4 text-[#6B0B0C]" />
-                    <span>Your Monthly Wrap is Here! 🎉</span>
+                    <span>Your monthly wrap is here</span>
                   </motion.button>
 
                   <div>
                     <span className="font-cursive text-3xl sm:text-4xl text-[#CDE3E8] block">
                       Where coders celebrate
                     </span>
-                    <h1 className="font-serif text-4xl sm:text-6xl font-bold text-[#FFF8CA] tracking-tight leading-tight m-0 mt-0.5">
+                    <h1 className="m-0 mt-0.5 break-words font-serif text-4xl font-bold leading-tight tracking-tight text-[#FFF8CA] sm:text-6xl">
                       {monthName(w!.month)}
                     </h1>
                   </div>
@@ -870,7 +866,7 @@ export function WrapPage() {
                     name="snoopyAutumn"
                     size="md"
                     variant="polaroid"
-                    caption="monthly highlights ✦"
+                    caption="monthly highlights"
                   />
 
                   <p className="font-sans text-xs sm:text-sm text-[#FFF8CA]/85 leading-relaxed max-w-md m-0">
@@ -888,8 +884,7 @@ export function WrapPage() {
                       }}
                       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full bg-[#FFF8CA] hover:bg-[#CDE3E8] text-[#2D120D] font-sans text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
                     >
-                      <Sparkles className="w-4 h-4 text-[#6B0B0C]" />
-                      <span>Unwrap Your Month ↓</span>
+                      <span>Open your month</span>
                     </button>
 
                     {w!.empty && (
@@ -955,7 +950,7 @@ export function WrapPage() {
                   name="cloverLadybug"
                   size="md"
                   variant="polaroid"
-                  caption="keep building ♥"
+                  caption="keep building"
                 />
 
                 {w!.empty && (

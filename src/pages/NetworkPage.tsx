@@ -258,7 +258,7 @@ export function NetworkPage() {
             {/* Center Scallop-Inspired Gingham Card (Holiday Market & Celebfest Reference) */}
             <div className="max-w-xl mx-auto text-center relative z-10 rounded-[2.2rem] pattern-blue-gingham border-2 border-[#3E2217]/25 px-6 py-8 sm:px-10 sm:py-9 shadow-[0_14px_35px_rgba(62,34,23,0.12)]">
               <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2F0CB] border border-[#284E45]/30 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#284E45] mb-2">
-                ★ COMMUNITY SPACE ★
+                COMMUNITY SPACE
               </span>
               <h1 className="font-cake text-5xl sm:text-7xl md:text-8xl font-bold uppercase text-[#3E2217] tracking-tight leading-none break-words">
                 DEV SOCIAL
@@ -270,7 +270,7 @@ export function NetworkPage() {
               {/* Decorative Star Divider */}
               <div className="my-3.5 flex items-center justify-center gap-3 text-[#3E2217]">
                 <span className="h-px w-12 bg-[#3E2217]/25" />
-                <span className="text-base select-none" aria-hidden="true">☆ ✦ ☆</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-[#3E2217]/35" aria-hidden="true" />
                 <span className="h-px w-12 bg-[#3E2217]/25" />
               </div>
 
@@ -286,7 +286,7 @@ export function NetworkPage() {
               <div className="relative w-44 sm:w-52 lg:w-52 xl:w-60 rotate-[3deg] hover:rotate-0 transition-transform duration-300 rounded-2xl bg-[#FFF8CA] p-2.5 pb-4 border-2 border-[#3E2217] shadow-[0_14px_32px_rgba(62,34,23,0.22)]">
                 {/* Mint Sage Washi Tape Accent */}
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#E2F0CB] text-[#284E45] text-[9px] font-bold font-sans tracking-widest uppercase border border-[#284E45]/30 shadow-2xs whitespace-nowrap">
-                  COZY PACE ✦
+                  COZY PACE
                 </div>
                 <div className="rounded-xl overflow-hidden border border-[#3E2217]/20 bg-[#FAF6EC]">
                   <img

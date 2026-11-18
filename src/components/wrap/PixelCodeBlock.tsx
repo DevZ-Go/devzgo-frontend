@@ -36,7 +36,7 @@ export function PixelCodeBlock({
           </span>
         </div>
         <span className="text-[10px] font-medium" style={{ color: accentColor }}>
-          verified ✦
+          verified
         </span>
       </div>
 

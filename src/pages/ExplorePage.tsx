@@ -441,17 +441,6 @@ export function ExplorePage() {
             />
           </div>
           <h2>{focused.project.title}</h2>
-          <ProjectSocialBar
-            projectId={focused.project.id}
-            title={focused.project.title}
-            initialLikes={focused.project.likes}
-            initialLiked={focused.project.isLiked}
-            likesHidden={focused.project.likesHidden}
-            isOwner={focused.project.isOwner}
-            commentsCount={focused.project.commentsCount}
-            commentsEnabled={focused.project.commentsEnabled}
-            labeled
-          />
           {focused.project.shortDescription && <p>{focused.project.shortDescription}</p>}
           {focused.project.fullDescription && (
             <p className="tvw-panel-long">{focused.project.fullDescription}</p>
@@ -479,7 +468,7 @@ export function ExplorePage() {
             )}
           </div>
           <div className="tvw-sep" />
-          <div className="tvw-actions">
+          <div className="tvw-actions tvw-open-row">
             <button
               type="button"
               className="tvw-btn tvw-btn--primary"
@@ -487,13 +476,25 @@ export function ExplorePage() {
             >
               OPEN PROJECT &rarr;
             </button>
+            <ProjectSocialBar
+              projectId={focused.project.id}
+              title={focused.project.title}
+              initialLikes={focused.project.likes}
+              initialLiked={focused.project.isLiked}
+              likesHidden={focused.project.likesHidden}
+              isOwner={focused.project.isOwner}
+              commentsCount={focused.project.commentsCount}
+              commentsEnabled={focused.project.commentsEnabled}
+              iconsOnly
+              className="tvw-inline-social"
+            />
+          </div>
+          <div className="tvw-actions">
             {focused.project.isOwner && (
               <Link to={`/project/${focused.project.id}/edit`} className="tvw-btn">
                 EDIT
               </Link>
             )}
-          </div>
-          <div className="tvw-actions">
             <button type="button" className="tvw-btn" onClick={unfocus}>
               &larr; BACK TO EXPLORE
             </button>

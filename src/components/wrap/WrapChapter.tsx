@@ -57,8 +57,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#E2F1F5]",
     badgeBg: "bg-[#CDE3E8]/15 border-[#CDE3E8]/40 text-[#CDE3E8]",
-    windowTitle: "DevZ-Go · Monthly Highlight ✦",
-    okLabel: "Next Chapter ↓",
+    windowTitle: "DevZ-Go · Monthly Highlight",
+    okLabel: "Next chapter",
     okBtnClass:
       "bg-[#FFF8CA] hover:bg-[#CDE3E8] text-[#14233A] font-bold shadow-md",
   },
@@ -73,8 +73,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#DBEAFE]",
     badgeBg: "bg-[#FFF8CA]/15 border-[#FFF8CA]/45 text-[#FFF8CA]",
-    windowTitle: "DevZ-Go · Spotlight ✦",
-    okLabel: "Next Chapter ↓",
+    windowTitle: "DevZ-Go · Spotlight",
+    okLabel: "Next chapter",
     okBtnClass:
       "bg-[#FFF8CA] hover:bg-white text-[#102454] font-bold shadow-md",
   },
@@ -89,8 +89,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#FFF8CA]/85",
     badgeBg: "bg-[#FFF8CA]/15 border-[#FFF8CA]/35 text-[#FFF8CA]",
-    windowTitle: "DevZ-Go · Community Note ✦",
-    okLabel: "Next Chapter ↓",
+    windowTitle: "DevZ-Go · Community Note",
+    okLabel: "Next chapter",
     okBtnClass:
       "bg-[#CDE3E8] hover:bg-[#FFF8CA] text-[#2D120D] font-bold shadow-md",
   },
@@ -105,8 +105,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#E2F0CB]/90",
     badgeBg: "bg-[#E2F0CB]/15 border-[#E2F0CB]/40 text-[#E2F0CB]",
-    windowTitle: "DevZ-Go · Builder Log ✦",
-    okLabel: "Next Chapter ↓",
+    windowTitle: "DevZ-Go · Builder Log",
+    okLabel: "Next chapter",
     okBtnClass:
       "bg-[#E2F0CB] hover:bg-[#FFF8CA] text-[#122923] font-bold shadow-md",
   },
@@ -121,8 +121,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#CBE4EE]/90",
     badgeBg: "bg-[#CBE4EE]/15 border-[#CBE4EE]/40 text-[#CBE4EE]",
-    windowTitle: "DevZ-Go · Studio Log ✦",
-    okLabel: "Next Chapter ↓",
+    windowTitle: "DevZ-Go · Studio Log",
+    okLabel: "Next chapter",
     okBtnClass:
       "bg-[#CBE4EE] hover:bg-[#FFF8CA] text-[#142536] font-bold shadow-md",
   },
@@ -137,8 +137,8 @@ const THEME_CONFIG: Record<
     titleColor: "text-[#FFF8CA]",
     bodyColor: "text-[#EDE2F8]",
     badgeBg: "bg-[#D5BEEA]/15 border-[#D5BEEA]/45 text-[#D5BEEA]",
-    windowTitle: "DevZ-Go · Monthly Persona ✦",
-    okLabel: "Continue ↓",
+    windowTitle: "DevZ-Go · Monthly Persona",
+    okLabel: "Continue",
     okBtnClass:
       "bg-[#D5BEEA] hover:bg-[#FFF8CA] text-[#221235] font-bold shadow-md",
   },
@@ -186,20 +186,20 @@ export function WrapChapter({
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ amount: 0.45, once: false }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative z-10 max-w-xl w-full rounded-[2rem] border-2 ${cfg.windowBg} ${cfg.windowBorder} overflow-hidden`}
+        className={`relative z-10 max-h-[calc(100dvh-5.5rem)] w-full max-w-xl overflow-y-auto rounded-[2rem] border-2 ${cfg.windowBg} ${cfg.windowBorder}`}
       >
         {/* Window Titlebar */}
-        <div className={`flex items-center justify-between px-5 py-2.5 ${cfg.headerBg}`}>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
-            <span className={`ml-1.5 font-sans text-xs font-semibold tracking-wide ${cfg.headerText}`}>
+        <div className={`flex items-center justify-between gap-2 px-4 py-2.5 sm:px-5 ${cfg.headerBg}`}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#FF5F56]" />
+            <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#FFBD2E]" />
+            <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#27C93F]" />
+            <span className={`ml-1.5 truncate font-sans text-xs font-semibold tracking-wide ${cfg.headerText}`}>
               {cfg.windowTitle}
             </span>
           </div>
-          <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${cfg.badgeBg}`}
+            <span
+            className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${cfg.badgeBg}`}
           >
             {index} {label ? `· ${label}` : ""}
           </span>
@@ -215,7 +215,7 @@ export function WrapChapter({
               </span>
             )}
             <h2
-              className={`font-serif text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-tight m-0 ${cfg.titleColor}`}
+              className={`m-0 break-words font-serif text-2xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl ${cfg.titleColor}`}
             >
               {title}
             </h2>
