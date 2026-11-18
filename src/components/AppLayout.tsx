@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useLayoutEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
@@ -25,6 +25,25 @@ export function AppLayout() {
     if (!user?.id) return;
     rememberPath(String(user.id), `${location.pathname}${location.search}`);
   }, [user?.id, location.pathname, location.search]);
+
+  useLayoutEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    const reset = () => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    reset();
+    const frame = requestAnimationFrame(reset);
+    const soon = window.setTimeout(reset, 0);
+    const later = window.setTimeout(reset, 60);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(soon);
+      window.clearTimeout(later);
+    };
+  }, [location.pathname]);
   const isHome = location.pathname === "/home" || location.pathname === "/";
   const fullScreen =
     isHome ||

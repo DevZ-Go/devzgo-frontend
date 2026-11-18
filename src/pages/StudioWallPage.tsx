@@ -194,7 +194,7 @@ export function StudioWallPage({
               return (
                 <article
                   key={project.id}
-                  className={`group relative flex w-[310px] sm:w-[340px] shrink-0 snap-center flex-col justify-between rounded-[2rem] border-2 ${palette.bg} p-4 shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl`}
+                  className={`group relative flex w-[min(310px,calc(100vw-3.5rem))] sm:w-[340px] shrink-0 snap-center flex-col justify-between rounded-[2rem] border-2 ${palette.bg} p-4 shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl`}
                 >
                   {/* Top Washi Tag */}
                   <div

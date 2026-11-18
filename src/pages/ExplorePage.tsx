@@ -441,6 +441,17 @@ export function ExplorePage() {
             />
           </div>
           <h2>{focused.project.title}</h2>
+          <ProjectSocialBar
+            projectId={focused.project.id}
+            title={focused.project.title}
+            initialLikes={focused.project.likes}
+            initialLiked={focused.project.isLiked}
+            likesHidden={focused.project.likesHidden}
+            isOwner={focused.project.isOwner}
+            commentsCount={focused.project.commentsCount}
+            commentsEnabled={focused.project.commentsEnabled}
+            labeled
+          />
           {focused.project.shortDescription && <p>{focused.project.shortDescription}</p>}
           {focused.project.fullDescription && (
             <p className="tvw-panel-long">{focused.project.fullDescription}</p>
@@ -468,16 +479,6 @@ export function ExplorePage() {
             )}
           </div>
           <div className="tvw-sep" />
-          <ProjectSocialBar
-            projectId={focused.project.id}
-            title={focused.project.title}
-            initialLikes={focused.project.likes}
-            initialLiked={focused.project.isLiked}
-            likesHidden={focused.project.likesHidden}
-            isOwner={focused.project.isOwner}
-            commentsCount={focused.project.commentsCount}
-            commentsEnabled={focused.project.commentsEnabled}
-          />
           <div className="tvw-actions">
             <button
               type="button"
