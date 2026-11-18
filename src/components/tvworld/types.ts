@@ -20,6 +20,8 @@ export interface TvProject {
   likes: number;
   isLiked: boolean;
   likesHidden?: boolean;
+  commentsCount: number;
+  commentsEnabled: boolean;
 }
 
 /** A project placed in world space. Coordinates are the TV's centre. */

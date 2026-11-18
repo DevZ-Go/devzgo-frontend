@@ -6,10 +6,10 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderCode,
-  Heart,
   Sparkles,
 } from "lucide-react";
 import { ExploreStage } from "../components/explore/ExploreStage";
+import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { resolveApiAssetUrl } from "../api/config";
 import { StickerBadge, type StickerName } from "../components/StickerBadge";
@@ -241,24 +241,28 @@ export function StudioWallPage({
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2.5 px-1 border-t border-[#3E2217]/15 flex items-center justify-between gap-2">
-                    <span className="break-all font-mono text-[11px] font-semibold text-[#284E45] truncate">
-                      @{owner}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${palette.chip}`}
-                      >
-                        <Heart className="w-3 h-3 text-[#284E45] fill-[#284E45]" />
-                        <span>{project.likes ?? 0}</span>
+                  <div className="mt-3 pt-2.5 px-1 border-t border-[#3E2217]/15 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="break-all font-mono text-[11px] font-semibold text-[#284E45] truncate">
+                        @{owner}
                       </span>
                       <Link
                         to={`/project/${project.id}`}
-                        className="px-3.5 py-1 rounded-full bg-[#284E45] hover:bg-[#3E2217] text-[#FAF6EC] text-xs font-bold uppercase tracking-wider transition-colors"
+                        className="px-3.5 py-1 rounded-full bg-[#284E45] hover:bg-[#3E2217] text-[#FAF6EC] text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
                       >
                         Open &rarr;
                       </Link>
                     </div>
+                    <ProjectSocialBar
+                      projectId={String(project.id)}
+                      title={project.title}
+                      initialLikes={project.likes_count ?? project.likes ?? 0}
+                      initialLiked={Boolean(project.is_liked)}
+                      likesHidden={Boolean(project.likes_hidden)}
+                      isOwner={project.is_owner === true}
+                      commentsCount={project.comments_count ?? 0}
+                      commentsEnabled={project.comments_enabled !== false}
+                    />
                   </div>
                 </article>
               );
@@ -277,8 +281,7 @@ export function StudioWallPage({
 
               return (
                 <li key={project.id} className="pt-2">
-                  <Link
-                    to={`/project/${project.id}`}
+                  <article
                     className={`group relative flex h-full flex-col justify-between rounded-3xl border-2 ${palette.bg} p-4 shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl`}
                   >
                     {/* Top Number & Category Pill */}
@@ -297,7 +300,7 @@ export function StudioWallPage({
                       />
                     )}
 
-                    <div>
+                    <Link to={`/project/${project.id}`} className="block">
                       <div className="aspect-[16/10] rounded-2xl bg-white border border-[#3E2217]/15 p-2 overflow-hidden flex items-center justify-center shadow-inner">
                         {cover ? (
                           <img
@@ -325,20 +328,32 @@ export function StudioWallPage({
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Link>
 
-                    <div className="mt-3 pt-2.5 px-1 border-t border-[#3E2217]/15 flex items-center justify-between gap-2">
-                      <span className="break-all font-mono text-[11px] font-semibold text-[#284E45] truncate">
-                        @{owner}
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${palette.chip} shrink-0`}
-                      >
-                        <Heart className="w-3 h-3 text-[#284E45] fill-[#284E45]" />
-                        <span>{project.likes ?? 0}</span>
-                      </span>
+                    <div className="mt-3 pt-2.5 px-1 border-t border-[#3E2217]/15 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="break-all font-mono text-[11px] font-semibold text-[#284E45] truncate">
+                          @{owner}
+                        </span>
+                        <Link
+                          to={`/project/${project.id}`}
+                          className="px-3.5 py-1 rounded-full bg-[#284E45] hover:bg-[#3E2217] text-[#FAF6EC] text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
+                        >
+                          Open &rarr;
+                        </Link>
+                      </div>
+                      <ProjectSocialBar
+                        projectId={String(project.id)}
+                        title={project.title}
+                        initialLikes={project.likes_count ?? project.likes ?? 0}
+                        initialLiked={Boolean(project.is_liked)}
+                        likesHidden={Boolean(project.likes_hidden)}
+                        isOwner={project.is_owner === true}
+                        commentsCount={project.comments_count ?? 0}
+                        commentsEnabled={project.comments_enabled !== false}
+                      />
                     </div>
-                  </Link>
+                  </article>
                 </li>
               );
             })}

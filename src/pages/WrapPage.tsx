@@ -309,12 +309,135 @@ type Chapter = {
   code: string;
 };
 
+type WrapLangSpec = {
+  ext: string;
+  formatValue: (v: string | number | string[]) => string;
+  formatAssign: (name: string, val: string | number | string[]) => string;
+  sep: string;
+};
+
+const quote = (s: string) => `"${s}"`;
+
+const LANG_SPECS: Record<string, WrapLangSpec> = {
+  typescript: {
+    ext: "ts",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `const ${k} = ${LANG_SPECS.typescript!.formatValue(v)};`,
+    sep: " ",
+  },
+  javascript: {
+    ext: "js",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `const ${k} = ${LANG_SPECS.javascript!.formatValue(v)};`,
+    sep: " ",
+  },
+  python: {
+    ext: "py",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `${k} = ${LANG_SPECS.python!.formatValue(v)}`,
+    sep: "; ",
+  },
+  java: {
+    ext: "java",
+    formatValue: (v) => (Array.isArray(v) ? `{${v.map(quote).join(", ")}}` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) =>
+      `${Array.isArray(v) ? "String[]" : typeof v === "string" ? "String" : "int"} ${k} = ${LANG_SPECS.java!.formatValue(v)};`,
+    sep: " ",
+  },
+  cpp: {
+    ext: "cpp",
+    formatValue: (v) => (Array.isArray(v) ? `{${v.map(quote).join(", ")}}` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) =>
+      `${Array.isArray(v) ? "auto" : typeof v === "string" ? "string" : "int"} ${k} = ${LANG_SPECS.cpp!.formatValue(v)};`,
+    sep: " ",
+  },
+  csharp: {
+    ext: "cs",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `var ${k} = ${LANG_SPECS.csharp!.formatValue(v)};`,
+    sep: " ",
+  },
+  go: {
+    ext: "go",
+    formatValue: (v) => (Array.isArray(v) ? `[]string{${v.map(quote).join(", ")}}` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `${k} := ${LANG_SPECS.go!.formatValue(v)}`,
+    sep: "; ",
+  },
+  rust: {
+    ext: "rs",
+    formatValue: (v) => (Array.isArray(v) ? `vec![${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `let ${k} = ${LANG_SPECS.rust!.formatValue(v)};`,
+    sep: " ",
+  },
+  ruby: {
+    ext: "rb",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `${k} = ${LANG_SPECS.ruby!.formatValue(v)}`,
+    sep: "; ",
+  },
+  php: {
+    ext: "php",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `$${k} = ${LANG_SPECS.php!.formatValue(v)};`,
+    sep: " ",
+  },
+  swift: {
+    ext: "swift",
+    formatValue: (v) => (Array.isArray(v) ? `[${v.map(quote).join(", ")}]` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `let ${k} = ${LANG_SPECS.swift!.formatValue(v)}`,
+    sep: "; ",
+  },
+  kotlin: {
+    ext: "kt",
+    formatValue: (v) => (Array.isArray(v) ? `listOf(${v.map(quote).join(", ")})` : typeof v === "string" ? quote(v) : String(v)),
+    formatAssign: (k, v) => `val ${k} = ${LANG_SPECS.kotlin!.formatValue(v)}`,
+    sep: "; ",
+  },
+};
+
+const TECH_TO_LANG: Array<[RegExp, keyof typeof LANG_SPECS]> = [
+  [/\btypescript\b|\bts\b/i, "typescript"],
+  [/\bpython\b|\bdjango\b|\bflask\b|\bfastapi\b|\bpytorch\b/i, "python"],
+  [/\bjavascript\b|\bnode(\.js)?\b|\breact\b|\bnext(\.js)?\b|\bvue\b|\bexpress\b/i, "javascript"],
+  [/\bjava\b|\bspring\b/i, "java"],
+  [/c\+\+|\bcpp\b/i, "cpp"],
+  [/c#|\bcsharp\b|\.net\b/i, "csharp"],
+  [/\bgolang\b|\bgo\b/i, "go"],
+  [/\brust\b/i, "rust"],
+  [/\bruby\b|\brails\b/i, "ruby"],
+  [/\bphp\b|\blaravel\b/i, "php"],
+  [/\bswift\b/i, "swift"],
+  [/\bkotlin\b/i, "kotlin"],
+];
+
+/** Picks the user's most-used language for the month, defaulting to TypeScript if none. */
+function detectWrapLanguage(topTech: string[]): WrapLangSpec {
+  for (const tech of topTech) {
+    for (const [pattern, key] of TECH_TO_LANG) {
+      if (pattern.test(tech)) return LANG_SPECS[key]!;
+    }
+  }
+  return LANG_SPECS.typescript!;
+}
+
+function formatWrapCode(
+  lang: WrapLangSpec,
+  baseName: string,
+  entries: Array<[string, string | number | string[]]>
+): { file: string; code: string } {
+  return {
+    file: `${baseName}.${lang.ext}`,
+    code: entries.map(([k, v]) => lang.formatAssign(k, v)).join(lang.sep),
+  };
+}
+
 /**
  * Clean chapters using the website's illustrated stickers (no blocky pixel art)
  * and the website's signature serif + cursive typography.
  */
 function chapters(w: Wrap): Chapter[] {
   const m = w.metrics;
+  const lang = detectWrapLanguage(m.top_tech ?? []);
   const out: Chapter[] = [];
   const add = (
     show: unknown,
@@ -323,8 +446,7 @@ function chapters(w: Wrap): Chapter[] {
     title: string,
     text: string,
     visual: ReactNode,
-    file: string,
-    code: string
+    snippet: { file: string; code: string }
   ) =>
     show &&
     out.push({
@@ -333,8 +455,8 @@ function chapters(w: Wrap): Chapter[] {
       title,
       text,
       visual,
-      file,
-      code,
+      file: snippet.file,
+      code: snippet.code,
     });
 
   add(
@@ -344,8 +466,7 @@ function chapters(w: Wrap): Chapter[] {
     `You started ${plural(m.projects_created, "project")}`,
     "Every build is compiled and showcased on your profile.",
     <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="shipped ♥" />,
-    "projects.ts",
-    `export const projectsCreated = ${m.projects_created};`
+    formatWrapCode(lang, "projects", [["projectsCreated", m.projects_created]])
   );
   add(
     m.top_tech.length,
@@ -354,8 +475,7 @@ function chapters(w: Wrap): Chapter[] {
     `Core Stack: ${m.top_tech[0]}`,
     m.top_tech.join(" • "),
     <StickerBadge name="escKeycap" size="md" variant="polaroid" caption="tech stack" />,
-    "tech.stack.ts",
-    `export const topTech = [${m.top_tech.map((t) => `"${t}"`).join(", ")}];`
+    formatWrapCode(lang, "tech_stack", [["topTech", m.top_tech]])
   );
   add(
     m.project_likes_received + m.project_comments_received,
@@ -364,8 +484,10 @@ function chapters(w: Wrap): Chapter[] {
     "People noticed your work",
     `Your builds received ${plural(m.project_likes_received, "like")} and ${plural(m.project_comments_received, "comment")} across the community.`,
     <StickerBadge name="starHatKid" size="md" variant="polaroid" caption="crowd favorite ✦" />,
-    "feedback.ts",
-    `const likes = ${m.project_likes_received}; const comments = ${m.project_comments_received};`
+    formatWrapCode(lang, "feedback", [
+      ["likes", m.project_likes_received],
+      ["comments", m.project_comments_received],
+    ])
   );
   add(
     m.posts_published,
@@ -374,8 +496,10 @@ function chapters(w: Wrap): Chapter[] {
     `You shared ${plural(m.posts_published, "note")}`,
     `${plural(m.post_likes_received, "like")} and ${plural(m.post_comments_received, "reply", "replies")} came back from the community.`,
     <StickerBadge name="blueMiffy" size="md" variant="polaroid" caption="dev social ✦" />,
-    "posts.ts",
-    `const posts = ${m.posts_published}; const reactions = ${m.post_likes_received + m.post_comments_received};`
+    formatWrapCode(lang, "posts", [
+      ["posts", m.posts_published],
+      ["reactions", m.post_likes_received + m.post_comments_received],
+    ])
   );
   add(
     m.connections_made,
@@ -384,8 +508,7 @@ function chapters(w: Wrap): Chapter[] {
     `${plural(m.connections_made, "new connection")}`,
     "Your creative circle grew this month.",
     <StickerBadge name="offlineDino" size="md" variant="polaroid" caption="connected ✦" />,
-    "network.ts",
-    `export const newConnections = ${m.connections_made};`
+    formatWrapCode(lang, "network", [["newConnections", m.connections_made]])
   );
   add(
     m.projects_joined + m.members_joined_my_projects + m.invitations_sent,
@@ -394,8 +517,10 @@ function chapters(w: Wrap): Chapter[] {
     "Teamwork in motion",
     `${plural(m.projects_joined, "project")} joined, ${plural(m.members_joined_my_projects, "builder")} joined yours, ${plural(m.invitations_sent, "invite")} sent.`,
     <StickerBadge name="snoopyMeadow" size="md" variant="polaroid" caption="collab crew" />,
-    "collaborations.ts",
-    `const joined = ${m.projects_joined}; const teamGrowth = ${m.members_joined_my_projects};`
+    formatWrapCode(lang, "collaborations", [
+      ["joined", m.projects_joined],
+      ["teamGrowth", m.members_joined_my_projects],
+    ])
   );
   add(
     m.top_liked_category,
@@ -404,8 +529,7 @@ function chapters(w: Wrap): Chapter[] {
     `Top vibe: ${m.top_liked_category}`,
     "Based on the builds you starred and explored.",
     <StickerBadge name="sageMiffy" size="md" variant="polaroid" caption="curated taste" />,
-    "taste.ts",
-    `export const favoriteCategory = "${m.top_liked_category}";`
+    formatWrapCode(lang, "taste", [["favoriteCategory", m.top_liked_category ?? "All"]])
   );
 
   if (out.length === 0) {
@@ -416,8 +540,7 @@ function chapters(w: Wrap): Chapter[] {
         title: "Fresh Canvas Unlocked",
         text: "Your monthly wrap is initialized and ready for your first shipped build.",
         visual: <StickerBadge name="keycapsDone" size="md" variant="polaroid" caption="you got this ♥" />,
-        file: "status.ts",
-        code: `export const status = "READY_TO_BUILD";`,
+        ...formatWrapCode(lang, "status", [["status", "READY_TO_BUILD"]]),
       },
       {
         label: "Create",
@@ -425,8 +548,7 @@ function chapters(w: Wrap): Chapter[] {
         title: "Start Your Next Build",
         text: "Upload a repo, import from GitHub, or collaborate with builders across DevZ-Go.",
         visual: <StickerBadge name="blueMiffy" size="md" variant="polaroid" caption="projects studio" />,
-        file: "next_build.ts",
-        code: `export const mode = "building";`,
+        ...formatWrapCode(lang, "next_build", [["mode", "building"]]),
       }
     );
   }
