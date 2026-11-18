@@ -9,6 +9,7 @@ import { PixelTV } from "../components/tvworld/PixelTV";
 import { layoutProjects, toTvProject } from "../components/tvworld/worldLayout";
 import type { PlacedTv } from "../components/tvworld/types";
 import { StickerBadge } from "../components/StickerBadge";
+import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import "../components/tvworld/tvworld.css";
 
 const CAM_KEY = "devzgo:tvworld:cam";
@@ -467,6 +468,16 @@ export function ExplorePage() {
             )}
           </div>
           <div className="tvw-sep" />
+          <ProjectSocialBar
+            projectId={focused.project.id}
+            title={focused.project.title}
+            initialLikes={focused.project.likes}
+            initialLiked={focused.project.isLiked}
+            likesHidden={focused.project.likesHidden}
+            isOwner={focused.project.isOwner}
+            commentsCount={focused.project.commentsCount}
+            commentsEnabled={focused.project.commentsEnabled}
+          />
           <div className="tvw-actions">
             <button
               type="button"
