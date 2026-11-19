@@ -15,6 +15,7 @@ interface ProjectSocialBarProps {
   isOwner?: boolean;
   commentsCount?: number;
   commentsEnabled?: boolean;
+  compact?: boolean;
   className?: string;
   /** Show the words Like and Share, not only icons. */
   labeled?: boolean;
@@ -34,6 +35,7 @@ export function ProjectSocialBar({
   isOwner = false,
   commentsCount = 0,
   commentsEnabled = true,
+  compact = false,
   className = "",
   labeled = false,
   iconsOnly = false,
@@ -66,7 +68,7 @@ export function ProjectSocialBar({
           aria-pressed={liked}
           title={signedIn ? (liked ? "Unlike project" : "Like project") : "Sign in to like projects"}
           className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
-            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : compact ? "px-2 py-1.5 text-[11px]" : "px-2.5 py-1 text-xs"
           } ${
             liked
               ? "bg-[#B81D27] text-[#FCFBF4] border-[#B81D27] shadow-xs"
@@ -84,7 +86,7 @@ export function ProjectSocialBar({
           onClick={() => setCommentsOpen(true)}
           title="View and post comments"
           className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#E9DCF6] transition-all cursor-pointer ${
-            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : compact ? "px-2 py-1.5 text-[11px]" : "px-2.5 py-1 text-xs"
           }`}
         >
           <MessageCircle className={labeled || iconsOnly ? "w-4 h-4" : "w-3.5 h-3.5"} />
@@ -103,7 +105,7 @@ export function ProjectSocialBar({
           onClick={() => setShareOpen(true)}
           title="Share project"
           className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#DCE7F7] transition-all cursor-pointer ${
-            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : "px-2.5 py-1 text-xs"
+            iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : compact ? "px-2 py-1.5 text-[11px]" : "px-2.5 py-1 text-xs"
           }`}
         >
           <Share2 className={labeled || iconsOnly ? "w-4 h-4" : "w-3.5 h-3.5"} />
