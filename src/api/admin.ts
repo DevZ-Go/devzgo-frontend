@@ -203,6 +203,29 @@ export async function fetchAudit(offset: number): Promise<{ total: number; event
   return data;
 }
 
+export interface UsageStat {
+  key: string;
+  label: string;
+  count: number;
+  people: number;
+}
+
+export interface Insights {
+  days: number;
+  visits: number;
+  people: number;
+  pages: UsageStat[];
+  gallery: UsageStat;
+  tv: UsageStat;
+  horizontal: UsageStat;
+  vertical: UsageStat;
+}
+
+export async function fetchInsights(days: number): Promise<Insights> {
+  const { data } = await api.get<Insights>("/admin/insights", { params: { days } });
+  return data;
+}
+
 export async function fetchAccess(): Promise<{
   admins: { user_id: string; email: string; username: string; role: "owner" | "admin"; created_at: string | null }[];
   invites: { email: string; role: string; created_at: string | null }[];

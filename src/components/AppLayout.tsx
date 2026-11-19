@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { rememberPath } from "../auth/session";
+import { noteVisit } from "../usage";
 import { Footer } from "./Footer";
 import { DeveloperTour } from "./tour/DeveloperTour";
 import { RecruiterTour } from "./tour/RecruiterTour";
@@ -24,6 +25,7 @@ export function AppLayout() {
   useEffect(() => {
     if (!user?.id) return;
     rememberPath(String(user.id), `${location.pathname}${location.search}`);
+    noteVisit(location.pathname);
   }, [user?.id, location.pathname, location.search]);
 
   useLayoutEffect(() => {

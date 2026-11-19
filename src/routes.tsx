@@ -66,6 +66,7 @@ const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "Proje
 const AboutDevelopersPage = page(() => import("./pages/AboutDevelopersPage"), "AboutDevelopersPage");
 const AdminLayout = page(() => import("./pages/admin/AdminLayout"), "AdminLayout");
 const AdminOverviewPage = page(() => import("./pages/admin/OverviewPage"), "OverviewPage");
+const AdminInsightsPage = page(() => import("./pages/admin/InsightsPage"), "InsightsPage");
 const AdminPeoplePage = page(() => import("./pages/admin/PeoplePage"), "PeoplePage");
 const AdminPersonPage = page(() => import("./pages/admin/PersonPage"), "PersonPage");
 const AdminAccessPage = page(() => import("./pages/admin/AccessPage"), "AccessPage");
@@ -246,6 +247,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute><AdminLayout /></ProtectedRoute>,
         children: [
           { index: true, element: <AdminOverviewPage /> },
+          { path: "insights", element: <AdminInsightsPage /> },
           { path: "people", element: <AdminPeoplePage /> },
           { path: "people/:userId", element: <AdminPersonPage /> },
           { path: "access", element: <AdminAccessPage /> },
