@@ -12,5 +12,10 @@ export interface AuthUser {
   deactivated_at?: string | null;
   /** When set, permanent deletion is scheduled; signing in before this time cancels it. */
   delete_after?: string | null;
+  /** Set while an admin has locked the account. Signing in does not clear it. */
+  suspended_at?: string | null;
+  /** True when this account can open the admin area. */
+  is_platform_admin?: boolean;
+  admin_role?: "owner" | "admin" | null;
   [key: string]: unknown;
 }
