@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Pencil, Check, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Check, Plus, Trash2, UserPlus } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 
 export interface TeamDeveloper {
@@ -8,64 +8,66 @@ export interface TeamDeveloper {
   name: string;
   role: string;
   tagline: string;
-  linkedinUrl: string;
+  profileId: string; // DevZ-Go profile username or user ID (e.g. "janasi", "usr-janasi")
   githubUrl?: string;
 }
 
 /**
- * Default team list — you can edit LinkedIn URLs directly here in code
- * OR click "Customize LinkedIn Links" right on the page!
+ * Default team list — connect over DevZ-Go platform
+ * Admins / developer profile IDs can be customized in code or via "Customize Team Profiles"
  */
 const DEFAULT_DEVELOPERS: TeamDeveloper[] = [
   {
     id: "dev-1",
-    name: "Developer 01",
+    name: "Janasi Rajput",
     role: "Full-Stack & UI Architecture",
     tagline: "Crafting warm editorial interfaces, interactive experiences, and community flows.",
-    linkedinUrl: "https://www.linkedin.com/",
+    profileId: "usr-janasi",
   },
   {
     id: "dev-2",
-    name: "Developer 02",
+    name: "Chan S.",
     role: "Backend & Cloud Infrastructure",
     tagline: "Building FastAPI services, database migrations, and real-time systems.",
-    linkedinUrl: "https://www.linkedin.com/",
+    profileId: "usr-chan",
   },
   {
     id: "dev-3",
-    name: "Developer 03",
+    name: "Khushbu Patel",
     role: "Full-Stack Developer",
     tagline: "Designing workspace tools, project analysis, and developer portfolios.",
-    linkedinUrl: "https://www.linkedin.com/",
+    profileId: "usr-khushbu",
   },
   {
     id: "dev-4",
-    name: "Developer 04",
+    name: "Manasi Sharma",
     role: "Full-Stack Developer",
     tagline: "Connecting talent intelligence, assessments, and collaborative features.",
-    linkedinUrl: "https://www.linkedin.com/",
+    profileId: "usr-manasi",
   },
 ];
 
-const STORAGE_KEY = "devzgo_team_linkedin_v1";
+const STORAGE_KEY = "devzgo_team_profiles_v2";
 
 function loadDevelopers(): TeamDeveloper[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_DEVELOPERS;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_DEVELOPERS;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((d: Record<string, unknown>, idx: number) => ({
+        id: (d.id as string) || `dev-${idx + 1}`,
+        name: (d.name as string) || `Developer 0${idx + 1}`,
+        role: (d.role as string) || "Full-Stack Developer",
+        tagline: (d.tagline as string) || "Building on DevZ-Go.",
+        profileId: (d.profileId as string) || (d.username as string) || DEFAULT_DEVELOPERS[idx]?.profileId || "usr-janasi",
+        githubUrl: (d.githubUrl as string) || undefined,
+      }));
+    }
+    return DEFAULT_DEVELOPERS;
   } catch {
     return DEFAULT_DEVELOPERS;
   }
-}
-
-function LinkedInIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-    </svg>
-  );
 }
 
 export function AboutDevelopersPage() {
@@ -94,7 +96,7 @@ export function AboutDevelopersPage() {
         name: `Developer 0${developers.length + 1}`,
         role: "Full-Stack Developer",
         tagline: "Building tools and experiences on DevZ-Go.",
-        linkedinUrl: "https://www.linkedin.com/in/",
+        profileId: `usr-dev-${developers.length + 1}`,
       },
     ]);
   }
@@ -133,7 +135,7 @@ export function AboutDevelopersPage() {
               ) : (
                 <>
                   <Pencil className="w-3.5 h-3.5" />
-                  Customize LinkedIn Links
+                  Customize Team Profiles
                 </>
               )}
             </button>
@@ -151,7 +153,7 @@ export function AboutDevelopersPage() {
             </p>
             <p className="font-sans text-sm sm:text-base text-[#3E2217]/80 mt-3 leading-relaxed">
               Connect with the developers who designed, engineered, and built the
-              DevZ-Go platform on LinkedIn.
+              DevZ-Go platform directly on DevZ-Go.
             </p>
           </div>
         </div>
@@ -177,7 +179,7 @@ export function AboutDevelopersPage() {
               className="group relative flex flex-col justify-between rounded-3xl bg-[#FFFDF0] border-2 border-[#2D120D]/20 hover:border-[#6B0B0C] p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               <div>
-                {/* Top Number & LinkedIn Badge */}
+                {/* Top Number & DevZ-Go Badge */}
                 <div className="flex items-center justify-between gap-2 mb-5">
                   <span className="px-3 py-1 rounded-full bg-[#2D120D] text-[#FFF8CA] font-mono text-[10px] font-bold tracking-widest uppercase">
                     0{idx + 1} · BUILDER
@@ -192,8 +194,8 @@ export function AboutDevelopersPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   ) : (
-                    <span className="p-2 rounded-full bg-[#CDE3E8] text-[#2D120D]">
-                      <LinkedInIcon className="w-4 h-4" />
+                    <span className="p-1.5 rounded-full bg-[#CDE3E8] text-[#2D120D] shadow-xs" title="DevZ-Go Profile">
+                      <img src="/brand/logo.png" alt="" className="w-4 h-4 rounded-full object-cover" />
                     </span>
                   )}
                 </div>
@@ -245,13 +247,13 @@ export function AboutDevelopersPage() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-[#6B0B0C] mb-0.5">
-                        LinkedIn URL
+                        DevZ-Go Profile ID or Username
                       </label>
                       <input
-                        type="url"
-                        value={dev.linkedinUrl}
-                        onChange={(e) => updateField(dev.id, "linkedinUrl", e.target.value)}
-                        placeholder="https://www.linkedin.com/in/your-profile"
+                        type="text"
+                        value={dev.profileId}
+                        onChange={(e) => updateField(dev.id, "profileId", e.target.value)}
+                        placeholder="e.g. janasi, usr-janasi, or user ID"
                         className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-1.5 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
                       />
                     </div>
@@ -271,18 +273,15 @@ export function AboutDevelopersPage() {
                 )}
               </div>
 
-              {/* LinkedIn CTA Button */}
+              {/* DevZ-Go Connect CTA Button */}
               <div className="mt-6 pt-4 border-t border-[#2D120D]/10">
-                <a
-                  href={dev.linkedinUrl || "https://www.linkedin.com/"}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to={dev.profileId ? `/profile/${dev.profileId}` : "/explore/developers"}
                   className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] font-sans text-xs font-semibold tracking-wide transition-colors shadow-xs"
                 >
-                  <LinkedInIcon className="w-4 h-4 text-[#CDE3E8]" />
-                  <span>Connect on LinkedIn</span>
-                  <ExternalLink className="w-3 h-3 opacity-75" />
-                </a>
+                  <UserPlus className="w-4 h-4 text-[#CDE3E8]" />
+                  <span>Connect on DevZ-Go</span>
+                </Link>
               </div>
             </div>
           ))}
