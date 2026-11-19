@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import { BrandMark } from "./BrandMark";
+import { BrandMark, DevZLockup } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
 import { queryKeys } from "../api/queryKeys";
 import { useAccount } from "../auth/account";
@@ -319,19 +319,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         </div>
 
         <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between gap-3 relative" aria-label="Main">
-          {/* Left: High-Contrast Brand Logo Pill (Always Visible on Any Background) */}
           <div className="flex items-center shrink-0">
             <Link
               to={homePath}
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#2D120D]/90 hover:bg-[#6B0B0C] border border-[#CDE3E8]/35 shadow-lg backdrop-blur-md transition-all"
+              className="group inline-flex items-center drop-shadow-md"
             >
-              <span className="font-serif text-xl sm:text-2xl font-bold text-[#FFF8CA] tracking-tight">
-                DevZ
-              </span>
-              <span className="font-cursive italic font-bold text-[#CDE3E8] text-2xl sm:text-3xl -ml-0.5 leading-none">
-                Go
-              </span>
+              <DevZLockup />
             </Link>
           </div>
 

@@ -7,6 +7,7 @@ import { ExploreLink } from "../components/tvworld/ExploreLink";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import type { ApiProject } from "../types/project";
+import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
@@ -243,7 +244,7 @@ export function LandingPage() {
                       <span className="truncate max-w-[165px] font-medium">{stackLabel}</span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CDE3E8] text-[#2D120D] font-semibold ml-2 shrink-0">
                         <Heart className="w-3 h-3 text-[#6B0B0C] fill-[#6B0B0C]" />
-                        <span>{project.likes ?? 0}</span>
+                        <span>{project.likes_count ?? project.likes ?? 0}</span>
                       </span>
                     </div>
                   </div>
@@ -293,7 +294,7 @@ export function LandingPage() {
       <section className="bg-[#FFF8CA] px-4 sm:px-6 md:px-14 pt-20 pb-20 sm:pt-24 lg:py-20">
         <div className="max-w-[1360px] mx-auto w-full">
           {/* Tall banner: story, artwork, and DevSpace */}
-          <div className="relative w-full rounded-3xl bg-black border-2 border-[#2D120D]/25 overflow-hidden px-6 sm:px-10 lg:px-12 pt-10 pb-16 flex flex-col lg:grid lg:grid-cols-2 items-center gap-8 shadow-2xl">
+          <div className="relative w-full rounded-3xl bg-black border-2 border-[#2D120D]/25 overflow-hidden min-h-[540px] sm:min-h-[640px] lg:min-h-[76vh] px-6 sm:px-10 lg:px-12 py-10 flex flex-col lg:grid lg:grid-cols-[1fr_auto_1fr] items-center gap-8 shadow-2xl group">
             {/* Subtle Ambient Starlight Accents in the Black Space */}
             <div
               className="absolute inset-0 pointer-events-none opacity-40"
@@ -322,6 +323,14 @@ export function LandingPage() {
                 </span>
                 .
               </p>
+            </div>
+
+            <div className="relative z-10 flex items-center justify-center">
+              <img
+                src={lockInImage}
+                alt="Lock in artwork"
+                className="w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] lg:w-[52vh] lg:h-[52vh] xl:w-[58vh] xl:h-[58vh] max-w-full object-contain object-center group-hover:scale-[1.02] transition-transform duration-700"
+              />
             </div>
 
             {/* Right column: DevSpace */}
