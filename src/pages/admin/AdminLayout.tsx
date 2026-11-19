@@ -12,6 +12,7 @@ import { GuardProvider } from "./guard";
 
 const FIXED = [
   ["/admin", "Overview"],
+  ["/admin/insights", "Insights"],
   ["/admin/people", "People"],
   ["/admin/access", "Admin access"],
   ["/admin/approvals", "Approvals"],
