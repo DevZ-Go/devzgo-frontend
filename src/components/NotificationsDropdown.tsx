@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Briefcase, CheckCheck, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Trophy, UserPlus, Users, X } from "lucide-react";
+import { Bell, Briefcase, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
 import { queryKeys } from "../api/queryKeys";
@@ -62,7 +62,7 @@ function typeTone(type: string): string {
 }
 
 function TypeIcon({ type }: { type: string }) {
-  const cls = "h-3.5 w-3.5";
+  const cls = "h-2.5 w-2.5";
   if (type === "achievement") return <Trophy className={cls} />;
   if (type === "share" || type === "project_share") return <Share2 className={cls} />;
   if (type === "like" || type === "project_like") return <Heart className={cls} />;
@@ -150,76 +150,74 @@ export function NotificationsDropdown({ className = "text-stone-800 hover:bg-sto
 
   const panel = open ? createPortal(
     <div className="fixed inset-0 z-[80]">
-      <button type="button" aria-label="Close notifications" className="absolute inset-0 bg-[#3d0a14]/35 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-      <aside className="absolute inset-y-0 right-0 flex w-[min(100%,26rem)] flex-col border-l border-[#e7d3b0] bg-[linear-gradient(180deg,#fffdf8_0%,#f6efe2_100%)] text-stone-900 shadow-[-18px_0_40px_rgba(61,10,20,0.18)]">
-        <header className="relative overflow-hidden border-b border-[#ead9b8] px-5 py-5">
-          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#fced96]/70 blur-2xl" />
-          <div className="relative flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src="/brand/logo.png" alt="" className="h-11 w-11 rounded-2xl object-cover shadow-[0_8px_0_0_#721c2a]" />
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-maroon-800">Last 48 hours</p>
-                <h2 className="font-serif text-3xl leading-none text-stone-900">Notifications</h2>
-              </div>
-            </div>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-[#ead9b8] bg-white p-2 text-stone-600 shadow-[0_3px_0_0_#e7d3b0] hover:translate-y-px hover:shadow-[0_2px_0_0_#e7d3b0]" aria-label="Close">
+      <button type="button" aria-label="Close notifications" className="absolute inset-0 bg-stone-950/40" onClick={() => setOpen(false)} />
+      <aside
+        role="dialog"
+        aria-label="Notifications"
+        className="absolute inset-y-0 right-0 flex w-[min(100%,26rem)] flex-col border-l border-stone-200 bg-white text-stone-900 shadow-[-12px_0_40px_rgba(15,23,42,0.12)]"
+      >
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 px-4 py-3">
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold tracking-tight text-stone-950">Notifications</h2>
+            <p className="text-xs text-stone-500">Past 48 hours{unreadCount > 0 ? ` · ${unreadCount} unread` : ""}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void handleMarkAllRead()}
+                className="rounded-md px-2 py-1 text-xs font-semibold text-[#721c2a] hover:bg-stone-100 disabled:opacity-60"
+              >
+                Mark all as read
+              </button>
+            )}
+            <button type="button" onClick={() => setOpen(false)} className="rounded-full p-1.5 text-stone-500 hover:bg-stone-100" aria-label="Close">
               <X className="h-4 w-4" />
             </button>
           </div>
-          {unreadCount > 0 && (
-            <div className="relative mt-4 flex items-center justify-between">
-              <span className="rounded-full bg-maroon-800 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-[#fced96] shadow-[0_3px_0_0_#3d0a14]">
-                {unreadCount} new
-              </span>
-              <button type="button" disabled={loading} onClick={() => void handleMarkAllRead()} className="inline-flex items-center gap-1 rounded-full border border-maroon-200 bg-white px-3 py-1.5 text-xs font-semibold text-maroon-800 shadow-[0_3px_0_0_#f3d5dc] hover:translate-y-px hover:shadow-[0_2px_0_0_#f3d5dc] disabled:opacity-60">
-                <CheckCheck className="h-3.5 w-3.5" />
-                Mark all read
-              </button>
-            </div>
-          )}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {recent.length === 0 ? (
-            <div className="mt-8 rounded-3xl border border-[#ead9b8] bg-white/80 px-6 py-14 text-center shadow-[0_10px_0_0_#efe2c8]">
-              <Bell className="mx-auto h-6 w-6 text-maroon-800" />
-              <p className="mt-3 font-serif text-2xl text-stone-800">All quiet</p>
+            <div className="px-6 py-16 text-center">
+              <Bell className="mx-auto h-8 w-8 text-stone-300" />
+              <p className="mt-3 text-sm font-semibold text-stone-900">You're all caught up</p>
               <p className="mt-1 text-sm text-stone-500">Nothing new in the last 48 hours.</p>
             </div>
           ) : (
-            <ul className="space-y-3">
+            <ul>
               {recent.map((notif) => {
                 const tone = typeTone(notif.type);
                 return (
-                  <li key={notif.id}>
+                  <li key={notif.id} className="border-b border-stone-100 last:border-b-0">
                     <button
                       type="button"
                       onClick={() => void handleItemClick(notif)}
-                      className={`group flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition duration-150 hover:-translate-y-0.5 ${
-                        notif.read
-                          ? "border-[#eadfce] bg-white shadow-[0_6px_0_0_#efe4d2,0_12px_18px_rgba(61,10,20,0.05)] hover:shadow-[0_8px_0_0_#e7d8c0,0_16px_22px_rgba(61,10,20,0.08)]"
-                          : "border-[#e7c84a] bg-[linear-gradient(180deg,#fff8d4_0%,#fced96_100%)] shadow-[0_7px_0_0_#e2c44a,0_14px_22px_rgba(114,28,42,0.12)] hover:shadow-[0_9px_0_0_#d7b53a,0_18px_24px_rgba(114,28,42,0.16)]"
+                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-stone-50 ${
+                        notif.read ? "bg-white" : "bg-[#faf7f6]"
                       }`}
                     >
-                      <span className="relative shrink-0">
+                      <span className="relative mt-0.5 shrink-0">
                         {notif.actorAvatar ? (
-                          <img src={notif.actorAvatar} alt="" className="h-11 w-11 rounded-2xl object-cover shadow-[0_4px_0_0_rgba(61,10,20,0.25)]" />
+                          <img src={notif.actorAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
                         ) : (
-                          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(160deg,#8b263e,#5e1522)] font-serif text-sm text-[#fced96] shadow-[0_4px_0_0_#3d0a14]">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700">
                             {(notif.actorName || "DV").slice(0, 2).toUpperCase()}
                           </span>
                         )}
-                        <span className={`absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-white shadow-[0_2px_0_0_rgba(61,10,20,0.2)] ${tone}`}>
+                        <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white ${tone}`}>
                           <TypeIcon type={notif.type} />
                         </span>
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-maroon-800">{LABELS[notif.type] || "Update"}</span>
-                          {!notif.read && <span className="h-2 w-2 shrink-0 rounded-full bg-maroon-800 shadow-[0_0_0_3px_rgba(114,28,42,0.15)]" />}
+                        <span className={`block text-sm leading-5 ${notif.read ? "text-stone-600" : "font-medium text-stone-950"}`}>
+                          {notif.message}
                         </span>
-                        <span className="mt-1 block text-sm font-medium leading-snug text-stone-900">{notif.message}</span>
-                        <span className="mt-1.5 block text-[11px] text-stone-500">{formatTimeAgo(notif.createdAt)}</span>
+                        <span className="mt-1 block text-xs text-stone-500">
+                          {LABELS[notif.type] || "Update"} · {formatTimeAgo(notif.createdAt)}
+                        </span>
                       </span>
+                      {!notif.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#721c2a]" aria-hidden />}
                     </button>
                   </li>
                 );

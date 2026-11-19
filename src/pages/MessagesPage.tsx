@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, BellOff, Camera, Eye, FileText, Image as ImageIcon, Loader2, MessageSquare, Mic, Pin, Plus, Search, Send, Smile, UserRound, X } from "lucide-react";
 import { Navbar } from "../components/Navbar";
@@ -164,6 +164,19 @@ export function MessagesPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  const focusComposer = useCallback(() => {
+    const field = composerRef.current;
+    if (!field) return;
+    field.focus();
+    const end = field.value.length;
+    field.setSelectionRange(end, end);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!replyTo) return;
+    focusComposer();
+  }, [replyTo, focusComposer]);
 
   const mediaItems = useMemo<ChatMediaItem[]>(
     () =>
@@ -968,7 +981,10 @@ export function MessagesPage() {
                         onUnsend={msg.isOutgoing || msg.senderId === user?.id ? () => void handleUnsend(msg.id) : undefined}
                         onDelete={() => void handleDelete(msg.id)}
                         onOpenOnce={() => void handleOpenOnce(msg)}
-                        onReply={() => setReplyTo(msg)}
+                        onReply={() => {
+                          setReplyTo(msg);
+                          focusComposer();
+                        }}
                         onToggleStar={() => toggle("stars", msg.id)}
                         onForward={() => setForwardMsg(msg)}
                         onSave={() => void saveMedia(msg)}
