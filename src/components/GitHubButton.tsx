@@ -3,18 +3,24 @@ import { API_BASE_URL } from "../api/config";
 
 export function GitHubButton() {
   return (
-    <a
-      href={`${API_BASE_URL.replace(/\/$/, "")}/auth/github/login`}
-      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
-    >
-      <Github className="w-4 h-4" /> Continue with GitHub
-    </a>
+    <>
+      <a
+        href={`${API_BASE_URL.replace(/\/$/, "")}/auth/github/login`}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+      >
+        <Github className="w-4 h-4" /> Continue with GitHub
+      </a>
+      <p className="mt-2 text-center text-xs text-stone-500">
+        You can choose a different GitHub account on the next screen.
+      </p>
+    </>
   );
 }
 
 const GITHUB_ERRORS: Record<string, string> = {
   github: "GitHub sign-in failed. Please try again.",
   github_state: "GitHub sign-in expired or was started in another browser. Please try again.",
+  github_cancelled: "GitHub sign-in was cancelled. Continue with GitHub again and choose the account you want.",
   github_email: "Your GitHub account needs a verified primary email to sign in.",
   github_linked: "That email already belongs to an account linked to a different GitHub user.",
 };

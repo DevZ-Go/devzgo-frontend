@@ -19,7 +19,9 @@ export function LoginPage() {
   const { login: setAuthToken, refreshUser, logout } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(githubErrorMessage(useSearchParams()[0].get("error")));
+  const githubCode = useSearchParams()[0].get("error");
+  const cancelled = githubCode === "github_cancelled";
+  const [error, setError] = useState<string | null>(cancelled ? null : githubErrorMessage(githubCode));
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -123,6 +125,12 @@ export function LoginPage() {
 
             {locationState?.notice && !error && (
               <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{locationState.notice}</p>
+            )}
+
+            {cancelled && !error && (
+              <p className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-600">
+                {githubErrorMessage("github_cancelled")}
+              </p>
             )}
 
             {error && (
