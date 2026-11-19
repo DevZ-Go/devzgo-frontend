@@ -65,6 +65,14 @@ const AssessmentChallengePage = page(() => import("./pages/AssessmentsPage"), "A
 const PersonActivityPage = page(() => import("./pages/ActivityLogPage"), "PersonActivityPage");
 const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "ProjectActivityPage");
 const AboutDevelopersPage = page(() => import("./pages/AboutDevelopersPage"), "AboutDevelopersPage");
+const AdminLayout = page(() => import("./pages/admin/AdminLayout"), "AdminLayout");
+const AdminOverviewPage = page(() => import("./pages/admin/OverviewPage"), "OverviewPage");
+const AdminPeoplePage = page(() => import("./pages/admin/PeoplePage"), "PeoplePage");
+const AdminPersonPage = page(() => import("./pages/admin/PersonPage"), "PersonPage");
+const AdminAccessPage = page(() => import("./pages/admin/AccessPage"), "AccessPage");
+const AdminApprovalsPage = page(() => import("./pages/admin/ApprovalsPage"), "ApprovalsPage");
+const AdminAuditPage = page(() => import("./pages/admin/AuditPage"), "AuditPage");
+const AdminTablePage = page(() => import("./pages/admin/TablePage"), "TablePage");
 
 const developer = (element: ReactElement) => <ProtectedRoute><DeveloperRoute>{element}</DeveloperRoute></ProtectedRoute>;
 const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{element}</RecruiterRoute></ProtectedRoute>;
@@ -238,6 +246,19 @@ export const router = createBrowserRouter([
       { path: "/recruit/challenges/:id/edit", element: recruiting(<ChallengeEditorPage />) },
       { path: "/assessments", element: developer(<AssessmentsPage />) },
       { path: "/assessments/:id", element: developer(<AssessmentChallengePage />) },
+      {
+        path: "/admin",
+        element: <ProtectedRoute><AdminLayout /></ProtectedRoute>,
+        children: [
+          { index: true, element: <AdminOverviewPage /> },
+          { path: "people", element: <AdminPeoplePage /> },
+          { path: "people/:userId", element: <AdminPersonPage /> },
+          { path: "access", element: <AdminAccessPage /> },
+          { path: "approvals", element: <AdminApprovalsPage /> },
+          { path: "audit", element: <AdminAuditPage /> },
+          { path: "browse/:group/:table", element: <AdminTablePage /> },
+        ],
+      },
 
     ],
   },

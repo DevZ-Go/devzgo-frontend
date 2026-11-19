@@ -23,6 +23,8 @@ const GITHUB_ERRORS: Record<string, string> = {
   github_cancelled: "GitHub sign-in was cancelled. Continue with GitHub again and choose the account you want.",
   github_email: "Your GitHub account needs a verified primary email to sign in.",
   github_linked: "That email already belongs to an account linked to a different GitHub user.",
+  account_suspended: "This account is suspended. A DevZ-Go admin has to restore it before you can sign in.",
+  github_deleted: "This account was permanently deleted.",
 };
 
 export function githubErrorMessage(code: string | null): string | null {
