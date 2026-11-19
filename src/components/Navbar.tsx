@@ -288,17 +288,18 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
   if (variant === "editorial") {
     const solid = isScrolled || mobileOpen;
-    const topLink = (to: string, label: string) => (
+    const topLink = (to: string, label: string, Icon?: LucideIcon) => (
       <Link
         to={to}
         aria-current={isActive(to) ? "page" : undefined}
-        className={`font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-3.5 py-1 rounded-full ${
+        className={`inline-flex items-center justify-center gap-2 font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-4 py-1.5 rounded-full min-w-[124px] ${
           isActive(to)
             ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
             : "text-[#FFF8CA] hover:text-[#CDE3E8] hover:bg-white/10 drop-shadow-sm"
         }`}
       >
-        {label}
+        {Icon && <Icon className="w-4 h-4 md:w-[18px] md:h-[18px] shrink-0" />}
+        <span className="leading-none">{label}</span>
       </Link>
     );
     const iconLink = "hidden lg:inline-flex p-1.5 rounded-full bg-[#2D120D]/80 text-[#FFF8CA] shadow-sm ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] transition-all";
@@ -329,21 +330,19 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             </Link>
           </div>
 
-          {/* Center: Network · Explore · Messages in Cursive Pill Bar */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D120D]/90 backdrop-blur-md border border-[#CDE3E8]/30 shadow-lg xl:absolute xl:left-1/2 xl:-translate-x-1/2">
+          {/* Center: Network · Explore · Me in Cursive Pill Bar */}
+          <div className="hidden lg:flex items-center gap-1.5 p-1.5 rounded-full bg-[#2D120D]/90 backdrop-blur-md border border-[#CDE3E8]/30 shadow-lg xl:absolute xl:left-1/2 xl:-translate-x-1/2">
             {recruiter ? (
               <>
-                {topLink("/recruit", "Dashboard")}
-                {topLink("/recruit/talent", "Find talent")}
-                {topLink("/recruit/shortlists", "Shortlists")}
+                {topLink("/recruit", "Dashboard", LayoutDashboard)}
+                {topLink("/recruit/talent", "Find talent", Search)}
+                {topLink("/recruit/shortlists", "Shortlists", ListChecks)}
               </>
             ) : (
               <>
-                {topLink("/network", "Network")}
-                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
-                {topLink("/explore", "Explore")}
-                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
-                {topLink("/messages", "Messages")}
+                {topLink("/network", "Network", Users)}
+                {topLink("/explore", "Explore", Search)}
+                {topLink("/profile", "Me", User)}
               </>
             )}
           </div>
@@ -371,9 +370,6 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             >
               <CircleHelp className="nav-icon-help w-5 h-5 drop-shadow-sm" />
             </button>
-            <Link to="/profile" className={`group/nav ${iconLink}`} title="My account" aria-label="My account">
-              <User className="nav-icon-profile w-5 h-5 drop-shadow-sm" />
-            </Link>
             <Link to="/settings" className={`group/nav ${iconLink}`} title="Settings" aria-label="Settings">
               <Settings className="nav-icon-gear w-5 h-5 drop-shadow-sm" />
             </Link>
