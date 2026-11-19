@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { fetchActivity } from "../api/network";
@@ -10,6 +10,8 @@ import { ui } from "../styles/editorial";
 
 export function PostPage() {
   const { id = "" } = useParams();
+  const [params] = useSearchParams();
+  const focusCommentId = params.get("comment");
   const [toast, setToast] = useState<string | null>(null);
   const post = useQuery({ queryKey: queryKeys.activity(id), queryFn: () => fetchActivity(id), retry: false });
 
@@ -32,7 +34,7 @@ export function PostPage() {
             This post was deleted or you can't see it.
           </p>
         ) : (
-          <FeedItem activity={post.data} expanded notify={notify} />
+          <FeedItem activity={post.data} expanded notify={notify} focusCommentId={focusCommentId} />
         )}
       </main>
       {toast && (

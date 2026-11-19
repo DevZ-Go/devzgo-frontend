@@ -53,11 +53,27 @@ export function ProjectDetailPage() {
   const [showCollab, setShowCollab] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const activeFilePath = searchParams.get("file");
+  const focus = searchParams.get("focus");
 
   const fileTreeRoots = useMemo(
     () => buildFileTreeFromEntries(files),
     [files]
   );
+
+  useEffect(() => {
+    if (loading || !project || !focus) return;
+    const idMap: Record<string, string> = {
+      comment: "project-comments",
+      team: "project-team",
+      files: "project-files",
+    };
+    const target = idMap[focus];
+    if (!target) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [loading, project, focus, searchParams.get("comment"), searchParams.get("request")]);
 
   const isOwner =
     project?.is_owner === true ||

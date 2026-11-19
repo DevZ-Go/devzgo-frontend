@@ -5,10 +5,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Briefcase, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
+import { acceptCollaborationRequest, answerInvitation, declineCollaborationRequest } from "../api/collaborations";
 import { queryKeys } from "../api/queryKeys";
+import { getApiErrorMessage } from "../utils/apiError";
+import { isCollabActionNotification, notificationDestination, splitRelatedId } from "../utils/notificationLinks";
 
 const HOURS = 48;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function formatTimeAgo(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
@@ -75,34 +77,11 @@ function TypeIcon({ type }: { type: string }) {
   return <Bell className={cls} />;
 }
 
-function destination(notif: NotificationItem): string {
-  const related = (notif.relatedId || "").split(":")[0];
-  if (notif.type === "connection_request" || notif.type === "connection_accepted") {
-    return `/profile/${notif.actorId || notif.actorUsername}`;
-  }
-  if (notif.type === "new_message") return `/messages?user=${notif.actorId}`;
-  if (notif.type === "recruitment_request") return "/opportunities";
-  if (notif.type === "recruitment_accepted") return `/messages?user=${notif.actorId}`;
-  if (notif.type === "recruitment_declined") return "/recruit/inbox";
-  if (notif.type === "challenge_invitation" || notif.type === "challenge_posted") return UUID.test(related) ? `/assessments/${related}` : "/assessments";
-  if (notif.type === "challenge_feedback") return "/assessments";
-  if (notif.type === "challenge_submission" || notif.type === "challenge_response") return UUID.test(related) ? `/recruit/challenges/${related}` : "/recruit/challenges";
-  if ((notif.type === "workspace_commit" || notif.type === "workspace_pr") && UUID.test(related)) {
-    return `/project/${related}/workspace`;
-  }
-  if (
-    ["project_like", "project_comment", "project_share", "collaboration_request", "collaboration_accepted", "collaboration_invitation", "collaboration_joined"].includes(notif.type)
-    && UUID.test(related)
-  ) {
-    return `/project/${related}`;
-  }
-  if (UUID.test(related)) return `/network/post/${related}`;
-  return "/network";
-}
-
 export function NotificationsDropdown({ className = "text-stone-800 hover:bg-stone-200/80 hover:text-stone-950" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: notifications = [] } = useQuery({ queryKey: queryKeys.notifications, queryFn: fetchNotifications });
@@ -127,6 +106,12 @@ export function NotificationsDropdown({ className = "text-stone-800 hover:bg-sto
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  async function markRead(notif: NotificationItem) {
+    if (notif.read) return;
+    await markNotificationRead(notif.id);
+    setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
+  }
+
   async function handleMarkAllRead() {
     setLoading(true);
     try {
@@ -140,12 +125,38 @@ export function NotificationsDropdown({ className = "text-stone-800 hover:bg-sto
   }
 
   async function handleItemClick(notif: NotificationItem) {
-    if (!notif.read) {
-      await markNotificationRead(notif.id);
-      setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n)));
-    }
+    await markRead(notif);
     setOpen(false);
-    navigate(destination(notif));
+    navigate(notificationDestination(notif));
+  }
+
+  async function handleCollabAction(notif: NotificationItem, answer: "accept" | "decline") {
+    const { primary, secondary } = splitRelatedId(notif.relatedId);
+    if (!secondary) {
+      await markRead(notif);
+      setOpen(false);
+      navigate(notificationDestination(notif));
+      return;
+    }
+    setActionBusy(notif.id);
+    setActionError(null);
+    try {
+      if (notif.type === "collaboration_request") {
+        if (answer === "accept") await acceptCollaborationRequest(secondary, primary);
+        else await declineCollaborationRequest(secondary);
+      } else if (notif.type === "collaboration_invitation") {
+        await answerInvitation(secondary, answer);
+      }
+      await markRead(notif);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.collab });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+      setOpen(false);
+      if (answer === "accept" && primary) navigate(`/project/${primary}?focus=team`);
+    } catch (err) {
+      setActionError(getApiErrorMessage(err));
+    } finally {
+      setActionBusy(null);
+    }
   }
 
   const panel = open ? createPortal(
@@ -177,6 +188,9 @@ export function NotificationsDropdown({ className = "text-stone-800 hover:bg-sto
             </button>
           </div>
         </header>
+        {actionError && (
+          <p role="alert" className="border-b border-rose-100 bg-rose-50 px-4 py-2 text-xs text-rose-800">{actionError}</p>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {recent.length === 0 ? (
             <div className="px-6 py-16 text-center">
@@ -188,37 +202,62 @@ export function NotificationsDropdown({ className = "text-stone-800 hover:bg-sto
             <ul>
               {recent.map((notif) => {
                 const tone = typeTone(notif.type);
+                const collab = isCollabActionNotification(notif.type);
                 return (
                   <li key={notif.id} className="border-b border-stone-100 last:border-b-0">
-                    <button
-                      type="button"
-                      onClick={() => void handleItemClick(notif)}
+                    <div
                       className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-stone-50 ${
                         notif.read ? "bg-white" : "bg-[#faf7f6]"
                       }`}
                     >
-                      <span className="relative mt-0.5 shrink-0">
-                        {notif.actorAvatar ? (
-                          <img src={notif.actorAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
-                        ) : (
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700">
-                            {(notif.actorName || "DV").slice(0, 2).toUpperCase()}
+                      <button
+                        type="button"
+                        onClick={() => void handleItemClick(notif)}
+                        className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                      >
+                        <span className="relative mt-0.5 shrink-0">
+                          {notif.actorAvatar ? (
+                            <img src={notif.actorAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                          ) : (
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-xs font-semibold text-stone-700">
+                              {(notif.actorName || "DV").slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                          <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white ${tone}`}>
+                            <TypeIcon type={notif.type} />
                           </span>
-                        )}
-                        <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white ${tone}`}>
-                          <TypeIcon type={notif.type} />
                         </span>
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={`block text-sm leading-5 ${notif.read ? "text-stone-600" : "font-medium text-stone-950"}`}>
-                          {notif.message}
+                        <span className="min-w-0 flex-1">
+                          <span className={`block text-sm leading-5 ${notif.read ? "text-stone-600" : "font-medium text-stone-950"}`}>
+                            {notif.message}
+                          </span>
+                          <span className="mt-1 block text-xs text-stone-500">
+                            {LABELS[notif.type] || "Update"} · {formatTimeAgo(notif.createdAt)}
+                          </span>
                         </span>
-                        <span className="mt-1 block text-xs text-stone-500">
-                          {LABELS[notif.type] || "Update"} · {formatTimeAgo(notif.createdAt)}
-                        </span>
-                      </span>
-                      {!notif.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#721c2a]" aria-hidden />}
-                    </button>
+                        {!notif.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#721c2a]" aria-hidden />}
+                      </button>
+                    </div>
+                    {collab && (
+                      <div className="flex gap-2 px-4 pb-3 pl-[4.25rem]">
+                        <button
+                          type="button"
+                          disabled={actionBusy === notif.id}
+                          onClick={() => void handleCollabAction(notif, "accept")}
+                          className="rounded-lg bg-maroon-800 px-3 py-1.5 text-xs font-semibold text-amber-50 hover:bg-maroon-900 disabled:opacity-60"
+                        >
+                          {actionBusy === notif.id ? "…" : "Accept"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionBusy === notif.id}
+                          onClick={() => void handleCollabAction(notif, "decline")}
+                          className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}

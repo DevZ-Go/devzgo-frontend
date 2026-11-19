@@ -125,16 +125,49 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
   if (!open) return null;
 
   const pad = 10;
+  const gap = 16;
+  const cardEstimate = 280;
   const narrow = window.innerWidth < 640;
   const cardWidth = Math.min(400, window.innerWidth - 32);
   let cardStyle: CSSProperties | undefined;
-  if (box && !narrow) {
-    const below = box.top + box.height + pad + 14;
-    const roomBelow = window.innerHeight - below > 260;
-    const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
-    cardStyle = roomBelow
-      ? { top: below, left, width: cardWidth }
-      : { top: Math.max(16, box.top - pad - 14 - 280), left, width: cardWidth };
+  let cardPlacementClass = "";
+
+  if (box) {
+    const highlight = {
+      top: box.top - pad,
+      left: box.left - pad,
+      right: box.left + box.width + pad,
+      bottom: box.top + box.height + pad,
+      width: box.width + pad * 2,
+      height: box.height + pad * 2,
+    };
+    const roomRight = window.innerWidth - highlight.right - gap;
+    const roomLeft = highlight.left - gap;
+    const roomBelow = window.innerHeight - highlight.bottom - gap;
+    const roomAbove = highlight.top - gap;
+    const centerY = Math.min(
+      Math.max(16, highlight.top + highlight.height / 2 - cardEstimate / 2),
+      window.innerHeight - cardEstimate - 16,
+    );
+
+    if (!narrow && roomRight >= cardWidth) {
+      cardStyle = { top: centerY, left: highlight.right + gap, width: cardWidth };
+    } else if (!narrow && roomLeft >= cardWidth) {
+      cardStyle = { top: centerY, left: Math.max(16, highlight.left - gap - cardWidth), width: cardWidth };
+    } else if (roomBelow >= cardEstimate) {
+      const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
+      cardStyle = { top: highlight.bottom + gap, left, width: cardWidth };
+    } else if (roomAbove >= cardEstimate) {
+      const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
+      cardStyle = { top: Math.max(16, highlight.top - gap - cardEstimate), left, width: cardWidth };
+    } else if (narrow) {
+      // Keep the spotlight visible: park the card on the opposite half of the screen.
+      const highlightMid = box.top + box.height / 2;
+      cardPlacementClass = highlightMid > window.innerHeight / 2 ? "inset-x-3 top-3" : "inset-x-3 bottom-3";
+    } else {
+      const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
+      cardStyle = { top: Math.max(16, Math.min(highlight.bottom + gap, window.innerHeight - cardEstimate - 16)), left, width: cardWidth };
+    }
   }
 
   return (
@@ -165,7 +198,9 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
         onKeyDown={trapFocus}
         style={cardStyle}
         className={`fixed rounded-3xl border border-stone-200/80 bg-[#FAF7EE] p-5 shadow-2xl outline-none transition-[top,left,opacity,transform] duration-500 ease-out sm:p-6 ${
-          cardStyle ? "" : narrow ? "inset-x-3 bottom-3" : "left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2"
+          cardStyle
+            ? ""
+            : cardPlacementClass || (narrow ? "inset-x-3 bottom-3" : "left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2")
         } ${settled ? "opacity-100" : "opacity-80"}`}
       >
         <div className="flex items-start justify-between gap-3">

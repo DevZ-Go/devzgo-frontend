@@ -29,8 +29,30 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function criteriaErrors(): string[] {
+    const issues: string[] = [];
+    if (!username.trim()) issues.push("Choose a username.");
+    else if (!usernameOk) issues.push("Pick an available username that meets the format rules.");
+    if (!email.trim()) issues.push("Add your email address.");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) issues.push("Enter a valid email address.");
+    if (!password) issues.push("Create a password.");
+    else if (!passwordValid(password)) {
+      issues.push("Password needs 8–128 characters, an uppercase letter, and a special character.");
+    }
+    if (!role) issues.push("Select your role.");
+    if (role === "Recruiter" && company.trim().length < 2) {
+      issues.push("Add the company or agency you recruit for.");
+    }
+    return issues;
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const issues = criteriaErrors();
+    if (issues.length) {
+      setError(issues.join(" "));
+      return;
+    }
     setError(null);
     setLoading(true);
 
@@ -62,6 +84,8 @@ export function RegisterPage() {
       setLoading(false);
     }
   }
+
+  const blocking = criteriaErrors();
 
   return (
     <AuthLayout
@@ -134,11 +158,18 @@ export function RegisterPage() {
                 {error}
               </div>
             )}
+            {!error && blocking.length > 0 && (username || email || password || role) && (
+              <ul className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 space-y-1">
+                {blocking.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            )}
 
             <button
               type="submit"
-              disabled={loading || !usernameOk || !passwordValid(password) || !role || (role === "Recruiter" && company.trim().length < 2)}
-              className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-base font-semibold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60 disabled:pointer-events-none"
+              disabled={loading}
+              className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-base font-semibold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60"
             >
               {loading ? "Creating account..." : "Create account"}
             </button>

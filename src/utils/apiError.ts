@@ -20,7 +20,14 @@ export function getApiErrorMessage(err: unknown): string {
 
   if (Array.isArray(data.detail)) {
     return data.detail
-      .map((d) => (typeof d === "object" && d && "msg" in d ? String(d.msg) : String(d)))
+      .map((d) => {
+        if (typeof d !== "object" || !d) return String(d);
+        const msg = "msg" in d ? String(d.msg) : String(d);
+        const loc = Array.isArray(d.loc) ? d.loc.filter((p) => p !== "body").join(" ") : "";
+        if (!loc) return msg;
+        const field = String(loc).replace(/_/g, " ");
+        return `${field}: ${msg}`;
+      })
       .join(". ");
   }
 

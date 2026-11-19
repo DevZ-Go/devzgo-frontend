@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Heart, Loader2, MessageSquare, Pencil, Send, Share2, Trash2 } from "lucide-react";
 import {
@@ -53,21 +53,23 @@ function Avatar({ name, url, className }: { name: string; url?: string | null; c
 }
 
 /** One feed post. In the feed it shows the latest two comments; on its own page (`expanded`) every comment, paged. */
-export function FeedItem({ activity, expanded = false, notify }: {
+export function FeedItem({ activity, expanded = false, notify, focusCommentId = null }: {
   activity: FeedActivity;
   expanded?: boolean;
   notify: (message: string) => void;
   index?: number;
+  focusCommentId?: string | null;
 }) {
   const client = useQueryClient();
   const navigate = useNavigate();
   const refresh = () => client.invalidateQueries({ queryKey: queryKeys.feed });
   const [like, setLike] = useState<{ isLiked: boolean; likesCount: number } | null>(null);
-  const [commentsOpen, setCommentsOpen] = useState(expanded);
+  const [commentsOpen, setCommentsOpen] = useState(expanded || Boolean(focusCommentId));
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [shareProject, setShareProject] = useState(false);
+  const [highlightCommentId, setHighlightCommentId] = useState<string | null>(focusCommentId);
   const shown = like ?? activity;
   const [label, color] = BADGES[activity.activityType] ?? BADGES.post!;
   const spark = activity.activityType === "spark";
@@ -83,6 +85,21 @@ export function FeedItem({ activity, expanded = false, notify }: {
   const comments: ActivityComment[] = expanded
     ? (allComments.data?.pages.flatMap((p) => p.items) ?? []).slice().reverse()
     : activity.comments;
+
+  useEffect(() => {
+    if (!focusCommentId || !expanded) return;
+    setCommentsOpen(true);
+    const el = document.getElementById(`activity-comment-${focusCommentId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightCommentId(focusCommentId);
+      const clear = window.setTimeout(() => setHighlightCommentId(null), 3500);
+      return () => window.clearTimeout(clear);
+    }
+    if (allComments.hasNextPage && !allComments.isFetchingNextPage) {
+      void allComments.fetchNextPage();
+    }
+  }, [focusCommentId, expanded, allComments.data, allComments.hasNextPage, allComments.isFetchingNextPage]);
 
   async function run(action: () => Promise<unknown>, failure: string) {
     setBusy(true);
@@ -283,7 +300,15 @@ export function FeedItem({ activity, expanded = false, notify }: {
             {comments.length === 0 ? (
               <p className="font-cursive italic text-lg text-[#6B0B0C] py-1">No notes yet. Leave a kind word ~</p>
             ) : comments.map((comment) => (
-              <div key={comment.id} className="group flex items-start justify-between gap-3 p-3 rounded-2xl bg-white border border-[#2D120D]/15 shadow-2xs">
+              <div
+                key={comment.id}
+                id={`activity-comment-${comment.id}`}
+                className={`group flex items-start justify-between gap-3 p-3 rounded-2xl border shadow-2xs scroll-mt-28 transition ${
+                  highlightCommentId === comment.id
+                    ? "bg-amber-50 border-maroon-700/40 ring-2 ring-maroon-700/30"
+                    : "bg-white border-[#2D120D]/15"
+                }`}
+              >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <Avatar name={comment.authorName} url={comment.authorAvatar} className="w-7 h-7 rounded-full shrink-0 mt-0.5 text-[10px]" />
                   <div className="min-w-0">

@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Trash2 } from "lucide-react";
 import { addProjectComment, deleteProjectComment, fetchProjectComments } from "../api/projects";
@@ -12,8 +12,11 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
   projectId: string; enabled: boolean; signedIn: boolean; readOnly?: boolean;
 }) {
   const client = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusCommentId = searchParams.get("comment");
   const key = queryKeys.projectComments(projectId);
   const [body, setBody] = useState("");
+  const [highlightId, setHighlightId] = useState<string | null>(focusCommentId);
   const comments = useInfiniteQuery({
     queryKey: key,
     queryFn: ({ pageParam }) => fetchProjectComments(projectId, pageParam),
@@ -33,6 +36,27 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
     e.preventDefault();
     if (body.trim()) add.mutate();
   };
+
+  useEffect(() => {
+    if (!focusCommentId || comments.isLoading) return;
+    const el = document.getElementById(`project-comment-${focusCommentId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(focusCommentId);
+      const clear = window.setTimeout(() => {
+        setHighlightId(null);
+        setSearchParams((params) => {
+          params.delete("comment");
+          if (params.get("focus") === "comment") params.delete("focus");
+          return params;
+        }, { replace: true });
+      }, 3500);
+      return () => window.clearTimeout(clear);
+    }
+    if (comments.hasNextPage && !comments.isFetchingNextPage) {
+      void comments.fetchNextPage();
+    }
+  }, [focusCommentId, comments.isLoading, comments.data, comments.hasNextPage, comments.isFetchingNextPage, setSearchParams]);
 
   return (
     <section id="project-comments" className="scroll-mt-24 rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 font-sans">
@@ -63,7 +87,13 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
         : (
           <ul className="space-y-4">
             {items.map((c) => (
-              <li key={c.id} className="flex gap-3">
+              <li
+                key={c.id}
+                id={`project-comment-${c.id}`}
+                className={`flex gap-3 scroll-mt-28 rounded-xl p-2 transition ${
+                  highlightId === c.id ? "bg-amber-50 ring-2 ring-maroon-700/40" : ""
+                }`}
+              >
                 <MemberAvatar name={c.author.full_name || c.author.username} src={c.author.avatar_url} size="sm" className="!h-8 !w-8" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm">

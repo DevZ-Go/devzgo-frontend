@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Users } from "lucide-react";
 import {
   accessLabel,
@@ -59,6 +59,9 @@ function FocusEditor({ projectId, current, onSaved }: { projectId: string; curre
 export function TeamPanel({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
   const { token, user } = useAuth();
   const client = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusRequestId = searchParams.get("request");
+  const focusInvite = searchParams.get("invite") || searchParams.get("focus") === "team";
   const key = [...queryKeys.collab, projectId];
   const members = useQuery({ queryKey: [...key, "members"], queryFn: () => fetchProjectCollaborators(projectId) });
   const me = useQuery({ queryKey: [...key, "me"], queryFn: () => fetchMyCollabStatus(projectId), enabled: Boolean(token) });
@@ -68,6 +71,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
   const invitations = useQuery({ queryKey: [...key, "invitations"], queryFn: () => fetchProjectInvitations(projectId), enabled: managesTeam });
 
   const [error, setError] = useState<string | null>(null);
+  const [highlightRequestId, setHighlightRequestId] = useState<string | null>(focusRequestId);
   const refresh = () => {
     void client.invalidateQueries({ queryKey: queryKeys.collab });
     void client.invalidateQueries({ queryKey: queryKeys.project(projectId) });
@@ -100,14 +104,38 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
   const list = members.data ?? [];
   const onTeam = status === "owner" || status === "member";
 
+  useEffect(() => {
+    if (!focusRequestId && !focusInvite) return;
+    const targetId = focusRequestId
+      ? `collab-request-${focusRequestId}`
+      : status === "invited"
+        ? "collab-invite-actions"
+        : "project-team";
+    const tick = window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (focusRequestId) setHighlightRequestId(focusRequestId);
+      setSearchParams((params) => {
+        params.delete("request");
+        params.delete("invite");
+        if (params.get("focus") === "team") params.delete("focus");
+        return params;
+      }, { replace: true });
+    }, 120);
+    const clear = window.setTimeout(() => setHighlightRequestId(null), 4000);
+    return () => {
+      window.clearTimeout(tick);
+      window.clearTimeout(clear);
+    };
+  }, [focusRequestId, focusInvite, status, setSearchParams]);
+
   return (
-    <section className="rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 space-y-5">
+    <section id="project-team" className="scroll-mt-24 rounded-2xl border border-stone-200/90 bg-white shadow-sm p-6 sm:p-8 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-stone-900">
           <Users className="w-5 h-5 text-forest-700" />
           <h2 className="font-serif text-2xl text-stone-900">Team ({list.length})</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div id="collab-invite-actions" className="flex flex-wrap gap-2 scroll-mt-28">
           {status === "none" && <button className={primary} onClick={() => setShowRequest(true)}>Request to join</button>}
           {status === "requested" && (
             <>
@@ -171,7 +199,13 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           {requests.data!.map((r) => {
             const level = answerLevels[r.id] ?? "commenter";
             return (
-              <div key={r.id} className="flex flex-wrap items-center gap-3 py-2">
+              <div
+                key={r.id}
+                id={`collab-request-${r.id}`}
+                className={`flex flex-wrap items-center gap-3 rounded-xl px-2 py-2 scroll-mt-28 transition ${
+                  highlightRequestId === r.id ? "bg-amber-50 ring-2 ring-maroon-700/40" : ""
+                }`}
+              >
                 <span className="min-w-[12rem] flex-1 font-sans text-sm text-stone-700">
                   <b>{r.requester.fullName || r.requester.username}</b> as {r.role}
                   {r.message && <span className="block text-xs text-stone-500">“{r.message}”</span>}

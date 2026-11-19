@@ -26,11 +26,20 @@ export function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const id = identifier.trim();
+    if (!id) {
+      setError("Enter your email or username.");
+      return;
+    }
+    if (!password) {
+      setError("Enter your password.");
+      return;
+    }
     setError(null);
     setLoading(true);
 
     try {
-      const { access_token } = await loginWithPassword(identifier, password);
+      const { access_token } = await loginWithPassword(id, password);
       setAuthToken(access_token);
       let me;
       try {
@@ -42,7 +51,14 @@ export function LoginPage() {
       }
       navigate(await destinationAfterLogin(me), { replace: true });
     } catch (err) {
-      setError(getApiErrorMessage(err));
+      const message = getApiErrorMessage(err);
+      if (/verify your email/i.test(message)) {
+        setError("Verify your email before signing in. Check your inbox for the 6-digit code, or register again to resend one.");
+      } else if (/invalid/i.test(message) || /401/.test(message)) {
+        setError("That email/username or password does not match. Check for typos, or use Forgot password.");
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
