@@ -14,6 +14,7 @@ import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { resolveApiAssetUrl } from "../api/config";
 import { StickerBadge, type StickerName } from "../components/StickerBadge";
+import { noteGalleryDirection } from "../usage";
 
 const CARD_PALETTES = [
   {
@@ -69,6 +70,10 @@ export function StudioWallPage({
   useEffect(() => {
     horizontalScroller.current?.scrollTo({ left: 0 });
   }, [data.appliedKey]);
+
+  useEffect(() => {
+    noteGalleryDirection(scrollMode);
+  }, [scrollMode]);
 
   // Keyboard arrow support in Horizontal mode
   useEffect(() => {
