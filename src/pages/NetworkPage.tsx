@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, Search, Users, Send, Loader2, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
 import { createPost, fetchFeedPage } from "../api/network";
+import { fetchMyProfile } from "../api/profiles";
 import {
   fetchConnections,
   acceptConnection,
@@ -24,6 +25,7 @@ import snailSketch from "../assets/snail.jpg";
 
 export function NetworkPage() {
   const { user } = useAuth();
+  const me = useQuery({ queryKey: ["my-profile-photo", user?.id ?? ""], queryFn: fetchMyProfile, enabled: Boolean(user) });
 
   const [params, setParams] = useSearchParams();
   const filter = params.get("filter") ?? "all";
@@ -375,9 +377,13 @@ export function NetworkPage() {
                 </div>
 
                 <div className="flex gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-[#284E45] text-[#FAF6EC] font-gift text-xl flex items-center justify-center shrink-0 border border-[#CBE4EE]">
-                    {user?.username ? user.username.slice(0, 2).toUpperCase() : "ME"}
-                  </div>
+                  {me.data?.avatarUrl ? (
+                    <img src={me.data.avatarUrl} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0 border border-[#CBE4EE]" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-[#284E45] text-[#FAF6EC] font-gift text-xl flex items-center justify-center shrink-0 border border-[#CBE4EE]">
+                      {user?.username ? user.username.slice(0, 2).toUpperCase() : "ME"}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="bg-[#F2F8FB] p-3.5 rounded-2xl border border-[#7D94B5]/30">
                       <textarea

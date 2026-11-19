@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Trash2 } from "lucide-react";
+import { assetUrlOrNull } from "../api/config";
 import { addProjectComment, deleteProjectComment, fetchProjectComments } from "../api/projects";
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -63,7 +64,7 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
           <ul className="space-y-4">
             {items.map((c) => (
               <li key={c.id} className="flex gap-3">
-                <img src={c.author.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.author.username)}`}
+                <img src={assetUrlOrNull(c.author.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.author.username)}`}
                   alt="" className="h-8 w-8 shrink-0 rounded-full bg-[#DCFCE7] ring-1 ring-forest-600/40" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm">

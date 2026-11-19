@@ -453,8 +453,11 @@ export function ExplorePage() {
             </div>
           )}
           <div className="tvw-meta">
-            <div>
-              BY<b>@{focused.project.author}</b>
+            <div className="flex items-center gap-2">
+              {focused.project.authorAvatar && (
+                <img src={focused.project.authorAvatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+              )}
+              <span>BY<b>@{focused.project.author}</b></span>
             </div>
             {focused.project.category && (
               <div>
