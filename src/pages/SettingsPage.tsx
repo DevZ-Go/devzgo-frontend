@@ -26,6 +26,17 @@ import { passwordValid } from "../utils/passwordPolicy";
 import { ui } from "../styles/editorial";
 
 const inputClass = `${ui.input} py-3`;
+
+function ForgotPasswordLink({ email }: { email?: string | null }) {
+  const to = email ? `/forgot-password?email=${encodeURIComponent(email)}` : "/forgot-password";
+  return (
+    <div className="text-right">
+      <Link to={to} className="text-xs font-semibold text-maroon-700 hover:text-maroon-900">
+        Forgot password?
+      </Link>
+    </div>
+  );
+}
 const ZONES = ["America/Toronto", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Vancouver", "Europe/London", "UTC"];
 const SECTIONS = [
   ["account", "Account"],
@@ -361,8 +372,11 @@ export function SettingsPage() {
           <h2 className="font-serif text-2xl text-stone-900">{hasPassword ? "Password" : "Set a password"}</h2>
           {!hasPassword && <p className="text-sm text-stone-500">You sign in with GitHub. A password lets you sign in with email too.</p>}
           {hasPassword && (
-            <PasswordInput required value={current} onChange={(e) => setCurrent(e.target.value)}
-              autoComplete="current-password" placeholder="Current password" aria-label="Current password" className={inputClass} />
+            <>
+              <PasswordInput required value={current} onChange={(e) => setCurrent(e.target.value)}
+                autoComplete="current-password" placeholder="Current password" aria-label="Current password" className={inputClass} />
+              <ForgotPasswordLink email={user?.email} />
+            </>
           )}
           <PasswordField value={next} onChange={setNext} className={inputClass} />
           <Save busy={busy} disabled={!passwordValid(next)}>Save password</Save>
@@ -418,10 +432,13 @@ export function SettingsPage() {
             <div className="space-y-3 rounded-2xl border border-stone-200 bg-[#f8f6f0] p-4">
               <p className="text-sm text-stone-700">Your profile and work stay hidden until you sign in again. Other sessions will be signed out.</p>
               {hasPassword && (
-                <PasswordInput
-                  required value={pausePassword} onChange={(e) => setPausePassword(e.target.value)}
-                  autoComplete="current-password" placeholder="Current password" aria-label="Password to pause account" className={inputClass}
-                />
+                <>
+                  <PasswordInput
+                    required value={pausePassword} onChange={(e) => setPausePassword(e.target.value)}
+                    autoComplete="current-password" placeholder="Current password" aria-label="Password to pause account" className={inputClass}
+                  />
+                  <ForgotPasswordLink email={user?.email} />
+                </>
               )}
               {!hasPassword && (
                 <p className="text-xs text-stone-500">Confirm as @{user?.username} (GitHub sign-in).</p>
@@ -467,10 +484,13 @@ export function SettingsPage() {
                 className={inputClass}
               />
               {hasPassword && (
-                <PasswordInput
-                  required value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)}
-                  autoComplete="current-password" placeholder="Current password" aria-label="Password to delete account" className={inputClass}
-                />
+                <>
+                  <PasswordInput
+                    required value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)}
+                    autoComplete="current-password" placeholder="Current password" aria-label="Password to delete account" className={inputClass}
+                  />
+                  <ForgotPasswordLink email={user?.email} />
+                </>
               )}
               <div className="flex flex-wrap gap-2">
                 <button
