@@ -31,6 +31,8 @@ import { useAuth } from "../auth/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { BrandMark, DevZLockup } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
+import { fetchMyProfile } from "../api/profiles";
+import { resolveApiAssetUrl } from "../api/config";
 import { queryKeys } from "../api/queryKeys";
 import { useAccount } from "../auth/account";
 import { openDeveloperTour, openRecruiterTour } from "./tour/events";
@@ -98,7 +100,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     return cleaned.slice(0, 2).toUpperCase();
   }, [user]);
 
-  const avatarUrl = (user?.avatar_url || user?.avatar || "") as string;
+  const mine = useQuery({
+    queryKey: ["my-profile-photo", user?.id ?? ""],
+    queryFn: fetchMyProfile,
+    enabled: Boolean(user),
+    staleTime: 30_000,
+  });
+  const avatarUrl = mine.data?.avatarUrl || resolveApiAssetUrl(String(user?.avatar_url || user?.avatar || ""));
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
