@@ -104,6 +104,12 @@ function GuardDialog({
   }, [onClose]);
 
   const critical = preview?.severity === "critical";
+  const waitsForAdmins = Boolean(
+    preview &&
+      critical &&
+      (preview.required_approvals ?? 0) >= 2 &&
+      !preview.action.startsWith("proposal."),
+  );
   const reasonOk = !requireReason || reason.trim().length >= 8;
   const typedOk = preview
     ? preview.casefold
@@ -124,7 +130,7 @@ function GuardDialog({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#6B0B0C]">
-              {preview ? `Step ${step} of 2 · ${critical && !preview.action.startsWith("proposal.") ? "Needs other admins" : "Confirm twice"}` : "Checking"}
+              {preview ? `Step ${step} of 2 · ${waitsForAdmins ? "Needs other admins" : "Confirm twice"}` : "Checking"}
             </p>
             <h2 id={titleId} className="mt-1 font-serif text-2xl font-bold text-[#2D120D]">
               {preview?.label ?? "Review this change"}
@@ -225,7 +231,7 @@ function GuardDialog({
                 className={`${ui.btn} ${critical ? ui.danger : ui.primary} px-4 py-2 text-sm`}
                 onClick={() => onClose({ reason: reason.trim(), typed: typed.trim() })}
               >
-                {preview.action.startsWith("proposal.") ? "Submit vote" : critical ? "Submit for approval" : "Confirm change"}
+                {preview.action.startsWith("proposal.") ? "Submit vote" : waitsForAdmins ? "Submit for approval" : "Confirm change"}
               </button>
             </div>
           </div>
