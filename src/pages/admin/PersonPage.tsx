@@ -131,7 +131,7 @@ export function PersonPage() {
       <section className="rounded-2xl border-2 border-[#DC2626] bg-[#FEE2E2] p-4 sm:p-5">
         <h3 className="font-serif text-lg font-bold text-[#991B1B]">Major changes</h3>
         <p className="mt-1 text-sm text-[#7F1D1D]">
-          These can remove someone’s work. They wait for 2 or 3 admin approvals and do not run when you submit them.
+          These can remove someone’s work. They wait for 2 admin approvals, unless you are signed in as the owner — then a deletion runs as soon as you confirm.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Action disabled={busy} onClick={() => void run("user.schedule_delete")}>Schedule deletion</Action>

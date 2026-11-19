@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchCatalog } from "../../api/admin";
+import { fetchAdminSession, fetchCatalog } from "../../api/admin";
 import { ui } from "../../styles/editorial";
 import { Loading, panel } from "./bits";
 
@@ -16,18 +16,20 @@ const STATS = [
 
 export function OverviewPage() {
   const catalog = useQuery({ queryKey: ["admin", "catalog"], queryFn: fetchCatalog });
+  const session = useQuery({ queryKey: ["admin", "session"], queryFn: fetchAdminSession });
   if (catalog.isLoading) return <Loading />;
   if (!catalog.data) return <p className={ui.error}>The overview could not be loaded.</p>;
   const { headline, groups } = catalog.data;
+  const ownerEmail = session.data?.owner_email ?? "the owner";
 
   return (
     <div className="space-y-6">
       <section className={panel}>
         <h2 className={ui.heading}>How dangerous changes work</h2>
         <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          Everyday fixes ask you to confirm twice and write a reason. Changes that can do serious damage — deleting an account or a project,
-          removing an admin, disconnecting GitHub, deleting a wrap — do not run until other admins approve them. Three approvals are required
-          when three or more admins can vote. With two admins, both must approve. You count as the first approval. Any other admin can stop a request.
+          Everyday fixes ask you to confirm twice and write a reason. Deleting an account or a project, removing an admin, disconnecting GitHub,
+          or deleting a wrap waits for 2 admin approvals, including yours. Any other admin can stop a request.
+          When {ownerEmail} confirms a deletion, it runs right away.
         </p>
         <p className="mt-2 text-sm text-stone-600">
           Passwords, reset links, GitHub tokens and unsaved editor text are hidden. Every change is written to the audit log.
