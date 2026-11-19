@@ -6,7 +6,7 @@
 
 import type { AuthUser } from "../types/auth";
 import type { ApiProject } from "../types/project";
-import type { LoginTokenResponse, RegisterPayload } from "./auth";
+import type { LoginTokenResponse, RegisterPayload, RegisterResult } from "./auth";
 import type {
   TechStackItem,
   CreateProjectPayload,
@@ -205,9 +205,13 @@ export async function loginWithPassword(
   return { access_token: "mock-jwt-token-devzgo-demo-2025", token_type: "bearer" };
 }
 
-export async function registerUser(_payload: RegisterPayload): Promise<unknown> {
+export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
   await delay(600);
-  return { message: "User registered successfully" };
+  return {
+    id: "mock-user",
+    username: payload.username,
+    email: payload.email,
+  };
 }
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
