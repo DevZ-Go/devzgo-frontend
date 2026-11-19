@@ -93,6 +93,8 @@ export function toTvProject(api: ApiProject, index: number): TvProject {
     likes: ui.likes,
     isLiked: Boolean(ui.isLiked),
     likesHidden: Boolean(ui.likesHidden),
+    commentsCount: ui.commentsCount,
+    commentsEnabled: api.comments_enabled !== false,
   };
 }
 

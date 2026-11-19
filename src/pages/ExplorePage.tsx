@@ -8,6 +8,8 @@ import type { Cam, ViewRect } from "../components/tvworld/CameraController";
 import { PixelTV } from "../components/tvworld/PixelTV";
 import { layoutProjects, toTvProject } from "../components/tvworld/worldLayout";
 import type { PlacedTv } from "../components/tvworld/types";
+import { StickerBadge } from "../components/StickerBadge";
+import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import "../components/tvworld/tvworld.css";
 
 const CAM_KEY = "devzgo:tvworld:cam";
@@ -327,25 +329,32 @@ export function ExplorePage() {
 
       <div className="tvw-vignette" />
 
-      {/* ── HUD: tiny, in the corners, never over the screens ── */}
+      {/* ── HUD: high-contrast, readable corners with Stickers ── */}
       <div className="tvw-hud tvw-hud--tl">
-        <b>PROJECT ARCHIVE</b>
-        {loading
-          ? "TUNING..."
-          : `${total} ${isNarrowed ? "MATCHING " : ""}PROJECT${total === 1 ? "" : "S"}`}
+        <StickerBadge name="sageMiffy" size="sm" variant="circle" className="!w-11 !h-11 shrink-0 -rotate-6" />
+        <div>
+          <b>TV WORLD · PROJECT ARCHIVE</b>
+          <span>
+            {loading
+              ? "TUNING CHANNELS..."
+              : `${total} ${isNarrowed ? "MATCHING " : ""}PROJECT${total === 1 ? "" : "S"}`}
+          </span>
+        </div>
       </div>
 
       <div className="tvw-hud tvw-hud--bl">
-        {focused ? (
-          <>ESC &middot; BACK TO EXPLORE &nbsp; &larr; &rarr; SWITCH TV</>
-        ) : (
-          <>
-            DRAG TO EXPLORE
-            <br />
-            <span className="tvw-hint-keys">&uarr; &darr; &larr; &rarr; / WASD &middot; SCROLL &middot; PINCH TO ZOOM</span>
-            <span className="tvw-hint-touch">TAP A TV TO OPEN IT</span>
-          </>
-        )}
+        <StickerBadge name="escKeycap" size="sm" variant="circle" className="!w-10 !h-10 shrink-0 rotate-3" />
+        <div>
+          {focused ? (
+            <>ESC &middot; BACK TO EXPLORE &nbsp; &larr; &rarr; SWITCH TV</>
+          ) : (
+            <>
+              <b>DRAG TO EXPLORE</b>
+              <span className="tvw-hint-keys">&uarr; &darr; &larr; &rarr; / WASD &middot; SCROLL &middot; CLICK A TV</span>
+              <span className="tvw-hint-touch">TAP A TV TO OPEN IT</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="tvw-hud tvw-hud--tr" data-ui>
@@ -362,12 +371,13 @@ export function ExplorePage() {
             button: "tvw-btn",
           }}
         />
-        <Link to="/home" className="tvw-btn">
-          &larr; EXIT
+        <Link to="/explore" className="tvw-btn">
+          &larr; STUDIO
         </Link>
       </div>
 
       <div className="tvw-hud tvw-hud--br" data-ui>
+        <StickerBadge name="keycapsDone" size="sm" variant="circle" className="hidden sm:inline-flex !w-10 !h-10 -rotate-6 mr-1" />
         <button type="button" className="tvw-btn tvw-btn--sq" aria-label="Zoom out" onClick={() => ctrlRef.current?.zoomBy(1 / 1.25)}>
           -
         </button>
@@ -382,13 +392,15 @@ export function ExplorePage() {
       {/* ── states ── */}
       {loading && (
         <div className="tvw-center">
+          <StickerBadge name="sageMiffy" size="md" className="-rotate-3" />
           <span className="tvw-blink">TUNING...</span>
         </div>
       )}
       {error && (
         <div className="tvw-center" data-ui>
+          <StickerBadge name="offlineDino" size="md" variant="polaroid" caption="offline" />
           <span>SIGNAL LOST</span>
-          <span style={{ color: "#4b4f57", letterSpacing: "0.12em" }}>{error}</span>
+          <span style={{ color: "#CBE4EE", letterSpacing: "0.08em" }}>{error}</span>
           <button type="button" className="tvw-btn" onClick={reload}>
             RETRY
           </button>
@@ -396,8 +408,9 @@ export function ExplorePage() {
       )}
       {empty && (
         <div className="tvw-center" data-ui>
+          <StickerBadge name="offlineDino" size="md" variant="polaroid" caption="no signal" />
           <span>NO SIGNAL</span>
-          <span style={{ color: "#4b4f57" }}>NO PUBLIC PROJECTS YET</span>
+          <span style={{ color: "#CBE4EE" }}>NO PUBLIC PROJECTS YET</span>
           <Link to="/add-project" className="tvw-btn tvw-btn--primary">
             UPLOAD THE FIRST ONE
           </Link>
@@ -405,6 +418,7 @@ export function ExplorePage() {
       )}
       {noResults && isNarrowed && (
         <div className="tvw-center" data-ui>
+          <StickerBadge name="offlineDino" size="md" className="-rotate-3" />
           <span>NOTHING TUNED IN FOR THESE FILTERS</span>
           <button type="button" className="tvw-btn" onClick={clearFilters}>
             SHOW ALL
@@ -415,8 +429,16 @@ export function ExplorePage() {
       {/* ── focused project info ── */}
       {focused && (
         <aside className="tvw-panel" data-ui key={focused.project.id} aria-label="Project details">
-          <div className="tvw-panel-kicker">
-            TV {String(focused.number).padStart(2, "0")} &middot; {idx} / {shown.length}
+          <div className="flex items-center justify-between gap-2">
+            <div className="tvw-panel-kicker">
+              TV {String(focused.number).padStart(2, "0")} &middot; {idx} / {shown.length}
+            </div>
+            <StickerBadge
+              name="starHatKid"
+              size="sm"
+              variant="circle"
+              className="!w-10 !h-10 rotate-6 shrink-0"
+            />
           </div>
           <h2>{focused.project.title}</h2>
           {focused.project.shortDescription && <p>{focused.project.shortDescription}</p>}
@@ -446,7 +468,7 @@ export function ExplorePage() {
             )}
           </div>
           <div className="tvw-sep" />
-          <div className="tvw-actions">
+          <div className="tvw-actions tvw-open-row">
             <button
               type="button"
               className="tvw-btn tvw-btn--primary"
@@ -454,13 +476,25 @@ export function ExplorePage() {
             >
               OPEN PROJECT &rarr;
             </button>
+            <ProjectSocialBar
+              projectId={focused.project.id}
+              title={focused.project.title}
+              initialLikes={focused.project.likes}
+              initialLiked={focused.project.isLiked}
+              likesHidden={focused.project.likesHidden}
+              isOwner={focused.project.isOwner}
+              commentsCount={focused.project.commentsCount}
+              commentsEnabled={focused.project.commentsEnabled}
+              iconsOnly
+              className="tvw-inline-social"
+            />
+          </div>
+          <div className="tvw-actions">
             {focused.project.isOwner && (
               <Link to={`/project/${focused.project.id}/edit`} className="tvw-btn">
                 EDIT
               </Link>
             )}
-          </div>
-          <div className="tvw-actions">
             <button type="button" className="tvw-btn" onClick={unfocus}>
               &larr; BACK TO EXPLORE
             </button>

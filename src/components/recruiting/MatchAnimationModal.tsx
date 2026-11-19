@@ -1,7 +1,7 @@
 // src/components/recruiting/MatchAnimationModal.tsx
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, FastForward } from "lucide-react";
+import { FastForward } from "lucide-react";
 import ducksBgImg from "../../assets/ducks_bg.png";
 import ducksOnlyImg from "../../assets/ducks_only.png";
 import duckRocketImg from "../../assets/duck_rocket.png";
@@ -327,12 +327,8 @@ export function MatchAnimationModal({ isOpen, onComplete, onClose }: MatchAnimat
             {/* ── RETRO PROGRESS BAR & LIVE TELEMETRY ── */}
             <div className="mt-4 px-2 sm:px-4">
               <div className="flex items-center justify-between text-xs font-mono text-stone-400 mb-2">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles
-                    className="w-3.5 h-3.5 animate-spin"
-                    style={{ color: accentColor, animationDuration: "3s" }}
-                  />
-                  <span className="font-semibold tracking-wider text-stone-300">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="min-w-0 font-semibold leading-snug tracking-wider text-stone-300">
                     {isDucks
                       ? "SCANNING CANDIDATES // REPOSITORIES & EVIDENCE"
                       : isBlastoff

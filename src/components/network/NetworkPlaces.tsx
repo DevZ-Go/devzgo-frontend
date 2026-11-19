@@ -24,8 +24,8 @@ export function NetworkPlaces({ current }: { current: NetworkPlace }) {
             aria-current={active ? "page" : undefined}
             className={`shrink-0 rounded-full px-5 py-2 text-xs sm:text-sm font-semibold tracking-wide transition-all ${
               active
-                ? "bg-[#721C2A] text-[#FDFBF7] shadow-xs"
-                : "border border-[#D8CFE8] bg-white/90 text-[#4A3E70] hover:bg-[#F0ECFA] hover:border-[#B9A9DC]"
+                ? "bg-[#FFF8CA] text-[#2D120D] shadow-xs"
+                : "border border-[#FFF8CA]/30 bg-[#2D120D]/60 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/60"
             }`}
           >
             {place.label}
@@ -34,7 +34,7 @@ export function NetworkPlaces({ current }: { current: NetworkPlace }) {
       })}
       <Link
         to={recruiter ? "/recruit/talent" : "/explore/developers"}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E5DFFA] border border-[#C9BEF0] px-5 py-2 text-xs sm:text-sm font-semibold text-[#42356B] hover:bg-[#D9D0F7] transition-all shadow-2xs"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#CDE3E8] border border-[#FFF8CA]/40 px-5 py-2 text-xs sm:text-sm font-semibold text-[#2D120D] hover:bg-[#FFF8CA] transition-all shadow-2xs"
       >
         <Search className="h-3.5 w-3.5" aria-hidden /> Find developers
       </Link>
