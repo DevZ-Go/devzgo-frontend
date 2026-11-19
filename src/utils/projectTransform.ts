@@ -57,7 +57,7 @@ export function transformApiProject(api: ApiProject, index: number): Project {
       id: api.owner_id ? String(api.owner_id) : undefined,
       name: api.owner?.name ?? username,
       username,
-      avatar: api.owner?.avatar ?? getAvatarUrl(username),
+      avatar: resolveApiAssetUrl(api.owner_avatar_url || api.owner?.avatar) || getAvatarUrl(username),
     },
   };
 }

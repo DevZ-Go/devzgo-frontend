@@ -87,7 +87,11 @@ export function toTvProject(api: ApiProject, index: number): TvProject {
     category,
     author: ui.author.username,
     ownerId: api.owner_id ? String(api.owner_id) : null,
-    authorAvatar: api.owner?.avatar ? resolveApiAssetUrl(api.owner.avatar) : null,
+    authorAvatar: api.owner_avatar_url
+      ? resolveApiAssetUrl(api.owner_avatar_url)
+      : api.owner?.avatar
+        ? resolveApiAssetUrl(api.owner.avatar)
+        : null,
     createdAt: api.created_at ?? null,
     isOwner: api.is_owner === true,
     likes: ui.likes,

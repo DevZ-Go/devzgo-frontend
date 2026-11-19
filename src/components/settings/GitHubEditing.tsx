@@ -58,7 +58,7 @@ export function GitHubEditing() {
         This connection is only for commits and pull requests you make. It is separate from sign-in and from importing a repository, and DevZ-Go never commits with someone else’s token.
       </p>
       {justConnected && <p className="text-sm font-medium text-forest-800">GitHub is connected for editing.</p>}
-      {denied && <p className={ui.error}>{denied === "denied" ? "GitHub authorization was cancelled." : denied === "taken" ? "That GitHub account is already connected to another DevZ-Go account. Disconnect it there first." : "GitHub couldn’t be connected. Try again."}</p>}
+      {denied && <p className={ui.error}>{denied === "denied" ? "GitHub authorization was cancelled. Connect again and choose the GitHub account you want." : denied === "taken" ? "That GitHub account is already connected to another DevZ-Go account. Disconnect it there, or connect again and choose a different GitHub account." : "GitHub couldn’t be connected. Try again."}</p>}
       {row?.connected ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-[#f8f6f0] px-4 py-3">
           <p className="text-sm text-stone-700">Connected as <span className="font-semibold">{row.login}</span></p>
@@ -68,6 +68,9 @@ export function GitHubEditing() {
         <button type="button" className={`${ui.btn} ${ui.primary} px-4 py-2 text-sm`} disabled={busy || connection.isLoading} onClick={() => void connect()}>
           {busy ? "Opening GitHub…" : "Connect GitHub"}
         </button>
+      )}
+      {!row?.connected && (
+        <p className="text-xs text-stone-500">You can choose a different GitHub account on the next screen.</p>
       )}
       {row && !row.configured && !row.connected && <p className="text-sm text-stone-500">Editing isn’t configured on this server yet.</p>}
       {error && <p className={ui.error}>{error}</p>}

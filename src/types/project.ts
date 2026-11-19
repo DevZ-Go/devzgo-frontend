@@ -50,6 +50,7 @@ export interface ApiProject {
   source?: ProjectSource | null;
   owner?: ApiProjectOwner;
   owner_username?: string;
+  owner_avatar_url?: string | null;
   /** ISO timestamp from the backend (used to keep TV world positions stable) */
   created_at?: string;
 }

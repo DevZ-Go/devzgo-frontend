@@ -208,8 +208,9 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
                 <span>{project.commentsCount}</span>
               </div>
               {project.author.username && (
-                <div className="flex items-center gap-1">
-                  <span>@{project.author.username}</span>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <img src={project.author.avatar} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/40" />
+                  <span className="truncate">@{project.author.username}</span>
                 </div>
               )}
             </div>
