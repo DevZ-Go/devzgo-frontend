@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ListChecks,
   Search,
+  Shield,
   User,
   LogOut,
   Menu,
@@ -213,6 +214,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   {to === "/messages" && <UnreadBadge count={unreadMessages} className="ml-auto" />}
                 </Link>
               ))}
+              {user?.is_platform_admin && (
+                <Link to="/admin" onClick={close} aria-current={isActive("/admin") ? "page" : undefined} className={mobileLinkClass("/admin", dark)}>
+                  <Shield className="w-4 h-4 shrink-0" /> Admin
+                </Link>
+              )}
               <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={mobileLinkClass("/settings", dark)}>
                 <Settings className="w-4 h-4 shrink-0" /> Settings
               </Link>
@@ -348,6 +354,15 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 text-[#FFF8CA]">
+            {user?.is_platform_admin && (
+              <Link
+                to="/admin"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FFF8CA] text-[#6B0B0C] text-xs font-semibold tracking-wide transition-all shadow-xs"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
             {!recruiter && (
               <Link
                 to="/wrap"
@@ -422,14 +437,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             </Link>
           ))}
 
-          {overflowItems.length > 0 && (
+          {(overflowItems.length > 0 || user?.is_platform_admin) && (
             <div className="relative" ref={moreRef}>
               <button
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
                 className={`flex items-center gap-1.5 whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  overflowItems.some((item) => isActive(item.to))
+                  overflowItems.some((item) => isActive(item.to)) || isActive("/admin")
                     ? "bg-[#CBE4EE] text-[#284E45] font-semibold"
                     : "text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10"
                 }`}
@@ -440,6 +455,19 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
               {moreOpen && (
                 <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border-2 border-[#284E45] bg-[#FAF6EC] p-2 shadow-2xl space-y-1">
+                  {user?.is_platform_admin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMoreOpen(false)}
+                      aria-current={isActive("/admin") ? "page" : undefined}
+                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                        isActive("/admin") ? "bg-[#6B0B0C] text-[#FFF8CA]" : "text-[#2D120D] hover:bg-[#CBE4EE]/60"
+                      }`}
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Admin</span>
+                    </Link>
+                  )}
                   {overflowItems.map(({ to, label, icon: Icon }) => (
                     <Link
                       key={to}
