@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Search, ArrowLeftRight, ArrowUpDown, Tv } from "lucide-react";
+import { Navbar } from "../components/Navbar";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { resolveApiAssetUrl } from "../api/config";
 import { StickerBadge } from "../components/StickerBadge";
@@ -182,24 +183,9 @@ export function ThemeSelectPage() {
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#ECE0F5] text-[#5B233B] relative">
-      {/* Clean Upper Bar in Olive/Clover Green & Cream */}
-      <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-3 sm:px-10 sm:py-3.5 bg-[#5B233B] text-[#FCFBF4] border-b-2 border-[#D5BEEA]/40 shadow-sm z-20">
-        <Link
-          to="/home"
-          className="shrink-0 px-3 py-1.5 rounded-full bg-[#D5BEEA] hover:bg-[#FCFBF4] text-[#5B233B] text-xs font-bold uppercase tracking-[0.16em] transition-colors sm:px-4"
-        >
-          &larr; Home
-        </Link>
-        <p className="min-w-0 truncate px-2 text-center font-cursive text-xl text-[#D5BEEA] sm:text-3xl">projects studio</p>
-        <Link
-          to="/explore/developers"
-          className="inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#DA6844] hover:bg-[#C05532] text-[#FCFBF4] text-xs font-bold uppercase tracking-[0.14em] transition-colors sm:px-4"
-        >
-          <Search className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Developers</span>
-        </Link>
-      </header>
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-[#FAF6EC] dark:bg-[#20100C] text-[#5B233B] relative">
+      <Navbar />
+      <div className="pt-16 sm:pt-20">
       {/* Decorative Die-Cut Stickers (Every sticker on the page is unique) */}
       <StickerBadge
         name="snoopyMeadow"
@@ -306,6 +292,7 @@ export function ThemeSelectPage() {
           </span>
         </Link>
       </main>
+      </div>
     </div>
   );
 }
