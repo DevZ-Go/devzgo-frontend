@@ -18,20 +18,51 @@ export function ExploreStage({
   children: ReactNode;
 }) {
   const dark = tone === "felt" || tone === "night" || tone === "deck";
-  const shell = tone === "deck"
-    ? "bg-[#14061f] text-white"
-    : tone === "night"
-      ? "bg-[#140e0c] text-amber-50"
-      : tone === "felt"
-        ? "bg-[#3b2420] text-stone-100"
-        : "bg-[#f7f5ed] text-stone-800";
+  const shell =
+    tone === "deck"
+      ? "bg-[#1B2E5E] text-[#FAF6EC]"
+      : tone === "night"
+        ? "bg-[#140e0c] text-amber-50"
+        : tone === "felt"
+          ? "bg-[#5B233B] text-[#FAF6EC]"
+          : "bg-[#B6C7E3] text-[#5B233B]";
+
   return (
     <div className={`flex h-dvh flex-col overflow-hidden ${shell}`}>
-      <header className={`flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 ${dark ? "border-b border-white/10" : "border-b border-stone-200 bg-[#f8f6f0]"}`}>
-        <Link to="/explore" className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-70 hover:opacity-100">
-          Back
-        </Link>
-        <h1 className={`font-serif text-xl tracking-tight ${dark ? "text-amber-50" : "text-stone-900"}`}>{title}</h1>
+      {/* Colorful Checkered Trim from Second Palette Reference (#DA6844, #B6C7E3, #9EA654, #D5BEEA, #8D5E46, #FCFBF4) */}
+      {!dark && (
+        <div
+          className="h-2.5 w-full shrink-0"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, #DA6844 0px, #DA6844 36px, #B6C7E3 36px, #B6C7E3 60px, #9EA654 60px, #9EA654 96px, #D5BEEA 96px, #D5BEEA 120px, #8D5E46 120px, #8D5E46 156px, #FCFBF4 156px, #FCFBF4 180px)",
+          }}
+        />
+      )}
+      {/* Ultra-clean 3-item upper bar: Back button, Title, Search + Vertical Filters menu */}
+      <header
+        className={`flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-8 z-30 ${
+          dark
+            ? "border-b border-white/15 bg-black/20"
+            : "border-b-2 border-[#5B233B]/20 bg-[#5B233B] text-[#FCFBF4] shadow-xs"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <Link
+            to="/explore"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.16em] transition ${
+              dark
+                ? "bg-white/15 hover:bg-white/25 text-white"
+                : "bg-[#D5BEEA] hover:bg-[#FCFBF4] text-[#5B233B]"
+            }`}
+          >
+            &larr; Studio
+          </Link>
+          <h1 className="font-cursive text-2xl sm:text-3xl tracking-wide text-[#FCFBF4] m-0">
+            {title}
+          </h1>
+        </div>
+
         <ExploreFilters
           filters={data.filters}
           onChange={data.setFilters}
@@ -39,14 +70,14 @@ export function ExploreStage({
           hasFilters={data.hasFilters}
           onClear={data.clearFilters}
           classes={{
-            root: "flex min-w-[16rem] flex-1 flex-wrap items-center justify-end gap-2",
+            root: "flex flex-wrap items-center justify-end gap-2.5",
             input: dark
-              ? "w-36 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
-              : "w-36 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300",
-            select: dark
-              ? "rounded-full border border-white/20 bg-transparent px-2 py-1.5 text-xs text-white"
-              : "rounded-full border border-stone-200 bg-white px-2 py-1.5 text-xs",
-            button: "text-[11px] font-semibold uppercase tracking-wider opacity-70 hover:opacity-100",
+              ? "w-44 sm:w-56 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm text-white placeholder:text-white/50 focus:outline-none"
+              : "w-44 sm:w-56 rounded-full border-2 border-[#D5BEEA] bg-[#FCFBF4] px-4 py-1.5 text-sm font-medium text-[#5B233B] placeholder:text-[#5B233B]/50 focus:outline-none focus:ring-2 focus:ring-[#D5BEEA]",
+            select:
+              "rounded-full border border-[#5B233B]/40 bg-white px-3 py-1.5 text-xs text-[#5B233B]",
+            button:
+              "px-3 py-1.5 rounded-full bg-[#DA6844] text-[#FCFBF4] text-xs font-bold uppercase tracking-wider hover:bg-[#C05532]",
           }}
         />
       </header>

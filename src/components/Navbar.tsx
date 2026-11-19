@@ -76,6 +76,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const items = recruiter ? RECRUITER_NAV : NAV_ITEMS;
   const homePath = recruiter ? "/recruit" : "/home";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const queryClient = useQueryClient();
   const { data: unreadMessages = 0 } = useQuery({
@@ -125,15 +127,30 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       if (overflow === "auto" || overflow === "scroll") break;
       node = node.parentElement;
     }
-    const scroller: HTMLElement | Window = node ?? window;
     const handleScroll = () => {
-      const top = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
-      setIsScrolled(top > 40);
+      const windowTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const nodeTop = node ? node.scrollTop : 0;
+      setIsScrolled(Math.max(windowTop, nodeTop) > 24);
     };
-    scroller.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    node?.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => scroller.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      node?.removeEventListener("scroll", handleScroll);
+    };
   }, [variant]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [moreOpen]);
 
   function handleLogout() {
     setMobileOpen(false);
@@ -277,47 +294,49 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         aria-current={isActive(to) ? "page" : undefined}
         className={`font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-3.5 py-1 rounded-full ${
           isActive(to)
-            ? "bg-[#fced96] text-stone-900 shadow-xs"
-            : "text-[#f8f6f0] hover:text-[#fced96] hover:bg-white/10 drop-shadow-sm"
+            ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
+            : "text-[#FFF8CA] hover:text-[#CDE3E8] hover:bg-white/10 drop-shadow-sm"
         }`}
       >
         {label}
       </Link>
     );
-    const iconLink = "hidden lg:inline-flex p-1.5 rounded-full bg-stone-950/80 text-white shadow-sm ring-1 ring-white/20 hover:bg-stone-950 transition-all";
+    const iconLink = "hidden lg:inline-flex p-1.5 rounded-full bg-[#2D120D]/80 text-[#FFF8CA] shadow-sm ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] transition-all";
 
     return (
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          solid ? "bg-maroon-950/80 backdrop-blur-md border-b border-white/10 shadow-xl py-0" : "bg-transparent py-1"
+          solid ? "bg-[#2D120D]/95 backdrop-blur-md border-b border-[#FFF8CA]/20 shadow-xl py-0" : "bg-transparent py-1"
         }`}
       >
         <div
           className={`transition-all duration-300 overflow-hidden ${
             solid ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
-          } bg-black/25 backdrop-blur-xs text-[11px] text-white/85 text-center py-1 tracking-[0.2em] uppercase font-medium`}
+          } bg-[#2D120D]/80 backdrop-blur-xs text-[11px] text-[#FFF8CA]/90 text-center py-1 tracking-[0.2em] uppercase font-medium`}
         >
           DevZ-Go — Community Showcase
         </div>
 
-        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between relative" aria-label="Main">
-          {/* Left: Brand Logo */}
-          <div className="flex items-center">
+        <nav className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 py-3 flex items-center justify-between gap-3 relative" aria-label="Main">
+          {/* Left: High-Contrast Brand Logo Pill (Always Visible on Any Background) */}
+          <div className="flex items-center shrink-0">
             <Link
               to={homePath}
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="flex items-center gap-2 font-serif text-2xl md:text-3xl font-semibold text-[#f8f6f0] tracking-tight drop-shadow-md hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#2D120D]/90 hover:bg-[#6B0B0C] border border-[#CDE3E8]/35 shadow-lg backdrop-blur-md transition-all"
             >
-              <span>DevZ</span>
-              <span className="font-cursive italic font-bold text-[#fced96] text-3xl md:text-[34px] -ml-1">
+              <span className="font-serif text-xl sm:text-2xl font-bold text-[#FFF8CA] tracking-tight">
+                DevZ
+              </span>
+              <span className="font-cursive italic font-bold text-[#CDE3E8] text-2xl sm:text-3xl -ml-0.5 leading-none">
                 Go
               </span>
             </Link>
           </div>
 
           {/* Center: Network · Explore · Messages in Cursive Pill Bar */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/15 shadow-lg lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D120D]/90 backdrop-blur-md border border-[#CDE3E8]/30 shadow-lg xl:absolute xl:left-1/2 xl:-translate-x-1/2">
             {recruiter ? (
               <>
                 {topLink("/recruit", "Dashboard")}
@@ -327,27 +346,27 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             ) : (
               <>
                 {topLink("/network", "Network")}
-                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
+                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
                 {topLink("/explore", "Explore")}
-                <span className="text-[#fced96]/50 text-xs select-none">✦</span>
+                <span className="text-[#CDE3E8]/40 text-xs select-none" aria-hidden="true">·</span>
                 {topLink("/messages", "Messages")}
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 text-white/90">
+          <div className="flex items-center gap-2 sm:gap-3 text-[#FFF8CA]">
             {!recruiter && (
               <Link
                 to="/wrap"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold tracking-wide transition-all"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] border border-[#FFF8CA]/35 text-xs font-semibold tracking-wide transition-all shadow-xs"
                 title="Monthly Wrap"
               >
-                <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
+                <CalendarDays className="w-3.5 h-3.5 text-[#CDE3E8]" />
                 <span>Wrap</span>
               </Link>
             )}
-            {messagesButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white")}
-            <NotificationsDropdown className="bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950 hover:text-white" />
+            {messagesButton("bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]")}
+            <NotificationsDropdown className="bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]" />
             <button
               type="button"
               onClick={startTour}
@@ -367,7 +386,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-400`} title="Log out" aria-label="Log out">
               <LogOut className="w-5 h-5 drop-shadow-sm" />
             </button>
-            {menuButton("bg-stone-950/80 text-white ring-1 ring-white/20 hover:bg-stone-950")}
+            {menuButton("bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C]")}
           </div>
         </nav>
 
@@ -376,46 +395,96 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     );
   }
 
+  const primaryItems = items.slice(0, 4);
+  const overflowItems = items.slice(4);
+
   const linkClass = (path: string) =>
-    `flex items-center gap-2 whitespace-nowrap px-2 xl:px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+    `flex items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
       isActive(path)
-        ? "bg-maroon-100 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 font-semibold"
-        : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800/60"
+        ? "bg-[#CBE4EE] text-[#284E45] font-semibold border border-[#FAF6EC]/50 shadow-2xs"
+        : "text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10"
     }`;
-  const iconButton = "p-2.5 text-stone-800 dark:text-stone-100 hover:text-maroon-800 hover:bg-stone-200/80 dark:hover:bg-stone-800 rounded-xl transition-all";
+  const iconButton = "p-2.5 text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10 rounded-xl transition-all";
 
   return (
     <nav
       aria-label="Main"
-      className="fixed top-0 left-0 right-0 z-50 bg-[#f8f6f0]/90 dark:bg-stone-900/90 backdrop-blur-xl border-b border-amber-200/40 dark:border-stone-800 transition-colors duration-300"
+      className="fixed top-0 left-0 right-0 z-50 bg-[#284E45]/95 backdrop-blur-xl border-b border-[#E2F0CB]/25 transition-colors duration-300"
     >
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        <Link to={homePath} className="flex items-center gap-2.5 group shrink-0">
+        <Link to={homePath} className="flex items-center gap-2 group shrink-0">
           <BrandMark />
-          <span className="font-serif text-xl font-normal text-stone-900 dark:text-stone-100 tracking-tight group-hover:text-maroon-700 dark:group-hover:text-maroon-300 transition-colors">
-            DevZ-Go
+          <span className="font-serif text-xl font-bold text-[#FAF6EC] tracking-tight group-hover:text-[#CBE4EE] transition-colors">
+            DevZ
+          </span>
+          <span className="font-cursive italic text-2xl font-bold text-[#E2F0CB] -ml-1">
+            Go
           </span>
         </Link>
 
-        <div className="hidden lg:flex items-center gap-0.5 xl:gap-1">
-          {items.map(({ to, label, icon: Icon }) => (
+        {/* Clean Upper Bar: Maximum 4 Primary Links + Vertical More Dropdown */}
+        <div className="hidden lg:flex items-center gap-1">
+          {primaryItems.map(({ to, label, icon: Icon }) => (
             <Link key={to} to={to} data-tour={tourKey(to)} aria-current={isActive(to) ? "page" : undefined} className={linkClass(to)}>
               <Icon className="hidden xl:block w-4 h-4" />
               <span>{label}</span>
               {to === "/messages" && <UnreadBadge count={unreadMessages} />}
             </Link>
           ))}
+
+          {overflowItems.length > 0 && (
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-expanded={moreOpen}
+                className={`flex items-center gap-1.5 whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  overflowItems.some((item) => isActive(item.to))
+                    ? "bg-[#CBE4EE] text-[#284E45] font-semibold"
+                    : "text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10"
+                }`}
+              >
+                <span>More</span>
+                <span className="text-[10px]">▾</span>
+              </button>
+
+              {moreOpen && (
+                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border-2 border-[#284E45] bg-[#FAF6EC] p-2 shadow-2xl space-y-1">
+                  {overflowItems.map(({ to, label, icon: Icon }) => (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={() => setMoreOpen(false)}
+                      data-tour={tourKey(to)}
+                      aria-current={isActive(to) ? "page" : undefined}
+                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                        isActive(to)
+                          ? "bg-[#6B0B0C] text-[#FFF8CA]"
+                          : "text-[#2D120D] hover:bg-[#CBE4EE]/60"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-          <div className="hidden lg:flex items-center gap-1">
-          {isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
-          {recruiter && messagesButton("text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white")}
-          {!recruiter && (
+        <div className="hidden lg:flex items-center gap-1">
+          {isDesktop && <NotificationsDropdown className="text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]" />}
+          {recruiter ? (
+            <>
+              {messagesButton("text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]")}
+            </>
+          ) : (
             <Link
               to="/add-project"
-              className="flex items-center gap-2 mx-1 px-4 py-2.5 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust hover:from-maroon-900 hover:to-autumn-amber text-white rounded-2xl text-sm font-semibold shadow-md shadow-maroon-800/20 hover:shadow-lg hover:shadow-maroon-800/30 transition-all"
+              className="flex items-center gap-2 mx-1 px-4 py-2 bg-[#E2F0CB] hover:bg-[#CBE4EE] text-[#284E45] border border-[#284E45]/20 rounded-full text-sm font-bold shadow-sm transition-all"
             >
-              <FolderPlus className="w-4 h-4" />
+              <FolderPlus className="w-4 h-4 text-[#284E45]" />
               Add project
             </Link>
           )}
@@ -441,20 +510,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           <Link to="/settings" aria-label="Settings" title="Settings" aria-current={isActive("/settings") ? "page" : undefined} className={`group/nav ${iconButton}`}>
             <Settings className="nav-icon-gear w-4 h-4" />
           </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="p-2.5 text-stone-800 dark:text-stone-100 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:hover:text-red-400 rounded-xl transition-all"
-            aria-label="Log out"
-            title="Log out"
-          >
+          <button type="button" onClick={handleLogout} className={`${iconButton} hover:text-coral-400`} aria-label="Log out" title="Log out">
             <LogOut className="w-4 h-4" />
           </button>
         </div>
 
         <div className="lg:hidden flex items-center gap-1">
-          {messagesButton("text-stone-800 hover:bg-stone-200/80 dark:text-stone-100 dark:hover:bg-stone-800")}
-          {!isDesktop && <NotificationsDropdown className="text-stone-800 hover:bg-stone-200/80 hover:text-maroon-800 dark:text-stone-100 dark:hover:bg-stone-800 dark:hover:text-white" />}
+          {messagesButton("text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]")}
+          {!isDesktop && <NotificationsDropdown className="text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]" />}
           <button
             type="button"
             onClick={startTour}
@@ -464,11 +527,11 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           >
             <CircleHelp className="nav-icon-help w-4 h-4" />
           </button>
-          {menuButton("text-stone-900 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-800")}
+          {menuButton("text-[#FAF6EC] hover:bg-white/10")}
         </div>
       </div>
 
-      {mobileMenu(false)}
+      {mobileMenu(true)}
     </nav>
   );
 }

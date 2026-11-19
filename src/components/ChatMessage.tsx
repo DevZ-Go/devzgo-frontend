@@ -235,6 +235,12 @@ export function ChatMessage({
                 <span className="mt-0.5 block truncate">{parsed.reply.snippet}</span>
               </button>
             )}
+            {parsed.project && (
+              <Link to={`/project/${parsed.project.id}`} className={`mb-1 block rounded-xl px-2.5 py-2 ${mine ? "bg-white/10" : "bg-[#f6efe2]"}`}>
+                <span className={`block text-[10px] font-semibold uppercase tracking-wide ${mine ? "text-[#fced96]" : "text-[#721c2a]"}`}>Project</span>
+                <span className="block text-sm font-semibold">{parsed.project.title}</span>
+              </Link>
+            )}
             {parsed.contact && (
               <Link to={parsed.contact.href} className={`mb-1 flex items-center gap-2 rounded-xl px-2 py-1.5 ${mine ? "bg-white/10" : "bg-[#f6efe2]"}`}>
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-[#721c2a] text-xs font-semibold text-[#fced96]">

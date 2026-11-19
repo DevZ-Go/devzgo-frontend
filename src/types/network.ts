@@ -99,6 +99,7 @@ export interface FeedActivity {
   authorHeadline?: string | null;
   activityType:
     | "post"
+    | "spark"
     | "milestone"
     | "collab_call"
     | "project_update"

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Briefcase, CheckCheck, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Sparkles, Trophy, UserPlus, Users, X } from "lucide-react";
+import { Bell, Briefcase, CheckCheck, ClipboardCheck, GitCommit, Heart, MessageSquare, Share2, Trophy, UserPlus, Users, X } from "lucide-react";
 import type { NotificationItem } from "../types/network";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
 import { queryKeys } from "../api/queryKeys";
@@ -72,7 +72,7 @@ function TypeIcon({ type }: { type: string }) {
   if (type.startsWith("recruitment")) return <Briefcase className={cls} />;
   if (type.startsWith("challenge")) return <ClipboardCheck className={cls} />;
   if (type === "workspace_commit" || type === "workspace_pr") return <GitCommit className={cls} />;
-  return <Sparkles className={cls} />;
+  return <Bell className={cls} />;
 }
 
 function destination(notif: NotificationItem): string {
