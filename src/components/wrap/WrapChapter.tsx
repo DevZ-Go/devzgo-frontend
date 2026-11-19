@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Terminal } from "lucide-react";
 import { SwipeExitArrow } from "./SwipeExitArrow";
+import { DevZLockup } from "../BrandMark";
 
 export type WrapThemeVariant =
   | "system-alert"
@@ -194,8 +195,11 @@ export function WrapChapter({
             <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#FF5F56]" />
             <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#FFBD2E]" />
             <span className="w-2.5 h-2.5 shrink-0 rounded-full bg-[#27C93F]" />
-            <span className={`ml-1.5 truncate font-sans text-xs font-semibold tracking-wide ${cfg.headerText}`}>
-              {cfg.windowTitle}
+            <span className="ml-1.5 flex min-w-0 items-center gap-1.5">
+              <DevZLockup compact />
+              <span className={`truncate font-sans text-xs font-semibold tracking-wide ${cfg.headerText}`}>
+                {cfg.windowTitle.replace(/^DevZ-Go\s*/, "")}
+              </span>
             </span>
           </div>
             <span

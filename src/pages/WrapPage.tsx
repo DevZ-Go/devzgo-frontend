@@ -18,6 +18,7 @@ import { fetchCurrentWrap, fetchWrap, fetchWrapMonths, shareWrap, type Wrap } fr
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
 import { StickerBadge } from "../components/StickerBadge";
+import { DevZLockup } from "../components/BrandMark";
 
 const SLIDE_THEMES: Array<{ color: string; variant: WrapThemeVariant }> = [
   { color: "#CDE3E8", variant: "binary-folder" }, // Slide 0: Intro
@@ -661,14 +662,11 @@ export function WrapPage() {
 
       {/* ── CLEAN TOP BAR ── */}
       <header className="fixed top-0 left-0 right-0 z-50 flex flex-wrap items-center justify-between gap-2 px-3 py-2 pointer-events-none sm:px-6 sm:py-3">
-        <div
-          className={`pointer-events-auto flex min-w-0 items-center gap-2 px-3 py-1.5 text-[#FFF8CA] text-xs font-sans sm:px-4 ${pill}`}
-        >
-          <span className="font-serif font-bold tracking-tight text-base text-[#FFF8CA]">DevZ</span>
-          <span className="font-cursive italic font-bold text-xl text-[#CDE3E8] -ml-1">Go</span>
-          <span className="text-white/30">·</span>
-          <span className="text-[#FFF8CA]/90 font-semibold">Wrap</span>
-        </div>
+        <Link to="/home" className="pointer-events-auto flex min-w-0 items-center gap-2 text-[#FFF8CA] drop-shadow-md">
+          <DevZLockup />
+          <span className="text-white/40">·</span>
+          <span className="text-sm font-semibold text-[#FFF8CA]/90">Wrap</span>
+        </Link>
 
         {slides.length > 0 && (
           <div className={`hidden md:flex pointer-events-auto items-center gap-1.5 px-3 py-1.5 ${pill}`}>
@@ -832,8 +830,9 @@ export function WrapPage() {
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#FF5F56]" />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#FFBD2E]" />
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#27C93F]" />
-                    <span className="ml-1.5 truncate font-sans text-xs font-semibold tracking-wide text-[#FFF8CA]">
-                      DevZ-Go · Monthly Wrap
+                    <span className="ml-1.5 flex min-w-0 items-center gap-1.5">
+                      <DevZLockup compact />
+                      <span className="truncate font-sans text-xs font-semibold tracking-wide text-[#FFF8CA]">· Monthly Wrap</span>
                     </span>
                   </div>
                   <span className="shrink-0 whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-widest text-[#CDE3E8]">
