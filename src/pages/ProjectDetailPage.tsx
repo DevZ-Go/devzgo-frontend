@@ -445,7 +445,15 @@ export function ProjectDetailPage() {
 
       {id && project && (
         <>
-          <ShareProjectDialog projectId={id} title={project.title} open={showShare} onClose={() => setShowShare(false)} />
+          <ShareProjectDialog
+            projectId={id}
+            title={project.title}
+            open={showShare}
+            onClose={() => setShowShare(false)}
+            coverUrl={resolveApiAssetUrl(project.cover_image_url || project.image_url)}
+            blurb={project.short_description}
+            techStacks={project.tech_stacks}
+          />
           <CollaborationModal projectId={id} projectTitle={project.title} isOpen={showCollab} onClose={() => setShowCollab(false)} />
         </>
       )}

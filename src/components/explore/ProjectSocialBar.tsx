@@ -21,6 +21,9 @@ interface ProjectSocialBarProps {
   labeled?: boolean;
   /** Heart, comment, and share icons with no words or counts. */
   iconsOnly?: boolean;
+  coverUrl?: string | null;
+  blurb?: string | null;
+  techStacks?: string[] | null;
 }
 
 /**
@@ -39,6 +42,9 @@ export function ProjectSocialBar({
   className = "",
   labeled = false,
   iconsOnly = false,
+  coverUrl,
+  blurb,
+  techStacks,
 }: ProjectSocialBarProps) {
   const { token } = useAuth();
   const signedIn = Boolean(token);
@@ -165,6 +171,9 @@ export function ProjectSocialBar({
               title={title}
               open={shareOpen}
               onClose={() => setShareOpen(false)}
+              coverUrl={coverUrl}
+              blurb={blurb}
+              techStacks={techStacks}
             />
           </div>,
           document.body

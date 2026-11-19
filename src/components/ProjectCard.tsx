@@ -41,7 +41,15 @@ function CardTools({ project }: { project: Project }) {
           @{project.author.username}
         </Link>
       </div>
-      <ShareProjectDialog projectId={project.id} title={project.title} open={share} onClose={() => setShare(false)} />
+      <ShareProjectDialog
+        projectId={project.id}
+        title={project.title}
+        open={share}
+        onClose={() => setShare(false)}
+        coverUrl={project.imageUrl}
+        blurb={project.shortDescription}
+        techStacks={project.techStack}
+      />
     </>
   );
 }

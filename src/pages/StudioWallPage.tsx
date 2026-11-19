@@ -298,6 +298,9 @@ export function StudioWallPage({
                       isOwner={project.is_owner === true}
                       commentsCount={project.comments_count ?? 0}
                       commentsEnabled={project.comments_enabled !== false}
+                      coverUrl={cover}
+                      blurb={project.short_description}
+                      techStacks={project.tech_stacks}
                     />
                   </div>
                 </article>
@@ -387,6 +390,9 @@ export function StudioWallPage({
                         isOwner={project.is_owner === true}
                         commentsCount={project.comments_count ?? 0}
                         commentsEnabled={project.comments_enabled !== false}
+                        coverUrl={cover}
+                        blurb={project.short_description}
+                        techStacks={project.tech_stacks}
                       />
                     </div>
                   </article>

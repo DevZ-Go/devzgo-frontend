@@ -489,6 +489,9 @@ export function ExplorePage() {
               isOwner={focused.project.isOwner}
               commentsCount={focused.project.commentsCount}
               commentsEnabled={focused.project.commentsEnabled}
+              coverUrl={focused.project.coverUrl}
+              blurb={focused.project.shortDescription}
+              techStacks={focused.project.techStack}
               iconsOnly
               className="tvw-inline-social"
             />

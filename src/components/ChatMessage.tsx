@@ -8,6 +8,7 @@ import { MemberAvatar } from "./MemberAvatar";
 import { ChatMediaThumb } from "./ChatMediaViewer";
 import { EmojiPicker } from "./EmojiPicker";
 import { parseChatContent, visibleText } from "../lib/chatText";
+import { ProjectShareCard } from "./ProjectShareCard";
 
 const TOP_EMOJIS = ["👍", "❤️", "😂", "😮", "🙏"];
 
@@ -99,6 +100,7 @@ export function ChatMessage({
   const parsed = parseChatContent(message.content || "");
   const voice = kind === "audio" || parsed.voice;
   const visual = Boolean(message.mediaUrl && !voice && (kind === "image" || kind === "video"));
+  const projectCard = Boolean(parsed.project);
   const caption = Boolean(parsed.text || parsed.contact);
 
   function place(event: MouseEvent | PointerEvent, width: number) {
@@ -199,7 +201,7 @@ export function ChatMessage({
               openSheet(event);
             }}
             className={`relative text-[0.94rem] leading-snug shadow-sm ${
-              visual ? "p-1" : "px-3 py-1.5"
+              visual || projectCard ? "p-1" : "px-3 py-1.5"
             } ${
               mine
                 ? "rounded-2xl rounded-br-md bg-[#721c2a] text-[#fffdf8]"
@@ -236,10 +238,7 @@ export function ChatMessage({
               </button>
             )}
             {parsed.project && (
-              <Link to={`/project/${parsed.project.id}`} className={`mb-1 block rounded-xl px-2.5 py-2 ${mine ? "bg-white/10" : "bg-[#f6efe2]"}`}>
-                <span className={`block text-[10px] font-semibold uppercase tracking-wide ${mine ? "text-[#fced96]" : "text-[#721c2a]"}`}>Project</span>
-                <span className="block text-sm font-semibold">{parsed.project.title}</span>
-              </Link>
+              <ProjectShareCard id={parsed.project.id} title={parsed.project.title} mine={mine} />
             )}
             {parsed.contact && (
               <Link to={parsed.contact.href} className={`mb-1 flex items-center gap-2 rounded-xl px-2 py-1.5 ${mine ? "bg-white/10" : "bg-[#f6efe2]"}`}>
@@ -252,9 +251,9 @@ export function ChatMessage({
                 </span>
               </Link>
             )}
-            {parsed.text && <p className={`whitespace-pre-wrap break-words ${visual ? "px-2 py-1" : ""}`}>{parsed.text}</p>}
-            {(!visual || caption) && (
-              <p className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${visual ? "px-2 pb-1" : ""} ${mine ? "text-[#f6d7b0]" : "text-stone-400"}`}>
+            {parsed.text && <p className={`whitespace-pre-wrap break-words ${visual || projectCard ? "px-2 py-1" : ""}`}>{parsed.text}</p>}
+            {(!visual || caption || projectCard) && (
+              <p className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${visual || projectCard ? "px-2 pb-1" : ""} ${mine ? "text-[#f6d7b0]" : "text-stone-400"}`}>
                 {time}
                 {receipt}
               </p>

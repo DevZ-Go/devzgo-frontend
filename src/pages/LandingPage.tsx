@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Heart, FolderCode } from "lucide-react";
+import { FolderCode } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { ExploreLink } from "../components/tvworld/ExploreLink";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
+import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import type { ApiProject } from "../types/project";
 import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
@@ -161,13 +162,13 @@ export function LandingPage() {
           {/* Cards Grid: 1 Special Promo Card + 3 Dynamic Project Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 items-stretch">
             {/* 1. Feature / Promo Card */}
-            <div className="group relative rounded-3xl bg-[#FFF8CA] text-[#2D120D] border-2 border-[#CDE3E8] p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+            <div className="group relative rounded-3xl bg-[#F3EDE4] text-[#2D120D] border border-[#2D120D]/10 p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
               {/* Top Tag */}
               <div className="flex items-center justify-between z-10">
-                <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA] shadow-xs">
+                <span className="rounded-full border border-white/50 bg-white/55 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#2D120D]/80 shadow-sm backdrop-blur-md">
                   TOP PROJECTS
                 </span>
-                <span className="font-cursive text-lg text-[#6B0B0C] font-bold">
+                <span className="font-cursive text-lg font-bold text-[#6B0B0C]/80">
                   curated
                 </span>
               </div>
@@ -204,51 +205,63 @@ export function LandingPage() {
                 project.tech_stacks && project.tech_stacks.length > 0
                   ? project.tech_stacks.slice(0, 2).join(" · ")
                   : project.category || "Open Source";
+              const href = linked ? `/project/${projectId}` : "/explore";
 
               return (
-                <Link
+                <article
                   key={project.id ?? idx}
-                  to={linked ? `/project/${projectId}` : "/explore"}
-                  className="group flex flex-col justify-between rounded-3xl bg-[#FFF8CA] p-4 text-left shadow-xl border-2 border-[#CDE3E8]/70 hover:border-[#CDE3E8] transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#CDE3E8]"
+                  className="group flex flex-col overflow-hidden rounded-3xl border border-[#2D120D]/10 bg-[#F3EDE4] text-left shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-[#2D120D]/18"
                 >
-                  {/* Project Image Frame (Uncropped object-contain on soft pedestal so GitHub cards aren't cut off) */}
-                  <div className="aspect-[16/10] w-full rounded-2xl bg-white border border-[#2D120D]/15 overflow-hidden flex items-center justify-center relative shadow-inner p-2">
-                    {coverUrl ? (
-                      <ImageWithFallback
-                        src={coverUrl}
-                        alt={project.title}
-                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#CDE3E8]/50 to-[#FFF8CA] text-[#2D120D] rounded-xl">
-                        <FolderCode className="w-10 h-10 text-[#6B0B0C] mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="font-serif text-sm font-semibold text-center text-[#2D120D] line-clamp-2">
-                          {project.title}
+                  <Link
+                    to={href}
+                    className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[#CDE3E8] focus-visible:ring-inset"
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#2D120D]/08">
+                      {coverUrl ? (
+                        <ImageWithFallback
+                          src={coverUrl}
+                          alt={project.title}
+                          className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#E8DFD2] to-[#F3EDE4] p-6 text-[#2D120D]">
+                          <FolderCode className="mb-2 h-10 w-10 text-[#6B0B0C] transition-transform group-hover:scale-110" />
+                          <span className="line-clamp-2 text-center font-serif text-sm font-semibold">{project.title}</span>
+                        </div>
+                      )}
+                      {project.category && (
+                        <span className="absolute left-3 top-3 rounded-full border border-white/55 bg-white/45 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#2D120D]/85 shadow-sm backdrop-blur-md">
+                          {project.category}
                         </span>
-                      </div>
-                    )}
-
-                    {project.category && (
-                      <span className="absolute top-2.5 left-2.5 text-[9px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full bg-[#2D120D] text-[#FFF8CA] shadow-xs">
-                        {project.category}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Project Title and Metadata */}
-                  <div className="mt-4 px-1 pt-1">
-                    <h3 className="font-serif text-xl text-[#2D120D] font-semibold group-hover:text-[#6B0B0C] transition-colors truncate">
-                      {project.title}
-                    </h3>
-                    <div className="flex items-center justify-between text-xs text-[#2D120D]/75 font-sans mt-1.5 pt-2 border-t border-[#2D120D]/15">
-                      <span className="truncate max-w-[165px] font-medium">{stackLabel}</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CDE3E8] text-[#2D120D] font-semibold ml-2 shrink-0">
-                        <Heart className="w-3 h-3 text-[#6B0B0C] fill-[#6B0B0C]" />
-                        <span>{project.likes_count ?? project.likes ?? 0}</span>
-                      </span>
+                      )}
                     </div>
-                  </div>
-                </Link>
+                    <div className="space-y-1.5 px-4 pb-2 pt-3">
+                      <h3 className="truncate font-serif text-xl font-semibold text-[#2D120D] transition-colors group-hover:text-[#6B0B0C]">
+                        {project.title}
+                      </h3>
+                      <p className="truncate text-xs font-medium text-[#2D120D]/65">{stackLabel}</p>
+                    </div>
+                  </Link>
+                  {linked && (
+                    <div className="mt-auto border-t border-[#2D120D]/08 px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <ProjectSocialBar
+                        projectId={projectId}
+                        title={project.title}
+                        initialLikes={project.likes_count ?? project.likes ?? 0}
+                        initialLiked={Boolean(project.is_liked)}
+                        likesHidden={Boolean(project.likes_hidden)}
+                        isOwner={Boolean(project.is_owner)}
+                        commentsCount={project.comments_count ?? 0}
+                        commentsEnabled={project.comments_enabled !== false}
+                        coverUrl={coverUrl}
+                        blurb={project.short_description}
+                        techStacks={project.tech_stacks}
+                        compact
+                        className="w-full justify-between sm:justify-start"
+                      />
+                    </div>
+                  )}
+                </article>
               );
             })}
           </div>

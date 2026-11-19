@@ -342,6 +342,9 @@ export function FeedItem({ activity, expanded = false, notify, focusCommentId = 
           title={activity.project.title}
           open={shareProject}
           onClose={() => setShareProject(false)}
+          coverUrl={activity.project.coverImageUrl}
+          blurb={activity.project.shortDescription}
+          techStacks={activity.project.techStacks}
         />
       )}
     </article>
