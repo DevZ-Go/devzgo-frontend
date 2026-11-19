@@ -2,8 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Trash2 } from "lucide-react";
-import { assetUrlOrNull } from "../api/config";
 import { addProjectComment, deleteProjectComment, fetchProjectComments } from "../api/projects";
+import { MemberAvatar } from "./MemberAvatar";
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
 
@@ -64,8 +64,7 @@ export function ProjectComments({ projectId, enabled, signedIn, readOnly = false
           <ul className="space-y-4">
             {items.map((c) => (
               <li key={c.id} className="flex gap-3">
-                <img src={assetUrlOrNull(c.author.avatar_url) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.author.username)}`}
-                  alt="" className="h-8 w-8 shrink-0 rounded-full bg-[#DCFCE7] ring-1 ring-forest-600/40" />
+                <MemberAvatar name={c.author.full_name || c.author.username} src={c.author.avatar_url} size="sm" className="!h-8 !w-8" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm">
                     <Link to={`/profile/${c.author.id}`} className="font-cursive text-lg font-bold text-[#1C1917] hover:text-crimson-600">{c.author.full_name}</Link>

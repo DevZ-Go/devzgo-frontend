@@ -9,6 +9,7 @@ const STALE_CODE = [
   "Failed to fetch dynamically imported module",
   "Importing a module script failed",
   "error loading dynamically imported module",
+  "MIME type",
 ];
 
 function describe(error: unknown): { title: string; detail: string } {

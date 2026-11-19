@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   cancelAccountDelete,
@@ -117,6 +118,7 @@ function daysLeft(iso: string | null | undefined): number | null {
 
 export function SettingsPage() {
   const { user, login, logout, refreshUser } = useAuth();
+  const photos = useQueryClient();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { recruiter } = useAccount();
@@ -308,6 +310,7 @@ export function SettingsPage() {
     await run(async () => {
       const saved = await uploadAvatar(file);
       setAvatarUrl(saved.avatarUrl || null);
+      photos.setQueryData(["my-profile-photo", user?.id ?? ""], saved);
       setMessage({ text: "Photo saved.", ok: true });
     });
   }

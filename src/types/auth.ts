@@ -17,5 +17,7 @@ export interface AuthUser {
   /** True when this account can open the admin area. */
   is_platform_admin?: boolean;
   admin_role?: "owner" | "admin" | null;
+  /** Uploaded profile photo, when /auth/me includes it. */
+  avatar_url?: string | null;
   [key: string]: unknown;
 }

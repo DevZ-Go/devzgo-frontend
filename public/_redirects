@@ -1,2 +1,4 @@
+# Hashed scripts must stay files. A missing one should 404, not come back as the HTML page.
+/assets/*    /assets/:splat    200
 # Cloudflare Pages: serve the SPA for client-side routes (refresh / deep links).
 /*    /index.html   200

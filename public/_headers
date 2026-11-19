@@ -1,0 +1,5 @@
+# The page itself must always be fresh so it points at the latest hashed scripts.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

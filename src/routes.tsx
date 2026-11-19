@@ -16,9 +16,14 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
         return { default: module[name] };
       },
       (error: unknown) => {
-        if (!sessionStorage.getItem(RELOADED_KEY)) {
-          sessionStorage.setItem(RELOADED_KEY, "1");
-          window.location.reload();
+        const last = Number(sessionStorage.getItem(RELOADED_KEY) || 0);
+        const now = Date.now();
+        // A missing chunk comes back as the HTML page. Retry once, then again after the new deploy is up.
+        if (!last || now - last > 20000) {
+          sessionStorage.setItem(RELOADED_KEY, String(now));
+          const next = new URL(window.location.href);
+          next.searchParams.set("v", String(now));
+          window.location.replace(next.toString());
           return new Promise<never>(() => {});
         }
         throw error;
