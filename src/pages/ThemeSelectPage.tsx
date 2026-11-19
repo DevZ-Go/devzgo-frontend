@@ -191,7 +191,7 @@ export function ThemeSelectPage() {
         name="snoopyMeadow"
         size="lg"
         variant="polaroid"
-        caption="cozy studio"
+        caption="cozy studio ♥"
         className="hidden xl:inline-flex absolute top-24 left-8 -rotate-6 z-10"
       />
       <StickerBadge
@@ -211,7 +211,7 @@ export function ThemeSelectPage() {
         <div className="mb-8 text-center">
           <ProjectsStudioEmblem />
           <p className="mt-4 font-serif italic text-xl sm:text-2xl font-bold text-[#B81D27]">
-            Choose a studio space to explore student builds
+            Choose a studio space to explore student builds ♥
           </p>
         </div>
 
