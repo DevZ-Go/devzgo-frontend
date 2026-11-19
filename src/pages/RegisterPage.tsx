@@ -35,7 +35,25 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      await registerUser({ username, email, password, role, company: role === "Recruiter" ? company.trim() : undefined });
+      const result = await registerUser({
+        username,
+        email,
+        password,
+        role,
+        company: role === "Recruiter" ? company.trim() : undefined,
+      });
+      if ("verification_required" in result && result.verification_required) {
+        navigate("/verify-email", {
+          replace: true,
+          state: {
+            pendingId: result.pending_id,
+            emailMasked: result.email_masked,
+            resendAfter: result.resend_after,
+            email,
+          },
+        });
+        return;
+      }
       login((await loginWithPassword(email, password)).access_token);
       navigate(await destinationAfterLogin(await refreshUser()), { replace: true });
     } catch (err) {
