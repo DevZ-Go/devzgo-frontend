@@ -371,8 +371,9 @@ export function ExplorePage() {
             button: "tvw-btn",
           }}
         />
-        <Link to="/explore" className="tvw-btn">
-          &larr; STUDIO
+
+        <Link to="/explore" className="tvw-btn" title="Back to Gallery">
+          &larr; GALLERY
         </Link>
       </div>
 

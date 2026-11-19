@@ -461,6 +461,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 8px;
 }
 .tvw-hud--br {
@@ -492,11 +493,17 @@
   background: #FAF6EC;
   border: 2px solid #284E45;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 0 16px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   cursor: pointer;
   text-decoration: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease, color 0.2s, border-color 0.2s, background 0.2s;
+  box-sizing: border-box;
 }
 .tvw-btn:hover {
   color: #284E45;
@@ -532,21 +539,25 @@
   background: #FAF6EC;
   border: 2px solid #7D94B5;
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 0 14px;
+  height: 38px;
   max-width: 180px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 .tvw-input {
   font-family: var(--tvw-font);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #2D120D;
   background: #FAF6EC;
   border: 2px solid #7D94B5;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 0 16px;
+  height: 38px;
   width: 210px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 .tvw-input::placeholder {
   color: rgba(62, 34, 23, 0.55);
