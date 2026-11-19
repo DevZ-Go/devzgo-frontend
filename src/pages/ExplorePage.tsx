@@ -471,7 +471,7 @@ export function ExplorePage() {
           <div className="tvw-actions tvw-open-row">
             <button
               type="button"
-              className="tvw-btn tvw-btn--primary"
+              className="tvw-btn tvw-btn--primary !px-3.5 !py-1.5 !text-xs whitespace-nowrap shrink-0"
               onClick={() => openProject(focused.project.id)}
             >
               OPEN PROJECT &rarr;
