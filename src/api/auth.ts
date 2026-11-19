@@ -37,10 +37,30 @@ export async function loginWithPassword(
   return data;
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<unknown> {
-  const { data } = await axios.post(`${API_BASE_URL}/auth/register`, payload, {
+export type RegisterResult =
+  | { verification_required: true; pending_id: string; email_masked: string; resend_after: string }
+  | { id: string; username: string; email: string; verification_required?: false };
+
+export async function registerUser(payload: RegisterPayload): Promise<RegisterResult> {
+  const { data } = await axios.post<RegisterResult>(`${API_BASE_URL}/auth/register`, payload, {
     headers: { "Content-Type": "application/json" },
   });
+  return data;
+}
+
+export async function verifyEmailCode(pendingId: string, code: string): Promise<{ ok: boolean; username: string }> {
+  const { data } = await axios.post<{ ok: boolean; username: string }>(`${API_BASE_URL}/auth/verify-email`, {
+    pending_id: pendingId,
+    code,
+  });
+  return data;
+}
+
+export async function resendVerification(pendingId: string): Promise<{ resend_after: string; email_masked: string }> {
+  const { data } = await axios.post<{ resend_after: string; email_masked: string }>(
+    `${API_BASE_URL}/auth/resend-verification`,
+    { pending_id: pendingId },
+  );
   return data;
 }
 
@@ -60,16 +80,41 @@ export async function checkUsername(username: string, signal?: AbortSignal) {
   return data;
 }
 
-/** Creates the account for a first-time GitHub sign-in and returns its login token. */
+export type GitHubCompleteResult =
+  | { access_token: string; token_type: string; verification_required?: false }
+  | { verification_required: true; pending_id: string; email_masked: string; resend_after: string };
+
+/** Creates the account for a first-time GitHub sign-in, or starts email OTP when GitHub had no verified email. */
 export async function completeGitHubSignup(
   onboardingToken: string,
   username: string,
   role?: string,
   company?: string,
-): Promise<string> {
-  const { data } = await axios.post<LoginTokenResponse>(`${API_BASE_URL}/auth/github/complete`,
-    { onboarding_token: onboardingToken, username, role: role || undefined, company: company || undefined });
-  return data.access_token;
+  email?: string,
+): Promise<GitHubCompleteResult> {
+  const { data } = await axios.post<GitHubCompleteResult>(`${API_BASE_URL}/auth/github/complete`, {
+    onboarding_token: onboardingToken,
+    username,
+    role: role || undefined,
+    company: company || undefined,
+    email: email || undefined,
+  });
+  return data;
+}
+
+export async function requestEmailChange(newEmail: string): Promise<{ request_id: string; email_masked: string; resend_after: string }> {
+  const { data } = await api.post<{ request_id: string; email_masked: string; resend_after: string }>("/auth/email-change", {
+    new_email: newEmail,
+  });
+  return data;
+}
+
+export async function confirmEmailChange(requestId: string, code: string): Promise<{ access_token: string; email: string }> {
+  const { data } = await api.post<{ access_token: string; email: string }>("/auth/email-change/confirm", {
+    request_id: requestId,
+    code,
+  });
+  return data;
 }
 
 /** Omit currentPassword to set a first password on a GitHub-only account. Returns a fresh token. */

@@ -48,6 +48,13 @@ export interface DeveloperProfile {
   notifyMessages?: boolean | null;
   notifyCollaborations?: boolean | null;
   notifyChallenges?: boolean | null;
+  emailNotifyConnectionRequests?: boolean | null;
+  emailNotifyConnectionMilestones?: boolean | null;
+  emailNotifyMessagesDigest?: boolean | null;
+  emailNotifyCollaborations?: boolean | null;
+  emailNotifyProjectActivity?: boolean | null;
+  emailNotifyRecruiter?: boolean | null;
+  emailNotifyWeeklySummary?: boolean | null;
   challengeNotices?: "off" | "open_to_work" | "always" | null;
   challengeInvites?: "off" | "open_to_work" | "always" | null;
   startPage?: "home" | "resume" | null;

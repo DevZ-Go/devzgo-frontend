@@ -37,6 +37,7 @@ const LandingPage = page(() => import("./pages/LandingPage"), "LandingPage");
 const ProfilePage = page(() => import("./pages/ProfilePage"), "ProfilePage");
 const LoginPage = page(() => import("./pages/LoginPage"), "LoginPage");
 const RegisterPage = page(() => import("./pages/RegisterPage"), "RegisterPage");
+const VerifyEmailPage = page(() => import("./pages/VerifyEmailPage"), "VerifyEmailPage");
 const ForgotPasswordPage = page(() => import("./pages/PasswordResetPages"), "ForgotPasswordPage");
 const ResetPasswordPage = page(() => import("./pages/PasswordResetPages"), "ResetPasswordPage");
 const AuthCallbackPage = page(() => import("./pages/AuthCallbackPage"), "AuthCallbackPage");
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([
         path: "/register",
         element: <RegisterPage />,
       },
+      { path: "/verify-email", element: <VerifyEmailPage /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
       { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/auth/callback", element: <AuthCallbackPage /> },

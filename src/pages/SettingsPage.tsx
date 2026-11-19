@@ -5,7 +5,9 @@ import {
   cancelAccountDelete,
   changePassword,
   changeUsername,
+  confirmEmailChange,
   deactivateAccount,
+  requestEmailChange,
   scheduleAccountDelete,
 } from "../api/auth";
 import { fetchMyProfile, MEMBER_ROLES, updateMyProfile, uploadAvatar } from "../api/profiles";
@@ -160,6 +162,17 @@ export function SettingsPage() {
   const [notifyConnections, setNotifyConnections] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
   const [notifyCollaborations, setNotifyCollaborations] = useState(true);
+  const [emailNotifyConnectionRequests, setEmailNotifyConnectionRequests] = useState(true);
+  const [emailNotifyConnectionMilestones, setEmailNotifyConnectionMilestones] = useState(true);
+  const [emailNotifyMessagesDigest, setEmailNotifyMessagesDigest] = useState(true);
+  const [emailNotifyCollaborations, setEmailNotifyCollaborations] = useState(true);
+  const [emailNotifyProjectActivity, setEmailNotifyProjectActivity] = useState(true);
+  const [emailNotifyRecruiter, setEmailNotifyRecruiter] = useState(true);
+  const [emailNotifyWeeklySummary, setEmailNotifyWeeklySummary] = useState(true);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailChangeRequestId, setEmailChangeRequestId] = useState<string | null>(null);
+  const [emailChangeMasked, setEmailChangeMasked] = useState("");
+  const [emailChangeCode, setEmailChangeCode] = useState("");
   const [challengeNotices, setChallengeNotices] = useState<"off" | "open_to_work" | "always">("off");
   const [challengeInvites, setChallengeInvites] = useState<"off" | "open_to_work" | "always">("always");
   const [startPage, setStartPage] = useState<"home" | "resume">("home");
@@ -209,6 +222,13 @@ export function SettingsPage() {
         setNotifyConnections(profile.notifyConnections !== false);
         setNotifyMessages(profile.notifyMessages !== false);
         setNotifyCollaborations(profile.notifyCollaborations !== false);
+        setEmailNotifyConnectionRequests(profile.emailNotifyConnectionRequests !== false);
+        setEmailNotifyConnectionMilestones(profile.emailNotifyConnectionMilestones !== false);
+        setEmailNotifyMessagesDigest(profile.emailNotifyMessagesDigest !== false);
+        setEmailNotifyCollaborations(profile.emailNotifyCollaborations !== false);
+        setEmailNotifyProjectActivity(profile.emailNotifyProjectActivity !== false);
+        setEmailNotifyRecruiter(profile.emailNotifyRecruiter !== false);
+        setEmailNotifyWeeklySummary(profile.emailNotifyWeeklySummary !== false);
         setChallengeNotices(profile.challengeNotices === "always" || profile.challengeNotices === "open_to_work" ? profile.challengeNotices : "off");
         setChallengeInvites(profile.challengeInvites === "off" || profile.challengeInvites === "open_to_work" ? profile.challengeInvites : "always");
         setStartPage(profile.startPage === "resume" ? "resume" : "home");
@@ -292,8 +312,36 @@ export function SettingsPage() {
     await run(async () => {
       await updateMyProfile({
         notifyLikes, notifyComments, notifyShares, notifyConnections, notifyMessages, notifyCollaborations,
+        emailNotifyConnectionRequests, emailNotifyConnectionMilestones, emailNotifyMessagesDigest,
+        emailNotifyCollaborations, emailNotifyProjectActivity, emailNotifyRecruiter, emailNotifyWeeklySummary,
       });
       setMessage({ text: "Notifications saved.", ok: true });
+    });
+  }
+
+  async function startEmailChange(e: FormEvent) {
+    e.preventDefault();
+    await run(async () => {
+      const result = await requestEmailChange(newEmail.trim());
+      setEmailChangeRequestId(result.request_id);
+      setEmailChangeMasked(result.email_masked);
+      setEmailChangeCode("");
+      setMessage({ text: `Code sent to ${result.email_masked}.`, ok: true });
+    });
+  }
+
+  async function finishEmailChange(e: FormEvent) {
+    e.preventDefault();
+    if (!emailChangeRequestId) return;
+    await run(async () => {
+      const result = await confirmEmailChange(emailChangeRequestId, emailChangeCode.trim());
+      login(result.access_token);
+      await refreshUser();
+      setNewEmail("");
+      setEmailChangeRequestId(null);
+      setEmailChangeCode("");
+      setEmailChangeMasked("");
+      setMessage({ text: "Email updated. Other devices have been signed out.", ok: true });
     });
   }
 
@@ -366,10 +414,50 @@ export function SettingsPage() {
           <UsernameField value={username} onChange={setUsername} onAvailable={onAvailable} className={inputClass} />
           <Save busy={busy} disabled={!ready || sameName || !nameReady}>Save username</Save>
         </form>
-        <div>
+        <div className="space-y-3">
           <h2 className="font-serif text-2xl text-stone-900">Email</h2>
-          <p className="mt-2 break-all font-mono text-sm text-stone-600">{user?.email}</p>
-          <p className="mt-1 text-xs text-stone-500">This is the address you sign in with. Who else can see it is under Privacy.</p>
+          <p className="break-all font-mono text-sm text-stone-600">{user?.email}</p>
+          <p className="text-xs text-stone-500">This is the address you sign in with. Who else can see it is under Privacy.</p>
+          {!emailChangeRequestId ? (
+            <form onSubmit={startEmailChange} className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+                Change to
+                <input
+                  type="email"
+                  required
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="new@example.com"
+                  className={`${inputClass} mt-1 font-normal normal-case tracking-normal`}
+                />
+              </label>
+              <Save busy={busy} disabled={!ready || !newEmail.trim()}>Send verification code</Save>
+            </form>
+          ) : (
+            <form onSubmit={finishEmailChange} className="space-y-3">
+              <p className="text-sm text-stone-600">Enter the 6-digit code sent to {emailChangeMasked}.</p>
+              <input
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                required
+                value={emailChangeCode}
+                onChange={(e) => setEmailChangeCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className={inputClass}
+                aria-label="Verification code"
+              />
+              <div className="flex flex-wrap gap-3">
+                <Save busy={busy} disabled={emailChangeCode.length !== 6}>Confirm new email</Save>
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-stone-500"
+                  onClick={() => { setEmailChangeRequestId(null); setEmailChangeCode(""); }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
         <form onSubmit={savePassword} className="space-y-3">
           <h2 className="font-serif text-2xl text-stone-900">{hasPassword ? "Password" : "Set a password"}</h2>
@@ -654,6 +742,15 @@ export function SettingsPage() {
         <SwitchRow label="Connections" hint="Requests and acceptances" checked={notifyConnections} onChange={setNotifyConnections} />
         <SwitchRow label="Messages" hint="To silence one chat instead, mute it from the chat's ⋯ menu" checked={notifyMessages} onChange={setNotifyMessages} />
         <SwitchRow label="Collaboration" hint="Invites, requests, and people joining or leaving" checked={notifyCollaborations} onChange={setNotifyCollaborations} />
+        <h3 className="pt-4 font-serif text-xl text-stone-900">Email</h3>
+        <p className="text-sm text-stone-500">Optional email. Security messages (password reset, verification) are always sent when needed.</p>
+        <SwitchRow label="Connection requests" checked={emailNotifyConnectionRequests} onChange={setEmailNotifyConnectionRequests} />
+        <SwitchRow label="Connection milestones" checked={emailNotifyConnectionMilestones} onChange={setEmailNotifyConnectionMilestones} />
+        <SwitchRow label="Unread messages digest" checked={emailNotifyMessagesDigest} onChange={setEmailNotifyMessagesDigest} />
+        <SwitchRow label="Collaborations" checked={emailNotifyCollaborations} onChange={setEmailNotifyCollaborations} />
+        <SwitchRow label="Project activity" checked={emailNotifyProjectActivity} onChange={setEmailNotifyProjectActivity} />
+        <SwitchRow label="Recruiter opportunities" checked={emailNotifyRecruiter} onChange={setEmailNotifyRecruiter} />
+        <SwitchRow label="Weekly summary" checked={emailNotifyWeeklySummary} onChange={setEmailNotifyWeeklySummary} />
         {!recruiter && (
           <p className="text-xs text-stone-500">
             Technical challenges have their own page: <button type="button" onClick={() => open("challenges")} className={ui.link}>choose whether you receive them</button>.
