@@ -291,6 +291,21 @@ code {
   70% { transform: scale(0.96); }
 }
 
+@keyframes profile-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Body height for the About stage. On a phone the center pair sets the size so the drawing reaches the screen edges. */
+.builder-stage {
+  --solo: min(460px, calc((100vw - 1rem) / 0.74));
+}
+@media (min-width: 768px) {
+  .builder-stage {
+    --solo: clamp(300px, 34vw, 440px);
+  }
+}
+
 .group\/nav:hover .nav-icon-gear {
   animation: nav-gear-spin 1.35s cubic-bezier(0.4, 0.05, 0.2, 1);
   transform-origin: center;

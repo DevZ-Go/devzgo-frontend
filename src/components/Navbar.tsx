@@ -13,11 +13,13 @@ import {
   Inbox,
   LayoutDashboard,
   ListChecks,
+  ChevronDown,
   MoreHorizontal,
   Plus,
   Search,
   Shield,
   Trophy,
+  UsersRound,
   User,
   LogOut,
   Menu,
@@ -253,6 +255,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   </Link>
                 </>
               )}
+                  <Link to="/about-developers" onClick={close} aria-current={isActive("/about-developers") ? "page" : undefined} className={mobileLinkClass("/about-developers", dark)}>
+                <UsersRound className="w-4 h-4 shrink-0" /> About Developers
+              </Link>
               <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={mobileLinkClass("/settings", dark)}>
                 <Settings className="w-4 h-4 shrink-0" /> Settings
               </Link>
@@ -437,6 +442,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const isMoreActive =
     isActive("/assessments") ||
     isActive("/wrap") ||
+    isActive("/about-developers") ||
     location.pathname.startsWith("/network?tab=collaborations") ||
     location.search.includes("tab=collaborations") ||
     (location.pathname === "/profile" && location.search.includes("tab=activity")) ||
@@ -490,21 +496,20 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               );
             })}
 
-            {/* "More ▾" Dropdown */}
+            {/* More dropdown */}
             <div className="relative" ref={moreRef}>
               <button
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
-                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
                   isMoreActive
                     ? "bg-[#780D18] text-white shadow-xs"
                     : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
                 }`}
               >
-                <MoreHorizontal className="w-4 h-4" />
                 <span>More</span>
-                <span className="text-[10px] ml-0.5">▾</span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden />
               </button>
 
               {moreOpen && (
@@ -576,6 +581,15 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                     </>
                   )}
                   <div className="my-1 border-t border-[#DECDBA]/60 dark:border-white/10" />
+                  <Link
+                    to="/about-developers"
+                    onClick={() => setMoreOpen(false)}
+                    aria-current={isActive("/about-developers") ? "page" : undefined}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                  >
+                    <UsersRound className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                    <span>About Developers</span>
+                  </Link>
                   <Link
                     to="/settings"
                     onClick={() => setMoreOpen(false)}
