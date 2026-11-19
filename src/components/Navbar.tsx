@@ -1,20 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   CalendarDays,
   CircleHelp,
   ClipboardCheck,
   Compass,
   FileSearch,
-  FolderPlus,
   Home,
   Inbox,
   LayoutDashboard,
   ListChecks,
+  MoreHorizontal,
+  Plus,
   Search,
   Shield,
+  Trophy,
   User,
   LogOut,
   Menu,
@@ -38,12 +41,9 @@ interface NavbarProps {
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/home", label: "Home", icon: Home },
-  { to: "/network", label: "Network", icon: Users },
   { to: "/explore", label: "Explore", icon: Compass },
+  { to: "/network", label: "Network", icon: Users },
   { to: "/messages", label: "Messages", icon: MessageSquare },
-  { to: "/wrap", label: "Wrap", icon: CalendarDays },
-  { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
-  { to: "/profile", label: "Profile", icon: User },
 ];
 
 /** Recruiters review work: no project building, imports, or wraps. */
@@ -53,8 +53,6 @@ const RECRUITER_NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/recruit/match", label: "Match", icon: FileSearch },
   { to: "/recruit/challenges", label: "Challenges", icon: ClipboardCheck },
   { to: "/explore", label: "Explore projects", icon: Compass },
-  { to: "/recruit/shortlists", label: "Shortlists", icon: ListChecks },
-  { to: "/recruit/inbox", label: "Inbox", icon: Inbox },
 ];
 
 const UNREAD_KEY = [...queryKeys.messages, "unread-count"] as const;
@@ -75,11 +73,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const { logout, user } = useAuth();
   const { recruiter } = useAccount();
   const items = recruiter ? RECRUITER_NAV : NAV_ITEMS;
-  const homePath = recruiter ? "/recruit" : "/home";
+  const homePath = "/home";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
-  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   const queryClient = useQueryClient();
   const { data: unreadMessages = 0 } = useQuery({
     queryKey: UNREAD_KEY,
@@ -89,10 +86,23 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
+  const displayName = String(user?.name || user?.username || user?.email || "User");
+  const userInitials = useMemo(() => {
+    const raw = String(user?.name || user?.username || user?.email || "User");
+    const cleaned = raw.replace(/^@/, "").trim();
+    if (!cleaned) return "DV";
+    const parts = cleaned.split(/[\s._-]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return cleaned.slice(0, 2).toUpperCase();
+  }, [user]);
+
+  const avatarUrl = (user?.avatar_url || user?.avatar || "") as string;
+
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const onChange = () => {
-      setIsDesktop(mq.matches);
       if (mq.matches) setMobileOpen(false);
     };
     mq.addEventListener("change", onChange);
@@ -176,14 +186,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const tourLabel = recruiter ? "Recruiter tour" : "Developer tour";
 
   const mobileLinkClass = (path: string, dark: boolean) =>
-    `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+    `flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
       isActive(path)
         ? dark
           ? "bg-white/10 text-amber-200 font-semibold"
-          : "bg-maroon-100 dark:bg-maroon-950/60 text-maroon-800 dark:text-maroon-200 font-semibold"
+          : "bg-[#780D18] text-white font-semibold shadow-xs"
         : dark
           ? "text-white/90 hover:bg-white/10"
-          : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800/60"
+          : "text-[#3B1812] hover:bg-[#EFE5D8]"
     }`;
 
   const mobileMenu = (dark: boolean) => (
@@ -198,12 +208,12 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           className={`lg:hidden overflow-y-auto max-h-[calc(100dvh-4rem)] backdrop-blur-xl border-b ${
             dark
               ? "bg-stone-950/95 border-white/15 text-white"
-              : "bg-cream-50/95 dark:bg-stone-900/95 border-amber-100/60 dark:border-stone-800"
+              : "bg-[#F7F2E8]/98 dark:bg-stone-900/98 border-[#DECDBA] dark:border-stone-800 text-[#3B1812]"
           }`}
         >
           <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-4 space-y-1">
             {identity && (
-              <p className={`px-3 pb-2 text-xs truncate ${dark ? "text-stone-400" : "text-stone-500 dark:text-stone-400"}`}>
+              <p className={`px-3 pb-2 text-xs truncate ${dark ? "text-stone-400" : "text-[#3B1812]/70 dark:text-stone-400"}`}>
                 Signed in as {String(identity)}
               </p>
             )}
@@ -219,6 +229,22 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   <Shield className="w-4 h-4 shrink-0" /> Admin
                 </Link>
               )}
+              {!recruiter && (
+                <>
+                  <Link to="/assessments" onClick={close} className={mobileLinkClass("/assessments", dark)}>
+                    <Trophy className="w-4 h-4 shrink-0" /> Assessments
+                  </Link>
+                  <Link to="/wrap" onClick={close} className={mobileLinkClass("/wrap", dark)}>
+                    <CalendarDays className="w-4 h-4 shrink-0" /> Monthly Wrap
+                  </Link>
+                  <Link to="/network?tab=collaborations" onClick={close} className={mobileLinkClass("/network?tab=collaborations", dark)}>
+                    <Users className="w-4 h-4 shrink-0" /> Collaborations
+                  </Link>
+                  <Link to="/profile?tab=activity" onClick={close} className={mobileLinkClass("/profile?tab=activity", dark)}>
+                    <Activity className="w-4 h-4 shrink-0" /> Activity Log
+                  </Link>
+                </>
+              )}
               <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={mobileLinkClass("/settings", dark)}>
                 <Settings className="w-4 h-4 shrink-0" /> Settings
               </Link>
@@ -227,9 +253,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
               <Link
                 to="/add-project"
                 onClick={close}
-                className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white rounded-2xl text-sm font-semibold shadow-sm"
+                className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#780D18] hover:bg-[#5C0A12] text-white rounded-2xl text-sm font-semibold shadow-xs"
               >
-                <FolderPlus className="w-4 h-4" /> Add project
+                <Plus className="w-4 h-4" /> Add Project
               </Link>
             )}
             <button
@@ -240,12 +266,12 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   ? "bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust text-white shadow-sm"
                   : dark
                     ? "bg-white/10 text-white hover:bg-white/15"
-                    : "bg-[#fced96] text-stone-900 hover:bg-amber-200"
+                    : "bg-[#EFE5D8] text-[#3B1812] hover:bg-[#E5DACB]"
               }`}
             >
               <CircleHelp className="w-4 h-4" /> Take the {recruiter ? "recruiter" : "developer"} tour
             </button>
-            <div className={`mt-2 flex justify-end gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-amber-100/60 dark:border-stone-800"}`}>
+            <div className={`mt-2 flex justify-end gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-[#DECDBA] dark:border-stone-800"}`}>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -400,156 +426,295 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     );
   }
 
-  const primaryItems = items.slice(0, 4);
-  const overflowItems = items.slice(4);
-
-  const linkClass = (path: string) =>
-    `flex items-center gap-2 whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-      isActive(path)
-        ? "bg-[#CBE4EE] text-[#284E45] font-semibold border border-[#FAF6EC]/50 shadow-2xs"
-        : "text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10"
-    }`;
-  const iconButton = "p-2.5 text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10 rounded-xl transition-all";
+  const isMoreActive =
+    isActive("/assessments") ||
+    isActive("/wrap") ||
+    location.pathname.startsWith("/network?tab=collaborations") ||
+    location.search.includes("tab=collaborations") ||
+    (location.pathname === "/profile" && location.search.includes("tab=activity")) ||
+    isActive("/activity") ||
+    isActive("/settings");
 
   return (
-    <nav
-      aria-label="Main"
-      className="fixed top-0 left-0 right-0 z-50 bg-[#284E45]/95 backdrop-blur-xl border-b border-[#E2F0CB]/25 transition-colors duration-300"
-    >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        <Link to={homePath} className="flex items-center gap-2 group shrink-0">
-          <BrandMark />
-          <span className="font-serif text-xl font-bold text-[#FAF6EC] tracking-tight group-hover:text-[#CBE4EE] transition-colors">
-            DevZ
-          </span>
-          <span className="font-cursive italic text-2xl font-bold text-[#E2F0CB] -ml-1">
-            Go
-          </span>
-        </Link>
+    <>
+      <nav
+        aria-label="Main"
+        className="fixed top-0 left-0 right-0 z-50 bg-[#F7F2E8]/95 dark:bg-[#20100C]/95 backdrop-blur-md border-b border-[#E5DACB] dark:border-[#3D1812] shadow-xs transition-colors duration-300"
+      >
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 py-2.5 flex items-center justify-between gap-3">
+          {/* Left: DevZ Go Logo */}
+          <Link
+            to={homePath}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex items-center gap-2 group shrink-0"
+            title="DevZ-Go Home"
+            aria-label="DevZ-Go Home"
+          >
+            <BrandMark />
+            <span className="font-serif text-xl sm:text-2xl font-bold text-[#780D18] dark:text-[#FFF8CA] tracking-tight group-hover:opacity-90 transition-opacity">
+              DevZ
+            </span>
+            <span className="font-cursive italic text-2xl sm:text-3xl font-bold text-[#780D18] dark:text-[#E2A5A8] -ml-1">
+              Go
+            </span>
+          </Link>
 
-        {/* Clean Upper Bar: Maximum 4 Primary Links + Vertical More Dropdown */}
-        <div className="hidden lg:flex items-center gap-1">
-          {primaryItems.map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} data-tour={tourKey(to)} aria-current={isActive(to) ? "page" : undefined} className={linkClass(to)}>
-              <Icon className="hidden xl:block w-4 h-4" />
-              <span>{label}</span>
-              {to === "/messages" && <UnreadBadge count={unreadMessages} />}
-            </Link>
-          ))}
+          {/* Center: Home · Explore · Network · Messages · More (with Icons & Labels) */}
+          <div className="hidden lg:flex items-center gap-1.5">
+            {items.map(({ to, label, icon: Icon }) => {
+              const active = isActive(to);
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  data-tour={tourKey(to)}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                    active
+                      ? "bg-[#780D18] text-white shadow-xs"
+                      : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{label}</span>
+                  {to === "/messages" && <UnreadBadge count={unreadMessages} />}
+                </Link>
+              );
+            })}
 
-          {(overflowItems.length > 0 || user?.is_platform_admin) && (
+            {/* "More ▾" Dropdown */}
             <div className="relative" ref={moreRef}>
               <button
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
-                className={`flex items-center gap-1.5 whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  overflowItems.some((item) => isActive(item.to)) || isActive("/admin")
-                    ? "bg-[#CBE4EE] text-[#284E45] font-semibold"
-                    : "text-[#FAF6EC]/85 hover:text-[#FAF6EC] hover:bg-white/10"
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                  isMoreActive
+                    ? "bg-[#780D18] text-white shadow-xs"
+                    : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
                 }`}
               >
+                <MoreHorizontal className="w-4 h-4" />
                 <span>More</span>
-                <span className="text-[10px]">▾</span>
+                <span className="text-[10px] ml-0.5">▾</span>
               </button>
 
               {moreOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border-2 border-[#284E45] bg-[#FAF6EC] p-2 shadow-2xl space-y-1">
+                <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-2xl border border-[#DECDBA] bg-[#FAF6EC] dark:bg-[#2D120D] dark:border-[#6B0B0C] p-2 shadow-2xl space-y-1 text-[#3B1812] dark:text-[#FFF8CA]">
                   {user?.is_platform_admin && (
                     <Link
                       to="/admin"
                       onClick={() => setMoreOpen(false)}
                       aria-current={isActive("/admin") ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                        isActive("/admin") ? "bg-[#6B0B0C] text-[#FFF8CA]" : "text-[#2D120D] hover:bg-[#CBE4EE]/60"
-                      }`}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
                     >
-                      <Shield className="w-4 h-4" />
+                      <Shield className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
                       <span>Admin</span>
                     </Link>
                   )}
-                  {overflowItems.map(({ to, label, icon: Icon }) => (
-                    <Link
-                      key={to}
-                      to={to}
-                      onClick={() => setMoreOpen(false)}
-                      data-tour={tourKey(to)}
-                      aria-current={isActive(to) ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
-                        isActive(to)
-                          ? "bg-[#6B0B0C] text-[#FFF8CA]"
-                          : "text-[#2D120D] hover:bg-[#CBE4EE]/60"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{label}</span>
-                    </Link>
-                  ))}
+                  {recruiter ? (
+                    <>
+                      <Link
+                        to="/recruit/shortlists"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <ListChecks className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Shortlists</span>
+                      </Link>
+                      <Link
+                        to="/recruit/inbox"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <Inbox className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Inbox</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/assessments"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <Trophy className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Assessments</span>
+                      </Link>
+                      <Link
+                        to="/wrap"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <CalendarDays className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Monthly Wrap</span>
+                      </Link>
+                      <Link
+                        to="/network?tab=collaborations"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <Users className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Collaborations</span>
+                      </Link>
+                      <Link
+                        to="/profile?tab=activity"
+                        onClick={() => setMoreOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                      >
+                        <Activity className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
+                        <span>Activity Log</span>
+                      </Link>
+                    </>
+                  )}
+                  <div className="my-1 border-t border-[#DECDBA]/60 dark:border-white/10" />
+                  <Link
+                    to="/settings"
+                    onClick={() => setMoreOpen(false)}
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => { setMoreOpen(false); startTour(); }}
+                    className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors text-left"
+                  >
+                    <CircleHelp className="w-4 h-4" />
+                    <span>Take {recruiter ? "Recruiter" : "Developer"} Tour</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </button>
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="hidden lg:flex items-center gap-1">
-          {isDesktop && <NotificationsDropdown className="text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]" />}
-          {recruiter ? (
-            <>
-              {messagesButton("text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]")}
-            </>
-          ) : (
+          {/* Right: + Add Project · Search · Notifications · User Avatar */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {!recruiter && (
+              <Link
+                to="/add-project"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#780D18] hover:bg-[#5C0A12] text-white rounded-full text-sm font-bold shadow-xs transition-all hover:scale-[1.02]"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Add Project</span>
+              </Link>
+            )}
+
+            {/* Circular Search Button */}
             <Link
-              to="/add-project"
-              className="flex items-center gap-2 mx-1 px-4 py-2 bg-[#E2F0CB] hover:bg-[#CBE4EE] text-[#284E45] border border-[#284E45]/20 rounded-full text-sm font-bold shadow-sm transition-all"
+              to="/explore"
+              className="p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] hover:text-[#780D18] dark:border-[#6B0B0C] dark:text-[#FFF8CA] dark:hover:bg-white/10 transition-all flex items-center justify-center h-9 w-9"
+              title="Search projects and developers"
+              aria-label="Search"
             >
-              <FolderPlus className="w-4 h-4 text-[#284E45]" />
-              Add project
+              <Search className="w-4 h-4" />
             </Link>
-          )}
-          <button
-            type="button"
-            onClick={startTour}
-            data-tour="nav-help"
-            className={`group/nav ${iconButton}`}
-            aria-label={`Help: ${tourLabel}`}
-            title={tourLabel}
-          >
-            <CircleHelp className="nav-icon-help w-4 h-4" />
-          </button>
-          <Link
-            to="/profile"
-            className={`group/nav ${iconButton}`}
-            title="My account"
-            aria-label="My account"
-            aria-current={isActive("/profile") ? "page" : undefined}
-          >
-            <User className="nav-icon-profile w-4 h-4" />
-          </Link>
-          <Link to="/settings" aria-label="Settings" title="Settings" aria-current={isActive("/settings") ? "page" : undefined} className={`group/nav ${iconButton}`}>
-            <Settings className="nav-icon-gear w-4 h-4" />
-          </Link>
-          <button type="button" onClick={handleLogout} className={`${iconButton} hover:text-coral-400`} aria-label="Log out" title="Log out">
-            <LogOut className="w-4 h-4" />
-          </button>
+
+            {/* Circular Notifications Button */}
+            <NotificationsDropdown className="p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] hover:text-[#780D18] dark:border-[#6B0B0C] dark:text-[#FFF8CA] dark:hover:bg-white/10 transition-all flex items-center justify-center h-9 w-9" />
+
+            {/* Circular User Avatar */}
+            <Link
+              to="/profile"
+              className="rounded-full overflow-hidden border border-[#DECDBA] hover:border-[#780D18] transition-all flex items-center justify-center h-9 w-9 bg-[#780D18] text-[#FFF8CA] text-xs font-serif font-bold shadow-xs hover:scale-105"
+              title={displayName}
+              aria-label="My Profile"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{userInitials}</span>
+              )}
+            </Link>
+
+            {/* Mobile Hamburger toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen((v) => !v)}
+              className="lg:hidden p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] transition-colors h-9 w-9 flex items-center justify-center"
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+            >
+              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
-        <div className="lg:hidden flex items-center gap-1">
-          {messagesButton("text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]")}
-          {!isDesktop && <NotificationsDropdown className="text-[#FAF6EC]/85 hover:bg-white/10 hover:text-[#FAF6EC]" />}
-          <button
-            type="button"
-            onClick={startTour}
-            className={`group/nav ${iconButton}`}
-            aria-label={`Help: ${tourLabel}`}
-            title={tourLabel}
-          >
-            <CircleHelp className="nav-icon-help w-4 h-4" />
-          </button>
-          {menuButton("text-[#FAF6EC] hover:bg-white/10")}
-        </div>
+        {mobileMenu(false)}
+      </nav>
+
+      {/* Mobile Bottom Navigation Bar (Social App - Reference Image) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#F7F2E8]/95 dark:bg-[#20100C]/95 backdrop-blur-md border-t border-[#DECDBA] dark:border-[#3D1812] px-3 py-1.5 flex justify-around items-center shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <Link
+          to="/home"
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+            isActive("/home")
+              ? "text-[#780D18] font-bold dark:text-[#FFF8CA]"
+              : "text-[#3B1812]/75 hover:text-[#780D18] dark:text-[#FFF8CA]/70"
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span className="text-[10px]">Home</span>
+        </Link>
+        <Link
+          to="/explore"
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+            isActive("/explore")
+              ? "text-[#780D18] font-bold dark:text-[#FFF8CA]"
+              : "text-[#3B1812]/75 hover:text-[#780D18] dark:text-[#FFF8CA]/70"
+          }`}
+        >
+          <Compass className="w-5 h-5" />
+          <span className="text-[10px]">Explore</span>
+        </Link>
+        <Link
+          to="/network"
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+            isActive("/network")
+              ? "text-[#780D18] font-bold dark:text-[#FFF8CA]"
+              : "text-[#3B1812]/75 hover:text-[#780D18] dark:text-[#FFF8CA]/70"
+          }`}
+        >
+          <div className={`p-1 rounded-full ${isActive("/network") ? "bg-[#780D18] text-white" : ""}`}>
+            <Users className="w-4 h-4" />
+          </div>
+          <span className="text-[10px]">Network</span>
+        </Link>
+        <Link
+          to="/messages"
+          className={`relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+            isActive("/messages")
+              ? "text-[#780D18] font-bold dark:text-[#FFF8CA]"
+              : "text-[#3B1812]/75 hover:text-[#780D18] dark:text-[#FFF8CA]/70"
+          }`}
+        >
+          <MessageSquare className="w-5 h-5" />
+          {unreadMessages > 0 && <UnreadBadge count={unreadMessages} className="absolute top-0 right-2" />}
+          <span className="text-[10px]">Messages</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMobileOpen((v) => !v)}
+          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+            mobileOpen
+              ? "text-[#780D18] font-bold dark:text-[#FFF8CA]"
+              : "text-[#3B1812]/75 hover:text-[#780D18] dark:text-[#FFF8CA]/70"
+          }`}
+        >
+          <MoreHorizontal className="w-5 h-5" />
+          <span className="text-[10px]">More</span>
+        </button>
       </div>
-
-      {mobileMenu(true)}
-    </nav>
+    </>
   );
 }

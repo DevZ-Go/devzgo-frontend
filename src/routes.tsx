@@ -40,7 +40,6 @@ const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
 const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
-const ThemeSelectPage = page(() => import("./pages/ThemeSelectPage"), "ThemeSelectPage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
 const StudioWallPage = page(() => import("./pages/StudioWallPage"), "StudioWallPage");
 const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
@@ -130,7 +129,7 @@ export const router = createBrowserRouter([
         path: "/explore",
         element: (
           <ProtectedRoute>
-            <ThemeSelectPage />
+            <StudioWallPage />
           </ProtectedRoute>
         ),
       },
@@ -152,11 +151,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/explore/studio",
-        element: (
-          <ProtectedRoute>
-            <StudioWallPage />
-          </ProtectedRoute>
-        ),
+        element: <Navigate to="/explore" replace />,
       },
       {
         path: "/explore/folio",
