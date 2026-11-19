@@ -41,7 +41,7 @@ function Card({ onSubmit, children, busy, label, notice, error }: {
 }
 
 export function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(useSearchParams()[0].get("email") ?? "");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
