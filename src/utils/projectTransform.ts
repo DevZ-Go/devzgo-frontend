@@ -41,6 +41,24 @@ export function transformApiProject(api: ApiProject, index: number): Project {
       ? resolveApiAssetUrl(coverRaw)
       : "";
 
+  const team = Array.isArray(api.team) && api.team.length > 0
+    ? api.team.map((m) => ({
+        user_id: m.user_id ? String(m.user_id) : null,
+        username: m.username,
+        full_name: m.full_name ?? null,
+        avatar_url: m.avatar_url ? resolveApiAssetUrl(m.avatar_url) : null,
+        role: m.role ?? (m.is_owner ? "Owner" : "Collaborator"),
+        is_owner: Boolean(m.is_owner),
+      }))
+    : [{
+        user_id: api.owner_id ? String(api.owner_id) : null,
+        username,
+        full_name: api.owner?.name ?? username,
+        avatar_url: resolveApiAssetUrl(api.owner_avatar_url || api.owner?.avatar) || getAvatarUrl(username),
+        role: "Owner",
+        is_owner: true,
+      }];
+
   return {
     id,
     title: api.title ?? "Untitled Project",
@@ -59,5 +77,6 @@ export function transformApiProject(api: ApiProject, index: number): Project {
       username,
       avatar: resolveApiAssetUrl(api.owner_avatar_url || api.owner?.avatar) || getAvatarUrl(username),
     },
+    team,
   };
 }

@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Heart, MessageCircle, ArrowRight, Share2 } from "lucide-react";
 import { ImageWithFallback } from "./ImageWithFallback";
 import { ShareProjectDialog } from "./ShareProjectDialog";
+import { ProjectTeamAvatars } from "./ProjectTeamAvatars";
 import { useAuth } from "../auth/AuthContext";
 import { getTechStackChipClasses } from "../utils/techStackChipStyle";
 import type { Project } from "../types/project";
@@ -14,16 +15,29 @@ interface ProjectCardProps {
   variant?: "hero" | "featured" | "compact";
   /** Compact only: a pill in the top corner, such as the viewer's role on the project. */
   badge?: { label: string; strong?: boolean };
+  /** When false, omit the top-right team stack (e.g. profile page already shows faces at the bottom). */
+  showTopTeam?: boolean;
 }
 
-function CardTools({ project }: { project: Project }) {
+function teamPeople(project: Project) {
+  if (project.team?.length) return project.team;
+  return [{
+    user_id: project.author.id || null,
+    username: project.author.username,
+    full_name: project.author.name,
+    avatar_url: project.author.avatar,
+    role: "Owner",
+    is_owner: true,
+  }];
+}
+
+function CardTools({ project, showTopTeam = true }: { project: Project; showTopTeam?: boolean }) {
   const { token } = useAuth();
   const { count, liked, busy, toggle } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
   const [share, setShare] = useState(false);
-  const profile = project.author.id ? `/profile/${project.author.id}` : `/profile/${project.author.username}`;
   return (
     <>
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
         <button
           type="button"
           disabled={!token || busy}
@@ -37,9 +51,11 @@ function CardTools({ project }: { project: Project }) {
         <button type="button" title="Share" onClick={() => setShare(true)} className="rounded-full bg-white/95 p-1.5 text-stone-800 shadow-sm">
           <Share2 className="h-3.5 w-3.5" />
         </button>
-        <Link to={profile} title={`@${project.author.username}`} className="rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-stone-800 shadow-sm">
-          @{project.author.username}
-        </Link>
+        {showTopTeam && (
+          <div className="rounded-full bg-white/95 p-0.5 shadow-sm" onClick={(e) => e.stopPropagation()}>
+            <ProjectTeamAvatars people={teamPeople(project)} maxVisible={3} />
+          </div>
+        )}
       </div>
       <ShareProjectDialog
         projectId={project.id}
@@ -54,10 +70,11 @@ function CardTools({ project }: { project: Project }) {
   );
 }
 
-export function ProjectCard({ project, variant = "compact", badge }: ProjectCardProps) {
+export function ProjectCard({ project, variant = "compact", badge, showTopTeam = true }: ProjectCardProps) {
   const techClass = (tech: string) => getTechStackChipClasses(tech, "onDark");
   const { count, liked } = useProjectLike(project.id, project.likes, Boolean(project.isLiked));
-  const tools = <CardTools project={project} />;
+  const tools = <CardTools project={project} showTopTeam={showTopTeam} />;
+  const people = teamPeople(project);
 
   if (variant === "hero") {
     return (
@@ -127,18 +144,8 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
             <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
-              <div className="flex items-center gap-3 mb-3">
-                <ImageWithFallback
-                  src={project.author.avatar}
-                  alt={project.author.name}
-                  className="w-9 h-9 rounded-full border-2 border-white/40"
-                />
-                <div>
-                  <div className="text-white font-medium text-sm">{project.author.name}</div>
-                  <div className="text-white/60 text-xs">
-                    @{project.author.username}
-                  </div>
-                </div>
+              <div className="mb-3" onClick={(e) => e.preventDefault()}>
+                <ProjectTeamAvatars people={people} maxVisible={4} onDark size="md" />
               </div>
               <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-2 tracking-tight">
                 {project.title}
@@ -215,12 +222,9 @@ export function ProjectCard({ project, variant = "compact", badge }: ProjectCard
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span>{project.commentsCount}</span>
               </div>
-              {project.author.username && (
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <img src={project.author.avatar} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/40" />
-                  <span className="truncate">@{project.author.username}</span>
-                </div>
-              )}
+              <div className="ml-auto" onClick={(e) => e.preventDefault()}>
+                <ProjectTeamAvatars people={people} maxVisible={3} onDark />
+              </div>
             </div>
           </div>
         </div>

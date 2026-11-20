@@ -30,6 +30,7 @@ import {
   getProjectCategoryChipClasses,
   getTechStackChipClasses,
 } from "../utils/techStackChipStyle";
+import { linkifyText } from "../utils/linkifyText";
 
 const PLACEHOLDER =
   "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop";
@@ -330,13 +331,13 @@ export function ProjectDetailPage() {
                 </div>
                 {project.short_description && (
                   <p className="text-lg text-slate-700 leading-relaxed mb-6">
-                    {project.short_description}
+                    {linkifyText(project.short_description)}
                   </p>
                 )}
                 {project.full_description && project.full_description !== project.short_description && (
                   <div className="prose prose-slate max-w-none">
                     <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-                      {project.full_description}
+                      {linkifyText(project.full_description)}
                     </p>
                   </div>
                 )}

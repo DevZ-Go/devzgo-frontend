@@ -51,6 +51,15 @@ export interface ApiProject {
   owner?: ApiProjectOwner;
   owner_username?: string;
   owner_avatar_url?: string | null;
+  /** Owner first, then accepted collaborators — for card avatar stacks */
+  team?: Array<{
+    user_id: string;
+    username: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    role?: string;
+    is_owner?: boolean;
+  }>;
   /** ISO timestamp from the backend (used to keep TV world positions stable) */
   created_at?: string;
 }
@@ -91,6 +100,15 @@ export interface Project {
     username: string;
     avatar: string;
   };
+  /** Owner + collaborators for avatar stacks on cards */
+  team?: Array<{
+    user_id?: string | null;
+    username: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    role?: string | null;
+    is_owner?: boolean;
+  }>;
   /** From API for dashboards */
   visibility?: string;
 }

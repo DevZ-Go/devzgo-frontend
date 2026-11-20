@@ -29,6 +29,7 @@ export function PersonPage() {
   const perform = useAdminAction();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [premiumDays, setPremiumDays] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,6 +100,37 @@ export function PersonPage() {
           <Action disabled={busy} onClick={() => void run("user.cancel_delete")}>Cancel deletion</Action>
         </div>
       </section>
+
+      {row.account_type === "developer" && (
+        <section className={`${panel} space-y-3`}>
+          <h3 className={ui.heading}>Resume Studio Premium</h3>
+          <p className="text-sm text-stone-600">
+            Unlocks generate/export only. Matching and badges stay the same. Leave days blank for no expiry — they get an email when access ends.
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+              Days
+              <input
+                type="number"
+                min={1}
+                max={3650}
+                placeholder="forever"
+                className={`${ui.input} mt-1 w-28`}
+                value={premiumDays}
+                onChange={(e) => setPremiumDays(e.target.value)}
+                aria-label="Premium days"
+              />
+            </label>
+            <Action
+              disabled={busy}
+              onClick={() => void run("premium.grant", premiumDays.trim() ? { days: Number(premiumDays) } : {})}
+            >
+              Grant Premium
+            </Action>
+            <Action disabled={busy} onClick={() => void run("premium.revoke")}>Revoke Premium</Action>
+          </div>
+        </section>
+      )}
 
       <section className={`${panel} space-y-3`}>
         <h3 className={ui.heading}>Account type</h3>

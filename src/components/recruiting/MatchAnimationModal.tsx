@@ -359,7 +359,7 @@ export function MatchAnimationModal({ isOpen, onComplete, onClose }: MatchAnimat
                   ? "Verifying required technologies against actual code contributions..."
                   : isBlastoff
                   ? "Revealing matching developer profiles..."
-                  : "Calculating weighted match percentages across 20+ signals..."}
+                  : "Labeling supported, partial, unknown, and unmet requirements from visible evidence..."}
               </p>
             </div>
           </div>

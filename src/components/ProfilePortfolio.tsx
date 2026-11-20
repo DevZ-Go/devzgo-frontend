@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUpRight, FileText, Github, Globe, Heart, Linkedin, MapPin } from "lucide-react";
 import { uploadResume } from "../api/profiles";
 import { fetchUserCollaborations } from "../api/collaborations";
@@ -82,6 +82,8 @@ export function ProfilePortfolio({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importHint, setImportHint] = useState<string | null>(null);
+  const qc = useQueryClient();
   const userId = profile.userId || profile.id;
   const collaborations = useQuery({
     queryKey: [...queryKeys.collab, "user", userId],
@@ -112,8 +114,14 @@ export function ProfilePortfolio({
     if (!file) return;
     setBusy(true);
     setError(null);
+    setImportHint(null);
     try {
       onUpdated(await uploadResume(file));
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["career"] }),
+        qc.invalidateQueries({ queryKey: ["badges"] }),
+      ]);
+      setImportHint("Resume saved. Confirm extracted experience and skills so portfolio highlights and badges can update.");
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -304,11 +312,18 @@ export function ProfilePortfolio({
                 <p className="text-sm text-stone-500">Add a PDF and it appears here. Connections can see it unless you change that in Settings.</p>
               )}
               {own && (
-                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-800 transition hover:bg-stone-50">
-                  {busy ? "Uploading…" : profile.resumeUrl ? "Replace PDF" : "Add PDF"}
-                  <input type="file" accept="application/pdf,.pdf" className="sr-only" disabled={busy} onChange={(e) => void onResume(e.target.files?.[0])} />
-                </label>
+                <>
+                  <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-semibold text-stone-800 transition hover:bg-stone-50">
+                    {busy ? "Uploading…" : profile.resumeUrl ? "Replace PDF" : "Add PDF"}
+                    <input type="file" accept="application/pdf,.pdf" className="sr-only" disabled={busy} onChange={(e) => void onResume(e.target.files?.[0])} />
+                  </label>
+                  <p className="mt-2 text-xs text-stone-500">
+                    This same PDF feeds career import and badges. Confirm extracted items under{" "}
+                    <Link to="/career/import" className="font-semibold text-maroon-800 hover:underline">Resume import</Link>.
+                  </p>
+                </>
               )}
+              {importHint && <p className="mt-3 text-xs text-forest-800">{importHint} <Link to="/career/import" className="font-semibold underline">Review now</Link></p>}
               {error && <p className="mt-3 text-xs text-crimson-700">{error}</p>}
             </Card>
           )}

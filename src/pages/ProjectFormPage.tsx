@@ -3,10 +3,12 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   FileArchive,
+  Github,
   ImagePlus,
   Layers,
   LayoutList,
   Loader2,
+  Link2,
   Trash2,
   UploadCloud,
   Video,
@@ -38,7 +40,10 @@ import { isProjectOwner } from "../utils/projectOwnership";
 import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
 import { inviteCollaborator } from "../api/collaborations";
 import { TeammatePicker, type Teammate } from "../components/TeammatePicker";
+import { PhotoCropper } from "../components/PhotoCropper";
 import { Select } from "../components/ui/Select";
+
+const COVER_MAX_BYTES = 10 * 1024 * 1024;
 
 const TOTAL_STEPS = 3;
 const STEP_META = [
@@ -78,6 +83,7 @@ export function ProjectFormPage() {
   const [stackOptions, setStackOptions] = useState<TechStackItem[]>([]);
   const [selectedStackIds, setSelectedStackIds] = useState<number[]>([]);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [pendingCover, setPendingCover] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [demoVideoFile, setDemoVideoFile] = useState<File | null>(null);
   const [workspaceZip, setWorkspaceZip] = useState<File | null>(null);
@@ -526,6 +532,28 @@ export function ProjectFormPage() {
               ? "Update details or replace media and workspace."
               : "Tell us about your work. Media and files are optional."}
           </p>
+          {!isEdit && (
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-800 text-amber-50">
+                  <Github className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-stone-900">Prefer importing from GitHub?</p>
+                  <p className="mt-0.5 text-xs text-stone-600">
+                    Pull repositories as projects with languages and visibility filled in for you.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/import/github"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-maroon-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900"
+              >
+                <Github className="h-4 w-4" />
+                Import from GitHub
+              </Link>
+            </div>
+          )}
         </div>
 
         {loadingProject ? (
@@ -672,13 +700,16 @@ export function ProjectFormPage() {
                   value={fullDescription}
                   onChange={(e) => setFullDescription(e.target.value)}
                   rows={6}
-                  placeholder="What it does, what you learned, stack highlights…"
+                  placeholder="What it does, what you learned, stack highlights… You can paste working https:// links here too."
                   className={`${fieldClass} resize-y min-h-[160px]`}
                 />
+                <p className="mt-1.5 text-xs text-stone-500">
+                  URLs in the description become clickable on the project page.
+                </p>
               </div>
               <div>
                 <label htmlFor="live_url" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Live demo link <span className="text-stone-400 font-normal">(optional)</span>
+                  Working / live demo link <span className="text-stone-400 font-normal">(optional)</span>
                 </label>
                 <input
                   id="live_url"
@@ -690,6 +721,22 @@ export function ProjectFormPage() {
                   className={fieldClass}
                   placeholder="https://your-project.example.com"
                 />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+                    disabled={!liveUrl.trim() || !/^https?:\/\/\S+$/i.test(liveUrl.trim())}
+                    onClick={() => {
+                      const url = liveUrl.trim();
+                      const line = `Working link: ${url}`;
+                      setFullDescription((prev) => (prev.trim() ? `${prev.trim()}\n\n${line}` : line));
+                    }}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Add link into description
+                  </button>
+                  <span className="text-xs text-stone-500">Also shown as the Live demo button on the project page.</span>
+                </div>
               </div>
               <div>
                 <label htmlFor="impact_note" className="block text-sm font-medium text-stone-700 mb-1.5">
@@ -906,14 +953,18 @@ export function ProjectFormPage() {
                 <input
                   ref={coverInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0] ?? null;
-                    setCoverFile(f);
-                    if (f) setCoverRemoved(false);
+                    e.target.value = "";
+                    if (!f) return;
+                    setPendingCover(f);
                   }}
                 />
+                <p className="text-xs text-stone-500">
+                  Crop to 16:9 for project cards. Keep the image under 10 MB (PNG, JPG, GIF, or WebP).
+                </p>
                 {coverHeroSrc ? (
                   <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-video max-h-56">
                     <ImageWithFallback
@@ -930,6 +981,25 @@ export function ProjectFormPage() {
                   >
                     Click to add a cover preview
                   </button>
+                )}
+                {pendingCover && (
+                  <PhotoCropper
+                    file={pendingCover}
+                    title="Crop cover image"
+                    aspect={16 / 9}
+                    cropShape="rect"
+                    outputWidth={1280}
+                    outputHeight={720}
+                    maxBytes={COVER_MAX_BYTES}
+                    hint="Crop to 16:9 landscape for covers and gallery cards. Keep the file under 10 MB."
+                    confirmLabel="Use cover"
+                    onCancel={() => setPendingCover(null)}
+                    onDone={(cropped) => {
+                      setCoverFile(cropped);
+                      setCoverRemoved(false);
+                      setPendingCover(null);
+                    }}
+                  />
                 )}
               </div>
 

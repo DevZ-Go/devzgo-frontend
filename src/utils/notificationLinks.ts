@@ -18,6 +18,9 @@ export function notificationDestination(notif: NotificationItem): string {
   const { primary, secondary } = splitRelatedId(notif.relatedId);
   const related = primary;
 
+  if (notif.type === "achievement") {
+    return "/profile?tab=badges";
+  }
   if (notif.type === "connection_request") {
     return "/network/connections?tab=requests";
   }

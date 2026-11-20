@@ -12,6 +12,7 @@ import {
   extractRequirements, matchDevelopers, type AmbiguousTerm, type MatchFilters, type MatchResult, type RequirementStatus,
   type SuggestedRequirement,
 } from "../api/match";
+import { createEvaluation } from "../api/career";
 import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
 import { addRequirement, removeRequirement, toggleImportance, type Requirements } from "../utils/requirements";
@@ -19,6 +20,8 @@ import { addRequirement, removeRequirement, toggleImportance, type Requirements 
 const STATUS: Record<RequirementStatus, { label: string; tone: string }> = {
   evidenced: { label: "Detected in source", tone: "bg-[#DCFCE7] text-[#14532D] border-[#15803D]/40" },
   declared_project: { label: "Added to a project", tone: "bg-amber-50 text-amber-900 border-amber-300" },
+  work_history_claim: { label: "Confirmed work history", tone: "bg-[#FEF3C7] text-[#92400E] border-amber-300" },
+  resume_claim: { label: "Confirmed resume skill", tone: "bg-[#E0E7FF] text-[#3730A3] border-indigo-200" },
   declared_profile: { label: "Profile skill only", tone: "bg-stone-100 text-stone-700 border-stone-200" },
   missing: { label: "No evidence", tone: "bg-white text-stone-400 border-dashed border-stone-300" },
 };
@@ -72,20 +75,33 @@ function ResultCard({ result }: { result: MatchResult }) {
           {result.headline && <p className="mt-1 line-clamp-2 text-sm text-stone-600">{result.headline}</p>}
         </div>
         <div className="text-right">
-          <p className="font-serif text-4xl tabular-nums text-maroon-800">{result.percent}%</p>
-          <p className="text-[11px] text-stone-500">{result.points} of {result.max_points} points</p>
+          {result.numeric_match_enabled && result.percent != null ? (
+            <>
+              <p className="font-serif text-4xl tabular-nums text-maroon-800">{result.percent}%</p>
+              <p className="text-[11px] text-stone-500">{result.points} of {result.max_points} points</p>
+            </>
+          ) : (
+            <>
+              <p className="font-serif text-2xl tabular-nums text-maroon-800">{result.supported_count ?? result.required_met} supported</p>
+              <p className="text-[11px] text-stone-500">
+                {(result.partial_count ?? 0) > 0 ? `${result.partial_count} partial · ` : ""}
+                {(result.unknown_count ?? 0) > 0 ? `${result.unknown_count} unknown · ` : ""}
+                {(result.unmet_count ?? 0) > 0 ? `${result.unmet_count} unmet` : "evidence labels"}
+              </p>
+            </>
+          )}
         </div>
       </div>
       <p className="mt-3 text-xs text-stone-600">
-        {result.required_total > 0 && `${result.required_met} of ${result.required_total} required evidenced`}
+        {result.required_total > 0 && `${result.required_met} of ${result.required_total} required supported`}
         {result.required_total > 0 && result.preferred_total > 0 && " · "}
-        {result.preferred_total > 0 && `${result.preferred_met} of ${result.preferred_total} preferred evidenced`}
+        {result.preferred_total > 0 && `${result.preferred_met} of ${result.preferred_total} preferred supported`}
         {` · ${result.relevant_projects} relevant project${result.relevant_projects === 1 ? "" : "s"}`}
       </p>
       <ul className="mt-3 flex flex-wrap gap-1.5">
         {result.requirements.map((r) => (
-          <li key={`${r.importance}-${r.name}`} title={STATUS[r.status].label}
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS[r.status].tone}`}>
+          <li key={`${r.importance}-${r.name}`} title={(STATUS[r.status] || STATUS.missing).label}
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${(STATUS[r.status] || STATUS.missing).tone}`}>
             {r.importance === "required" && <span className="text-[9px] font-bold uppercase opacity-70">Req</span>}
             {r.name}
             {r.contribution_linked && <GitCommitHorizontal className="h-3 w-3" aria-label="with credited commits" />}
@@ -94,7 +110,7 @@ function ResultCard({ result }: { result: MatchResult }) {
       </ul>
       <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
         className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-maroon-800">
-        Why this score <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
+        Why this result <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <ul className="mt-2 space-y-2 border-t border-stone-100 pt-3">
@@ -102,9 +118,11 @@ function ResultCard({ result }: { result: MatchResult }) {
             <li key={`${r.importance}-${r.name}`} className="text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-stone-900">{r.name}</span>
-                <span className="text-xs text-stone-400">{r.importance === "required" ? "required, counts twice" : "preferred"}</span>
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS[r.status].tone}`}>{STATUS[r.status].label}</span>
-                <span className="ml-auto font-mono text-xs text-stone-500">+{r.weight * (r.importance === "required" ? 2 : 1)}</span>
+                <span className="text-xs text-stone-400">{r.importance === "required" ? "required" : "preferred"}</span>
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${(STATUS[r.status] || STATUS.missing).tone}`}>{(STATUS[r.status] || STATUS.missing).label}</span>
+                {result.numeric_match_enabled && (
+                  <span className="ml-auto font-mono text-xs text-stone-500">+{r.weight * (r.importance === "required" ? 2 : 1)}</span>
+                )}
               </div>
               {r.projects.length > 0 && (
                 <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-600">
@@ -134,6 +152,8 @@ export function MatchPage() {
   const [draft, setDraft] = useState("");
   const [filters, setFilters] = useState<MatchFilters>(NO_FILTERS);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [purpose, setPurpose] = useState<"general_discovery" | "opportunity_evaluation">("opportunity_evaluation");
+  const [ack, setAck] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
 
   const extract = useMutation({
@@ -149,8 +169,28 @@ export function MatchPage() {
   const data = run.data;
 
   const handleStartMatching = () => {
+    if (!ack) return;
     setIsAnimating(true);
-    run.mutate();
+    run.mutate(undefined, {
+      onSuccess: (body) => {
+        const top = body.results[0];
+        if (!top) return;
+        void createEvaluation({
+          candidate_id: top.id,
+          purpose,
+          acknowledgement: true,
+          role_title: purpose === "opportunity_evaluation" ? "Matched opportunity" : undefined,
+          requirements: { required: body.required, preferred: body.preferred },
+          result_summary: {
+            supported_count: top.supported_count,
+            partial_count: top.partial_count,
+            unknown_count: top.unknown_count,
+            unmet_count: top.unmet_count,
+            numeric_match_enabled: body.numeric_match_enabled,
+          },
+        }).catch(() => undefined);
+      },
+    });
   };
 
   const handleAnimationComplete = () => {
@@ -175,8 +215,23 @@ export function MatchPage() {
           <h1 className="mt-1 font-serif text-4xl text-stone-900 sm:text-5xl">Match a role</h1>
           <p className="mt-2 max-w-2xl text-sm text-stone-600">
             Paste a job description and DevZ-Go suggests the technologies it names. You decide what is required, then see which
-            developers have project evidence for them. The description is read once and never saved.
+            developers have project evidence for them. The description is read once and never saved. Results are evidence labels
+            (supported / partial / unknown / unmet) — not talent, intelligence, or employability scores. Numeric coverage stays off until validated.
           </p>
+          <div className="mt-4 space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-700">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-maroon-800">Purpose &amp; acknowledgement</p>
+            <select className={ui.input} value={purpose} onChange={(e) => setPurpose(e.target.value as typeof purpose)}>
+              <option value="general_discovery">General talent discovery</option>
+              <option value="opportunity_evaluation">Specific opportunity evaluation</option>
+            </select>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" className="mt-1" checked={ack} onChange={(e) => setAck(e.target.checked)} />
+              <span>
+                I understand DevZ-Go provides evidence-based decision support only. Humans remain responsible for hiring decisions.
+                This acknowledgement does not establish legal compliance. Automatic rejection is not performed.
+              </span>
+            </label>
+          </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -281,7 +336,7 @@ export function MatchPage() {
             <button
               type="button"
               onClick={handleStartMatching}
-              disabled={total === 0 || run.isPending || isAnimating}
+              disabled={total === 0 || !ack || run.isPending || isAnimating}
               className={`${ui.btn} ${ui.primary} mt-5 w-full py-2.5 text-sm`}
             >
               {run.isPending || isAnimating ? (

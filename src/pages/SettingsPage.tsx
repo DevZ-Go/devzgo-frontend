@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { fetchTransparency } from "../api/career";
 import {
   cancelAccountDelete,
   changePassword,
@@ -47,6 +48,7 @@ const SECTIONS = [
   ["availability", "Availability"],
   ["challenges", "Challenges"],
   ["privacy", "Privacy"],
+  ["transparency", "Career evidence"],
   ["safety", "Blocked & muted"],
   ["notifications", "Notifications"],
   ["github", "GitHub"],
@@ -124,9 +126,14 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { recruiter } = useAccount();
-  const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges")));
+  const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges" || id === "transparency")));
   const requested = params.get("section");
   const section: Section = sections.some(([id]) => id === requested) ? requested as Section : "account";
+  const transparency = useQuery({
+    queryKey: ["career-transparency"],
+    queryFn: fetchTransparency,
+    enabled: !recruiter && section === "transparency",
+  });
   const hasPassword = user?.has_password !== false;
   const [ready, setReady] = useState(false);
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
@@ -398,15 +405,27 @@ export function SettingsPage() {
               {(user?.username || "?").slice(0, 2).toUpperCase()}
             </span>
           )}
-          <label className="cursor-pointer rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 hover:bg-stone-50">
-            {avatarUrl ? "Change photo" : "Add a photo"}
-            <input
-              type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only"
-              onChange={(e) => { setPendingPhoto(e.target.files?.[0] ?? null); e.target.value = ""; }}
-            />
-          </label>
+          <div>
+            <label className="cursor-pointer rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 hover:bg-stone-50">
+              {avatarUrl ? "Change photo" : "Add a photo"}
+              <input
+                type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only"
+                onChange={(e) => { setPendingPhoto(e.target.files?.[0] ?? null); e.target.value = ""; }}
+              />
+            </label>
+            <p className="mt-1.5 text-[11px] text-stone-500">Square crop · keep under 5 MB (PNG, JPG, GIF, or WebP).</p>
+          </div>
           {pendingPhoto && (
-            <PhotoCropper file={pendingPhoto} onCancel={() => setPendingPhoto(null)} onDone={savePhoto} />
+            <PhotoCropper
+              file={pendingPhoto}
+              title="Crop your photo"
+              aspect={1}
+              cropShape="round"
+              maxBytes={5 * 1024 * 1024}
+              hint="Crop to a 1:1 square for your profile. Keep the image under 5 MB."
+              onCancel={() => setPendingPhoto(null)}
+              onDone={savePhoto}
+            />
           )}
         </div>
         <form onSubmit={saveUsername} className="space-y-3">
@@ -687,6 +706,47 @@ export function SettingsPage() {
         <SwitchRow label="Accept connection requests" checked={allowRequests} onChange={setAllowRequests} />
         <Save busy={busy} disabled={!ready}>Save privacy</Save>
       </form>
+    );
+  } else if (section === "transparency") {
+    const data = transparency.data as {
+      analyzed?: string[];
+      not_analyzed_as_worth?: string[];
+      audiences?: string[];
+      matching?: string;
+      corrections?: string;
+      disclaimer?: string;
+    } | undefined;
+    panel = (
+      <div className="space-y-4">
+        <div>
+          <h2 className="font-serif text-2xl text-stone-900">Career evidence transparency</h2>
+          <p className="mt-1 text-sm text-stone-500">
+            How recruiters can use evidence you choose to share — and how to correct it.
+          </p>
+        </div>
+        {transparency.isLoading && <p className="text-sm text-stone-500">Loading…</p>}
+        {transparency.isError && <p className={ui.error}>Could not load transparency details.</p>}
+        {data && (
+          <div className="space-y-4 text-sm text-stone-700">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Analyzed when you share it</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">{(data.analyzed || []).map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Not treated as worth or ability</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">{(data.not_analyzed_as_worth || []).map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+            {data.matching && <p>{data.matching}</p>}
+            {data.corrections && <p>{data.corrections}</p>}
+            {data.disclaimer && <p className="rounded-2xl border border-stone-200 bg-[#f8f6f0] p-3 text-xs text-stone-600">{data.disclaimer}</p>}
+            <div className="flex flex-wrap gap-3">
+              <Link to="/profile" className={ui.link}>Edit career on profile</Link>
+              <Link to="/career/import" className={ui.link}>Resume import</Link>
+              <Link to="/career/studio" className={ui.link}>Resume Studio</Link>
+            </div>
+          </div>
+        )}
+      </div>
     );
   } else if (section === "availability") {
     const chip = (on: boolean) =>

@@ -267,6 +267,8 @@ export type TalentCard = {
   work_types: string[];
   work_arrangements: string[];
   restricted: boolean;
+  visible_badges?: string[];
+  experience_categories?: string[];
   match: string[];
 };
 
@@ -292,6 +294,9 @@ export type TalentFilters = {
   openToWork?: boolean;
   workType?: string;
   arrangement?: string;
+  badgeFamily?: string;
+  badgeTrack?: string;
+  experienceCategory?: string;
 };
 
 export async function fetchProfileProjects(userId: string): Promise<ApiProject[]> {
@@ -322,6 +327,9 @@ export async function fetchTalent(params: TalentFilters): Promise<TalentCard[]> 
       open_to_work: params.openToWork || undefined,
       work_type: params.workType || undefined,
       arrangement: params.arrangement || undefined,
+      badge_family: params.badgeFamily || undefined,
+      badge_track: params.badgeTrack || undefined,
+      experience_category: params.experienceCategory || undefined,
     },
   });
   return data.map((card) => ({ ...card, avatar_url: assetUrlOrNull(card.avatar_url) }));

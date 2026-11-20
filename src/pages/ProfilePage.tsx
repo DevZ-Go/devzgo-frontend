@@ -31,7 +31,6 @@ import { ConnectButton } from "../components/ConnectButton";
 import { ProfileCompletion } from "../components/ProfileCompletion";
 import { ProfilePortfolio } from "../components/ProfilePortfolio";
 import { ProfileTeams } from "../components/ProfileTeams";
-import { CandidateStanding } from "../components/CandidateStanding";
 import { transformApiProject } from "../utils/projectTransform";
 import { getApiErrorMessage } from "../utils/apiError";
 import type { ApiProject, Project } from "../types/project";
@@ -39,9 +38,15 @@ import type { DeveloperProfile, FeedActivity } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
 import { useAccount } from "../auth/account";
 import { openDeveloperTour, openRecruiterTour } from "../components/tour/events";
+import { CareerTimeline, type CareerSection } from "../components/career/CareerTimeline";
+import { BadgeGallery } from "../components/career/BadgeGallery";
+import { PortfolioShowcase } from "../components/career/PortfolioShowcase";
+import { ShowcasedBadges } from "../components/career/ShowcasedBadges";
 
-const TABS = ["projects", "collaborations", "portfolio", "activity"] as const;
+const TABS = ["projects", "collaborations", "portfolio", "badges", "activity"] as const;
 type ProfileTab = (typeof TABS)[number];
+const PORTFOLIO_SECTIONS = ["overview", "experience", "education", "certifications"] as const;
+type PortfolioSection = (typeof PORTFOLIO_SECTIONS)[number];
 
 function formatMemberSince(iso: string | undefined): string | null {
   if (!iso) return null;
@@ -83,24 +88,24 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
-  const activeTab = TABS.find((t) => t === params.get("tab")) ?? "projects";
-  const graphic = activeTab === "portfolio" && params.get("view") === "graphic";
-  const setActiveTab = (tab: ProfileTab) => {
+  const requestedTab = TABS.find((t) => t === params.get("tab")) ?? "projects";
+  // Badges management is private — visitors never land on that tab.
+  const activeTab: ProfileTab =
+    requestedTab === "badges" && !isOwnProfile ? "projects" : requestedTab;
+  const portfolioSection = (PORTFOLIO_SECTIONS.find((s) => s === params.get("section")) ?? "overview") as PortfolioSection;
+  const setActiveTab = (tab: ProfileTab, section?: PortfolioSection) => {
     const next = new URLSearchParams();
-    if (tab !== "projects") next.set("tab", tab);
-    if (tab === "portfolio" && params.get("view") === "graphic") next.set("view", "graphic");
+    const safeTab = tab === "badges" && !isOwnProfile ? "projects" : tab;
+    if (safeTab !== "projects") next.set("tab", safeTab);
+    if (safeTab === "portfolio" && section && section !== "overview") next.set("section", section);
     setParams(next, { replace: true });
+  };
+  const setPortfolioSection = (section: PortfolioSection) => {
+    setActiveTab("portfolio", section);
   };
   const openWork = (tab: "projects" | "collaborations") => {
     setActiveTab(tab);
     requestAnimationFrame(() => document.getElementById("profile-work")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  };
-  const setGraphic = (on: boolean) => {
-    const next = new URLSearchParams(params);
-    next.set("tab", "portfolio");
-    if (on) next.set("view", "graphic");
-    else next.delete("view");
-    setParams(next, { replace: true });
   };
 
   // Edit profile modal state
@@ -132,6 +137,13 @@ export function ProfilePage() {
       navigate(location.pathname + location.search, { replace: true, state: null });
     }
   }, [location.state, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (isOwnProfile || params.get("tab") !== "badges") return;
+    const next = new URLSearchParams(params);
+    next.delete("tab");
+    setParams(next, { replace: true });
+  }, [isOwnProfile, params, setParams]);
 
   useEffect(() => {
     if (token && user == null) {
@@ -578,7 +590,7 @@ export function ProfilePage() {
           <div className="mb-10 p-6 rounded-3xl border border-stone-200/80 bg-white shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
               <Code2 className="w-4 h-4 text-maroon-700" />
-              Verified Skills & Tech Stack
+              Declared Skills & Tech Stack
             </div>
             <div className="flex flex-wrap gap-2">
               {skillsList.map((skill) => (
@@ -591,6 +603,13 @@ export function ProfilePage() {
               ))}
             </div>
           </div>
+        )}
+
+        {devProfile && devProfile.accountType !== "recruiter" && (
+          <ShowcasedBadges
+            userId={isOwnProfile ? undefined : (devProfile.userId || devProfile.id)}
+            own={isOwnProfile}
+          />
         )}
 
         {/* Tab Navigation */}
@@ -628,6 +647,19 @@ export function ProfilePage() {
           >
             Portfolio
           </button>
+          {isOwnProfile && devProfile?.accountType !== "recruiter" && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("badges")}
+              className={`shrink-0 pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+                activeTab === "badges"
+                  ? "border-maroon-700 text-maroon-800 font-medium"
+                  : "border-transparent text-stone-500 hover:text-stone-800"
+              }`}
+            >
+              Badges
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setActiveTab("activity")}
@@ -683,7 +715,7 @@ export function ProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projects.map((project) => (
                   <div key={project.id} className="flex flex-col gap-3">
-                    <ProjectCard project={project} variant="compact" badge={{ label: "Owner", strong: true }} />
+                    <ProjectCard project={project} variant="compact" badge={{ label: "Owner", strong: true }} showTopTeam={false} />
                     {isOwnProfile && (
                       <div className="flex flex-wrap items-center gap-3 px-1 text-xs">
                         <Link
@@ -717,7 +749,7 @@ export function ProfilePage() {
                 ))}
                 {joined.map(({ project, badge, canEdit }) => (
                   <div key={`joined-${project.id}`} className="flex flex-col gap-3">
-                    <ProjectCard project={project} variant="compact" badge={{ label: badge }} />
+                    <ProjectCard project={project} variant="compact" badge={{ label: badge }} showTopTeam={false} />
                     {isOwnProfile && (
                       <div className="flex flex-wrap items-center gap-3 px-1 text-xs">
                         {canEdit && (
@@ -745,23 +777,57 @@ export function ProfilePage() {
         )}
 
         {activeTab === "portfolio" && devProfile && (
-          <div>
-            <div className="mb-4 flex gap-2">
-              <button type="button" onClick={() => setGraphic(false)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${graphic ? "border border-stone-200 bg-white text-stone-600" : "bg-maroon-800 text-amber-50"}`}>
-                Write-up
-              </button>
-              <button type="button" onClick={() => setGraphic(true)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${graphic ? "bg-maroon-800 text-amber-50" : "border border-stone-200 bg-white text-stone-600"}`}>
-                Graphic
-              </button>
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              {PORTFOLIO_SECTIONS.map((section) => (
+                <button
+                  key={section}
+                  type="button"
+                  onClick={() => setPortfolioSection(section)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
+                    portfolioSection === section ? "bg-maroon-800 text-amber-50" : "border border-stone-200 bg-white text-stone-600"
+                  }`}
+                >
+                  {section}
+                </button>
+              ))}
             </div>
-            {graphic ? (
-              <CandidateStanding userId={devProfile.userId || devProfile.id} />
-            ) : (
-              <ProfilePortfolio profile={devProfile} projects={projects} raw={rawProjects} own={isOwnProfile} onUpdated={setDevProfile} />
+
+            {portfolioSection === "overview" && (
+              <div className="space-y-6">
+                <ProfilePortfolio profile={devProfile} projects={projects} raw={rawProjects} own={isOwnProfile} onUpdated={setDevProfile} />
+                {devProfile.accountType !== "recruiter" && (
+                  <PortfolioShowcase
+                    userId={isOwnProfile ? undefined : (devProfile.userId || devProfile.id)}
+                    own={isOwnProfile}
+                    onOpenSection={(section) => setPortfolioSection(section)}
+                  />
+                )}
+                {isOwnProfile && (
+                  <div className="flex flex-wrap gap-3">
+                    <Link to="/career/import" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-maroon-800 hover:bg-stone-50">
+                      Import / confirm resume
+                    </Link>
+                    <Link to="/career/studio" className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                      Resume Studio
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {portfolioSection !== "overview" && devProfile.accountType !== "recruiter" && (
+              <CareerTimeline
+                userId={isOwnProfile ? undefined : (devProfile.userId || devProfile.id)}
+                editable={isOwnProfile}
+                section={portfolioSection as CareerSection}
+              />
             )}
           </div>
+        )}
+
+        {activeTab === "badges" && isOwnProfile && (
+          <BadgeGallery editable />
         )}
 
         {/* Activity Tab */}

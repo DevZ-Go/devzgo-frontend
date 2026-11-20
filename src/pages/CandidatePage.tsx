@@ -11,6 +11,8 @@ import { ShortlistPicker } from "../components/recruiting/ShortlistPicker";
 import { InviteToChallenge } from "../components/recruiting/InviteToChallenge";
 import { SharedAssessments } from "../components/evidence/SharedAssessments";
 import { SkillMatrix } from "../components/evidence/SkillMatrix";
+import { BadgeGallery } from "../components/career/BadgeGallery";
+import { CareerTimeline } from "../components/career/CareerTimeline";
 import { mapProfile } from "../api/profiles";
 import {
   ENTRY_STATUSES, WORK_TYPES, fetchCandidate, sendRecruitmentRequest, updateEntry, type CandidateView, type EntryStatus,
@@ -261,6 +263,13 @@ export function CandidatePage() {
 
             {!p.restricted && <SkillMatrix userId={p.userId} />}
             <SharedAssessments userId={p.userId} />
+
+            {!p.restricted && (
+              <section className="space-y-6" aria-label="Career and badges">
+                <CareerTimeline userId={p.userId} />
+                <BadgeGallery userId={p.userId} />
+              </section>
+            )}
 
             <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="collab-title">
               <h2 id="collab-title" className="font-serif text-2xl text-stone-900">Collaboration history</h2>

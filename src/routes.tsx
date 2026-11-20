@@ -67,6 +67,8 @@ const RecruiterChallengePage = page(() => import("./pages/RecruiterChallengesPag
 const ChallengeEditorPage = page(() => import("./pages/ChallengeEditorPage"), "ChallengeEditorPage");
 const AssessmentsPage = page(() => import("./pages/AssessmentsPage"), "AssessmentsPage");
 const AssessmentChallengePage = page(() => import("./pages/AssessmentsPage"), "AssessmentChallengePage");
+const ResumeImportPage = page(() => import("./pages/ResumeImportPage"), "ResumeImportPage");
+const ResumeStudioPage = page(() => import("./pages/ResumeStudioPage"), "ResumeStudioPage");
 const PersonActivityPage = page(() => import("./pages/ActivityLogPage"), "PersonActivityPage");
 const ProjectActivityPage = page(() => import("./pages/ActivityLogPage"), "ProjectActivityPage");
 const AboutDevelopersPage = page(() => import("./pages/AboutDevelopersPage"), "AboutDevelopersPage");
@@ -249,6 +251,8 @@ export const router = createBrowserRouter([
       { path: "/recruit/challenges/:id/edit", element: recruiting(<ChallengeEditorPage />) },
       { path: "/assessments", element: developer(<AssessmentsPage />) },
       { path: "/assessments/:id", element: developer(<AssessmentChallengePage />) },
+      { path: "/career/import", element: developer(<ResumeImportPage />) },
+      { path: "/career/studio", element: developer(<ResumeStudioPage />) },
       {
         path: "/admin",
         element: <ProtectedRoute><AdminLayout /></ProtectedRoute>,

@@ -7,6 +7,7 @@ import { ExploreLink } from "../components/tvworld/ExploreLink";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
+import { ProjectTeamAvatars, teamFromProject } from "../components/ProjectTeamAvatars";
 import type { ApiProject } from "../types/project";
 import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
@@ -244,6 +245,9 @@ export function LandingPage() {
                   </Link>
                   {linked && (
                     <div className="mt-auto border-t border-[#2D120D]/08 px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <ProjectTeamAvatars people={teamFromProject(project)} maxVisible={4} />
+                      </div>
                       <ProjectSocialBar
                         projectId={projectId}
                         title={project.title}

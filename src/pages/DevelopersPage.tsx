@@ -54,6 +54,9 @@ export function DevelopersPage() {
   const [minProjects, setMinProjects] = useState(0);
   const [workType, setWorkType] = useState("");
   const [arrangement, setArrangement] = useState("");
+  const [badgeFamily, setBadgeFamily] = useState("");
+  const [badgeTrack, setBadgeTrack] = useState("");
+  const [experienceCategory, setExperienceCategory] = useState("");
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [requested, setRequested] = useState<Record<string, boolean>>({});
@@ -70,6 +73,7 @@ export function DevelopersPage() {
         const rows = await fetchTalent({
           q: query, tech: selected, sort, evidence: projectsOnly ? "projects" : "any", minProjects, github, source,
           openToWork: openToWork || Boolean(workType || arrangement), workType, arrangement,
+          badgeFamily, badgeTrack, experienceCategory,
         });
         if (!cancelled) {
           setPeople(rows.filter((person) => person.id !== meId));
@@ -88,14 +92,14 @@ export function DevelopersPage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query, selected, sort, projectsOnly, minProjects, github, source, openToWork, workType, arrangement, meId]);
+  }, [query, selected, sort, projectsOnly, minProjects, github, source, openToWork, workType, arrangement, badgeFamily, badgeTrack, experienceCategory, meId]);
 
   const suggestions = useMemo(() => {
     const term = techQuery.trim().toLowerCase();
     return stacks.filter((name) => !selected.includes(name) && (!term || name.toLowerCase().includes(term))).slice(0, 8);
   }, [stacks, selected, techQuery]);
 
-  const activeFilters = [projectsOnly, source, github, openToWork, minProjects > 0, workType, arrangement].filter(Boolean).length;
+  const activeFilters = [projectsOnly, source, github, openToWork, minProjects > 0, workType, arrangement, badgeFamily, badgeTrack, experienceCategory].filter(Boolean).length;
 
   function addTech(name: string) {
     setSelected((prev) => (prev.includes(name) ? prev : [...prev, name]));
@@ -110,6 +114,9 @@ export function DevelopersPage() {
     setMinProjects(0);
     setWorkType("");
     setArrangement("");
+    setBadgeFamily("");
+    setBadgeTrack("");
+    setExperienceCategory("");
   }
 
   async function connect(id: string) {
@@ -218,9 +225,36 @@ export function DevelopersPage() {
                 />
               </label>
             </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-xs font-semibold text-stone-600">
+                Badge family
+                <Select
+                  aria-label="Badge family" value={badgeFamily} onChange={setBadgeFamily}
+                  options={[["", "Any"], ["experience", "Experience"], ["skill_evidence", "Skill evidence"], ["assessment", "Assessment"]] as const}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
+              </label>
+              <label className="text-xs font-semibold text-stone-600">
+                Badge track
+                <Select
+                  aria-label="Badge track" value={badgeTrack} onChange={setBadgeTrack}
+                  options={[["", "Any"], ["professional", "Professional"], ["internship_coop", "Internship / co-op"], ["freelance", "Freelance"], ["volunteer", "Volunteer"], ["bronze", "Bronze"], ["silver", "Silver"], ["gold", "Gold"], ["participation", "Participation"], ["performance", "Performance"]] as const}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
+              </label>
+              <label className="text-xs font-semibold text-stone-600">
+                Experience category
+                <Select
+                  aria-label="Experience category" value={experienceCategory} onChange={setExperienceCategory}
+                  options={[["", "Any"], ["full_time", "Full-time"], ["part_time", "Part-time"], ["internship", "Internship"], ["coop", "Co-op"], ["freelance", "Freelance"], ["contract", "Contract"], ["volunteer", "Volunteer"], ["academic_project", "Academic project"], ["independent_project", "Independent project"]] as const}
+                  className={`${ui.input} mt-1 font-normal`}
+                />
+              </label>
+            </div>
             <p className="text-xs leading-relaxed text-stone-500">
-              Work type and arrangement only match people who opted in as open to work. Commits and pushes come from
-              repositories imported from GitHub; someone without an import is shown as “not imported”, never as inactive.
+              Work type and arrangement only match people who opted in as open to work. Badge and experience filters use
+              verified career evidence the candidate chose to show. Commits and pushes come from repositories imported
+              from GitHub; someone without an import is shown as “not imported”, never as inactive.
             </p>
           </div>
 
@@ -282,6 +316,20 @@ export function DevelopersPage() {
                       ))}
                     </ul>
                   )}
+                  {(person.visible_badges?.length || person.experience_categories?.length) ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {(person.visible_badges ?? []).slice(0, 4).map((label) => (
+                        <span key={label} className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-950">
+                          {label}
+                        </span>
+                      ))}
+                      {(person.experience_categories ?? []).slice(0, 3).map((cat) => (
+                        <span key={cat} className="rounded-full border border-stone-200 px-2 py-0.5 text-[11px] text-stone-600">
+                          {cat.replace(/_/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   {person.tech.length > 0 && (
                     <ul className="mt-3 flex flex-wrap gap-1.5">
                       {person.tech.slice(0, 6).map((name) => (
@@ -315,7 +363,7 @@ export function DevelopersPage() {
                       </>
                     ) : (
                       <>
-                        <Link to={`/profile/${person.id}?tab=portfolio&view=graphic`} className={`${ui.btn} ${ui.primary}`}>Graphic portfolio</Link>
+                        <Link to={`/profile/${person.id}?tab=badges`} className={`${ui.btn} ${ui.primary}`}>Badges & standing</Link>
                         <Link to={`/profile/${person.id}`} className={`${ui.btn} ${ui.neutral}`}>Profile</Link>
                         <button type="button" onClick={() => navigate(`/messages?user=${person.id}`)} className={`${ui.btn} ${ui.neutral}`} aria-label={`Message ${person.username}`}>
                           <Send className="h-3.5 w-3.5" />

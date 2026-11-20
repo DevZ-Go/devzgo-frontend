@@ -5,12 +5,20 @@ export type SuggestedRequirement = { name: string; category: string; reason: str
 export type AmbiguousTerm = { term: string; name: string; category: string; excerpt: string };
 export type Extracted = { required: SuggestedRequirement[]; preferred: SuggestedRequirement[]; ambiguous: AmbiguousTerm[] };
 
-export type RequirementStatus = "evidenced" | "declared_project" | "declared_profile" | "missing";
+export type RequirementStatus =
+  | "evidenced"
+  | "declared_project"
+  | "work_history_claim"
+  | "resume_claim"
+  | "declared_profile"
+  | "missing";
+export type CoverageStatus = "supported" | "partial" | "unknown" | "unmet";
 
 export type MatchRequirement = {
   name: string;
   importance: "required" | "preferred";
   status: RequirementStatus;
+  coverage?: CoverageStatus;
   weight: number;
   contribution_linked: boolean;
   project_count: number;
@@ -27,15 +35,20 @@ export type MatchResult = {
   open_to_work: boolean;
   work_types: string[];
   work_arrangements: string[];
-  percent: number;
-  points: number;
-  max_points: number;
+  percent: number | null;
+  points: number | null;
+  max_points: number | null;
+  numeric_match_enabled?: boolean;
   required_met: number;
   required_total: number;
   preferred_met: number;
   preferred_total: number;
   relevant_projects: number;
   contribution_linked: number;
+  supported_count?: number;
+  partial_count?: number;
+  unknown_count?: number;
+  unmet_count?: number;
   requirements: MatchRequirement[];
 };
 
@@ -52,6 +65,7 @@ export type MatchResponse = {
   required: string[];
   preferred: string[];
   formula: string;
+  numeric_match_enabled?: boolean;
   considered: number;
   restricted: number;
   results: MatchResult[];

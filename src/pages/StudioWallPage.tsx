@@ -11,6 +11,7 @@ import {
 import { ExploreStage } from "../components/explore/ExploreStage";
 import { ExploreFilters } from "../components/ExploreFilters";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
+import { ProjectTeamAvatars, teamFromProject } from "../components/ProjectTeamAvatars";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { resolveApiAssetUrl } from "../api/config";
 import { StickerBadge, type StickerName } from "../components/StickerBadge";
@@ -224,8 +225,6 @@ export function StudioWallPage({
               const cover = resolveApiAssetUrl(project.cover_image_url || project.image_url);
               const palette = CARD_PALETTES[idx % CARD_PALETTES.length];
               const sticker = idx % 2 === 0 ? GALLERY_STICKERS[Math.floor(idx / 2)] : undefined;
-              const owner = project.owner_username || project.owner?.username || "developer";
-
               return (
                 <article
                   key={project.id}
@@ -279,9 +278,7 @@ export function StudioWallPage({
 
                   <div className="mt-2.5 pt-2 px-0.5 border-t border-[#4A121A]/15 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="break-all font-mono text-[11px] font-semibold text-[#4A121A]/90 dark:text-[#FAF7F2]/90 truncate">
-                        @{owner}
-                      </span>
+                      <ProjectTeamAvatars people={teamFromProject(project)} maxVisible={4} />
                       <Link
                         to={`/project/${project.id}`}
                         className="px-3.5 py-1 rounded-full border border-[#4A121A] bg-[#4A121A] hover:bg-[#6B0B0C] text-[#FAF7F2] text-xs font-mono uppercase tracking-wider transition-all shadow-xs shrink-0"
@@ -316,8 +313,6 @@ export function StudioWallPage({
               const cover = resolveApiAssetUrl(project.cover_image_url || project.image_url);
               const palette = CARD_PALETTES[idx % CARD_PALETTES.length];
               const sticker = idx % 3 === 0 ? GALLERY_STICKERS[Math.floor(idx / 3)] : undefined;
-              const owner = project.owner_username || project.owner?.username || "developer";
-
               return (
                 <li key={project.id} className="pt-2">
                   <article
@@ -371,9 +366,7 @@ export function StudioWallPage({
 
                     <div className="mt-2.5 pt-2 px-0.5 border-t border-[#4A121A]/15 space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="break-all font-mono text-[11px] font-semibold text-[#4A121A]/90 dark:text-[#FAF7F2]/90 truncate">
-                          @{owner}
-                        </span>
+                        <ProjectTeamAvatars people={teamFromProject(project)} maxVisible={4} />
                         <Link
                           to={`/project/${project.id}`}
                           className="px-3.5 py-1 rounded-full border border-[#4A121A] bg-[#4A121A] hover:bg-[#6B0B0C] text-[#FAF7F2] text-xs font-mono uppercase tracking-wider transition-all shadow-xs shrink-0"
