@@ -13,6 +13,23 @@ export type JobStatus = {
   snapshot_id?: string | null;
 };
 
+export type ProjectBrief = {
+  schema_version?: string;
+  headline?: string;
+  overview?: string;
+  features?: string[];
+  purpose?: string;
+  audience?: string;
+  context?: string;
+  scope?: string;
+  workflow?: string;
+  limitations?: string[];
+  category?: string;
+  stack_nature?: string;
+  standalone?: boolean | null;
+  source?: string;
+};
+
 export type Insights = {
   available: boolean;
   audience?: string | null;
@@ -25,6 +42,7 @@ export type Insights = {
     what_was_built?: string;
     how_it_works?: string;
     uncertainties?: string[];
+    project_brief?: ProjectBrief;
   };
   technical?: {
     architecture?: string;
@@ -57,6 +75,11 @@ export type Insights = {
     how_it_works?: string;
     uncertainties?: string[];
   };
+  project_brief?: ProjectBrief;
+  explanation_kind?: "ai" | "deterministic" | "developer" | "none" | string | null;
+  quality_status?: string | null;
+  ai_explanation_valid?: boolean;
+  schema_version?: string | null;
 };
 
 export type Claim = {

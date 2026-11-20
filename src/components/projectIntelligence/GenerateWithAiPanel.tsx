@@ -260,11 +260,16 @@ export function GenerateWithAiPanel({
       {selected && (
         <div className="space-y-4 rounded-xl border border-stone-200 bg-stone-50/80 p-4 sm:p-5">
           <h4 className="font-semibold text-stone-900">Review before publishing</h4>
-          <Field label="AI short description" value={selected.short_description} />
-          <Field label="Simple explanation" value={selected.how_it_works_simple} />
+          <p className="text-xs text-stone-500">
+            Check that this reads like a clear project brief — not install steps or README paste.
+          </p>
+          <Field label="Headline / short description" value={selected.short_description} />
+          <Field label="How it works (plain English)" value={selected.how_it_works_simple} />
+          {selected.problem_solved && <Field label="Purpose" value={selected.problem_solved} />}
+          {selected.potential_audience && <Field label="Audience" value={selected.potential_audience} />}
           {selected.key_features?.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Key features</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Features</p>
               <ul className="mt-1 list-disc pl-5 text-sm text-stone-700">
                 {selected.key_features.map((f) => (
                   <li key={f}>{f}</li>
@@ -282,7 +287,7 @@ export function GenerateWithAiPanel({
           )}
           <label className="flex items-start gap-2 text-sm text-stone-700">
             <input type="checkbox" className="mt-1" checked={publishSimple} onChange={(e) => setPublishSimple(e.target.checked)} />
-            <span>Publish the simple explanation on the project page (visitors can read it for free).</span>
+            <span>Publish this AI brief on the project page (visitors can read it for free).</span>
           </label>
           <label className="flex items-start gap-2 text-sm text-stone-700">
             <input type="checkbox" className="mt-1" checked={adoptShort} onChange={(e) => setAdoptShort(e.target.checked)} />
