@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Code2, ExternalLink, Github, Loader2, MessageSquare, Pencil, Share2, Trash2, User, Users, Heart } from "lucide-react";
 import { ProjectQualityReport } from "../components/evidence/ProjectQualityReport";
+import { UnderstandProject } from "../components/projectIntelligence/UnderstandProject";
 import { FilePreview } from "../components/files/FilePreview";
 import { useProjectLike } from "../hooks/useProjectLike";
 import { Navbar } from "../components/Navbar";
@@ -329,16 +330,23 @@ export function ProjectDetailPage() {
                     </div>
                   )}
                 </div>
-                {project.short_description && (
-                  <p className="text-lg text-slate-700 leading-relaxed mb-6">
-                    {linkifyText(project.short_description)}
-                  </p>
-                )}
-                {project.full_description && project.full_description !== project.short_description && (
-                  <div className="prose prose-slate max-w-none">
-                    <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
-                      {linkifyText(project.full_description)}
-                    </p>
+                {(project.short_description || project.full_description) && (
+                  <div className="mb-2">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500 mb-3">
+                      About this project
+                    </h2>
+                    {project.short_description && (
+                      <p className="text-lg text-slate-700 leading-relaxed mb-4">
+                        {linkifyText(project.short_description)}
+                      </p>
+                    )}
+                    {project.full_description && project.full_description !== project.short_description && (
+                      <div className="prose prose-slate max-w-none">
+                        <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
+                          {linkifyText(project.full_description)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {Array.isArray(project.languages) && project.languages.length > 0 && (
@@ -395,6 +403,13 @@ export function ProjectDetailPage() {
             {tab === "report" && id && <ProjectQualityReport projectId={id} onOpenFile={openFromReport} />}
 
             {tab === "overview" && <>
+            {id && (
+              <UnderstandProject
+                projectId={id}
+                onOpenFile={openFromReport}
+                isTeam={Boolean(canEditCode)}
+              />
+            )}
             {videoUrl && (
               <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-6 sm:p-8">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Demo video</h2>

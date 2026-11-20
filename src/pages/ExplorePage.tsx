@@ -10,6 +10,7 @@ import { layoutProjects, toTvProject } from "../components/tvworld/worldLayout";
 import type { PlacedTv } from "../components/tvworld/types";
 import { StickerBadge } from "../components/StickerBadge";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
+import { ProjectTeamAvatars } from "../components/ProjectTeamAvatars";
 import "../components/tvworld/tvworld.css";
 
 const CAM_KEY = "devzgo:tvworld:cam";
@@ -454,11 +455,26 @@ export function ExplorePage() {
             </div>
           )}
           <div className="tvw-meta">
-            <div className="flex items-center gap-2">
-              {focused.project.authorAvatar && (
-                <img src={focused.project.authorAvatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
-              )}
-              <span>BY<b>@{focused.project.author}</b></span>
+            <div className="flex flex-col gap-2 min-w-0">
+              <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#CBE4EE]/85">
+                {focused.project.team.length > 1 ? "Team" : "Creator"}
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <ProjectTeamAvatars
+                  people={focused.project.team}
+                  maxVisible={5}
+                  onDark
+                />
+                <span className="min-w-0">
+                  BY <b>@{focused.project.author}</b>
+                  {focused.project.team.length > 1 ? (
+                    <span className="ml-1 font-sans text-[11px] font-semibold normal-case tracking-normal text-[#CBE4EE]/85">
+                      +{focused.project.team.length - 1} collab
+                      {focused.project.team.length - 1 === 1 ? "" : "s"}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
             </div>
             {focused.project.category && (
               <div>

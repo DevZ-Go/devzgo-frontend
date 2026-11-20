@@ -1,5 +1,6 @@
-import { useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { useId, useState, type MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { resolveApiAssetUrl } from "../api/config";
 import { MemberAvatar } from "./MemberAvatar";
 
 export type ProjectTeamPerson = {
@@ -36,6 +37,7 @@ export function ProjectTeamAvatars({
   className = "",
   onDark = false,
 }: Props) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
   const list = people.filter((p) => p?.username);
@@ -46,21 +48,28 @@ export function ProjectTeamAvatars({
   const ring = onDark ? "ring-2 ring-white/80" : "ring-2 ring-white";
   const solo = list.length === 1;
 
+  // Use buttons + navigate (not <Link>) so this can sit inside ProjectCard's <Link> without nested <a>.
+  function openProfile(person: ProjectTeamPerson, e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(profileHref(person));
+  }
+
   // Solo owner/collaborator: go straight to their profile.
   if (solo) {
     const person = list[0];
     return (
-      <Link
-        to={profileHref(person)}
+      <button
+        type="button"
         title={`@${person.username}`}
         aria-label={`Open @${person.username}'s profile`}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => openProfile(person, e)}
         className={`inline-flex rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-800/40 ${className}`}
       >
         <span className={`rounded-full ${ring}`}>
           <MemberAvatar name={label(person)} src={person.avatar_url} size="sm" className={chip} />
         </span>
-      </Link>
+      </button>
     );
   }
 
@@ -134,9 +143,10 @@ export function ProjectTeamAvatars({
           <ul className="max-h-72 overflow-y-auto py-1">
             {list.map((person) => (
               <li key={person.user_id || person.username}>
-                <Link
-                  to={profileHref(person)}
-                  className="flex items-center gap-2.5 px-3 py-2 hover:bg-stone-50"
+                <button
+                  type="button"
+                  onClick={(e) => openProfile(person, e)}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-stone-50"
                 >
                   <MemberAvatar
                     name={label(person)}
@@ -151,7 +161,7 @@ export function ProjectTeamAvatars({
                       {person.is_owner ? " · Owner" : person.role ? ` · ${person.role}` : ""}
                     </span>
                   </span>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
@@ -170,22 +180,25 @@ export function teamFromProject(project: {
   team?: ProjectTeamPerson[] | null;
 }): ProjectTeamPerson[] {
   if (Array.isArray(project.team) && project.team.length > 0) {
-    return project.team.map((m) => ({
-      user_id: m.user_id ? String(m.user_id) : null,
-      username: m.username,
-      full_name: m.full_name ?? null,
-      avatar_url: m.avatar_url ?? null,
-      role: m.role ?? (m.is_owner ? "Owner" : "Collaborator"),
-      is_owner: Boolean(m.is_owner),
-    }));
+    return project.team
+      .filter((m) => m?.username)
+      .map((m) => ({
+        user_id: m.user_id ? String(m.user_id) : null,
+        username: m.username,
+        full_name: m.full_name ?? null,
+        avatar_url: m.avatar_url ? resolveApiAssetUrl(m.avatar_url) : null,
+        role: m.role ?? (m.is_owner ? "Owner" : "Collaborator"),
+        is_owner: Boolean(m.is_owner),
+      }));
   }
   const username = project.owner_username || project.owner?.username;
   if (!username) return [];
+  const rawAvatar = project.owner_avatar_url || project.owner?.avatar || null;
   return [{
     user_id: project.owner_id ? String(project.owner_id) : null,
     username,
     full_name: project.owner?.name || username,
-    avatar_url: project.owner_avatar_url || project.owner?.avatar || null,
+    avatar_url: rawAvatar ? resolveApiAssetUrl(rawAvatar) : null,
     role: "Owner",
     is_owner: true,
   }];

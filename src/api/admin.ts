@@ -237,3 +237,62 @@ export async function fetchAccess(): Promise<{
   const { data } = await api.get("/admin/access");
   return data;
 }
+
+export type ProjectIntelligenceAdminSettings = {
+  free_project_limit?: number;
+  premium_project_limit?: number;
+  free_regenerations_per_project?: number;
+  premium_regenerations_per_project?: number;
+  visitor_insights_enabled?: boolean;
+  visitor_ai_enabled?: boolean;
+  visitor_ai_project_limit?: number;
+  ai_generate_enabled?: boolean;
+  auto_analyze_on_upload?: boolean;
+  global_daily_budget_usd?: number;
+  global_monthly_budget_usd?: number;
+  [key: string]: unknown;
+};
+
+export type ProjectIntelligenceAdminOverview = {
+  daily_spend_usd?: number;
+  monthly_spend_usd?: number;
+  monthly_requests?: number;
+  unique_enhanced_projects?: number;
+  failed_generations?: number;
+  active_premium_entitlements?: number;
+  monthly_tokens_in?: number;
+  monthly_tokens_out?: number;
+  ai_generate_enabled?: boolean;
+  near_quota_users?: {
+    user_id: string;
+    ai_projects_used: number;
+    regenerations_used: number;
+    cost_usd: number;
+  }[];
+};
+
+export async function fetchAdminProjectIntelligence(): Promise<{
+  feature_flag_enabled: boolean;
+  settings: ProjectIntelligenceAdminSettings;
+  overview?: ProjectIntelligenceAdminOverview;
+}> {
+  const { data } = await api.get("/admin/project-intelligence");
+  return data;
+}
+
+export async function patchAdminProjectIntelligence(
+  settings: Partial<ProjectIntelligenceAdminSettings>,
+): Promise<{ settings: ProjectIntelligenceAdminSettings }> {
+  const { data } = await api.patch("/admin/project-intelligence", { settings });
+  return data;
+}
+
+export async function grantAdminPiPremium(body: {
+  email?: string;
+  user_id?: string;
+  days?: number;
+  revoke?: boolean;
+}): Promise<{ ok: boolean; email: string; premium: boolean }> {
+  const { data } = await api.post("/admin/project-intelligence/premium", body);
+  return data;
+}

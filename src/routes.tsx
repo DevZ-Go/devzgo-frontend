@@ -83,6 +83,7 @@ const AdminAccessPage = page(() => import("./pages/admin/AccessPage"), "AccessPa
 const AdminApprovalsPage = page(() => import("./pages/admin/ApprovalsPage"), "ApprovalsPage");
 const AdminAuditPage = page(() => import("./pages/admin/AuditPage"), "AuditPage");
 const AdminTablePage = page(() => import("./pages/admin/TablePage"), "TablePage");
+const AdminProjectIntelligencePage = page(() => import("./pages/admin/ProjectIntelligencePage"), "ProjectIntelligencePage");
 
 const developer = (element: ReactElement) => <ProtectedRoute><DeveloperRoute>{element}</DeveloperRoute></ProtectedRoute>;
 const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{element}</RecruiterRoute></ProtectedRoute>;
@@ -263,6 +264,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <AdminOverviewPage /> },
           { path: "insights", element: <AdminInsightsPage /> },
+          { path: "project-intelligence", element: <AdminProjectIntelligencePage /> },
           { path: "people", element: <AdminPeoplePage /> },
           { path: "people/:userId", element: <AdminPersonPage /> },
           { path: "access", element: <AdminAccessPage /> },

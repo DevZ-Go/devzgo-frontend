@@ -14,6 +14,15 @@ export interface TvProject {
   /** Profile id, when the API sent one. Sample rows have none. */
   ownerId: string | null;
   authorAvatar: string | null;
+  /** Owner first, then collaborators — for avatar stacks on the detail panel. */
+  team: Array<{
+    user_id?: string | null;
+    username: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+    role?: string | null;
+    is_owner?: boolean;
+  }>;
   createdAt: string | null;
   /** True when the logged-in viewer owns the project (from the API). */
   isOwner: boolean;

@@ -6,7 +6,6 @@ import {
   Github,
   ImagePlus,
   Layers,
-  LayoutList,
   Loader2,
   Link2,
   Trash2,
@@ -41,21 +40,40 @@ import { getTechStackToggleClasses } from "../utils/techStackChipStyle";
 import { inviteCollaborator } from "../api/collaborations";
 import { TeammatePicker, type Teammate } from "../components/TeammatePicker";
 import { PhotoCropper } from "../components/PhotoCropper";
+import { GenerateWithAiPanel } from "../components/projectIntelligence/GenerateWithAiPanel";
+import { ProjectIntelligenceControls } from "../components/projectIntelligence/ProjectIntelligenceControls";
 import { Select } from "../components/ui/Select";
 
 const COVER_MAX_BYTES = 10 * 1024 * 1024;
+/** Must stay aligned with backend `MAX_UPLOAD_BYTES` in workspace_extract.py */
+const WORKSPACE_ZIP_MAX_BYTES = 200 * 1024 * 1024;
+const WORKSPACE_ZIP_MAX_MB = WORKSPACE_ZIP_MAX_BYTES / (1024 * 1024);
 
 const TOTAL_STEPS = 3;
 const STEP_META = [
   {
     n: 1,
-    title: "Details",
-    subtitle: "Title & descriptions",
-    icon: LayoutList,
+    title: "Source & story",
+    subtitle: "Title, ZIP, tech & description",
+    icon: FileArchive,
   },
   { n: 2, title: "Classification", subtitle: "Category & visibility", icon: Layers },
-  { n: 3, title: "Assets", subtitle: "Media, workspace & team", icon: UploadCloud },
+  { n: 3, title: "Polish", subtitle: "Media & teammates", icon: UploadCloud },
 ] as const;
+
+/** Rule-based category guess from detected tech names (no external AI). */
+function suggestCategoryFromTech(names: string[]): ProjectCategory {
+  const blob = names.map((n) => n.toLowerCase()).join(" ");
+  if (/tensorflow|pytorch|scikit|keras|huggingface|openai|langchain|numpy|pandas/.test(blob)) {
+    return "AI/ML";
+  }
+  if (/react native|flutter|swift|kotlin|expo|android|ios/.test(blob)) return "Mobile";
+  if (/unity|unreal|godot|phaser|gamemaker/.test(blob)) return "Gaming";
+  if (/django|flask|fastapi|express|nestjs|next|react|vue|angular|svelte|node/.test(blob)) {
+    return "Web Development";
+  }
+  return "Other";
+}
 
 export function ProjectFormPage() {
   const { id: editProjectId } = useParams<{ id: string }>();
@@ -102,6 +120,12 @@ export function ProjectFormPage() {
     detected: number[];
   } | null>(null);
   const [confirmingTechStacks, setConfirmingTechStacks] = useState(false);
+  /** Created early so ZIP can be analyzed / AI used before final publish. */
+  const [draftProjectId, setDraftProjectId] = useState<string | null>(null);
+  const [sourceIndexed, setSourceIndexed] = useState(false);
+  const [categorySuggested, setCategorySuggested] = useState(false);
+  /** When false, tech confirm modal only saves stacks and stays on the create form. */
+  const [techModalExitsForm, setTechModalExitsForm] = useState(false);
 
   /** Server URLs when editing (for PUT when user does not replace media). */
   const [savedCoverUrl, setSavedCoverUrl] = useState<string | null>(null);
@@ -142,6 +166,13 @@ export function ProjectFormPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (isEdit && editProjectId) {
+      setDraftProjectId(editProjectId);
+      setSourceIndexed(true);
+    }
+  }, [isEdit, editProjectId]);
 
   useEffect(() => {
     if (!isEdit || !editProjectId) {
@@ -255,14 +286,18 @@ export function ProjectFormPage() {
     if (zipInputRef.current) zipInputRef.current.value = "";
   }
 
-  function projectPayloadBase() {
+  function projectPayloadBase(overrides?: {
+    category?: ProjectCategory;
+    visibility?: ProjectVisibility;
+  }) {
+    const cat = (overrides?.category ?? (category as ProjectCategory)) || "Other";
     return {
       title: title.trim(),
       short_description: shortDescription.trim(),
       full_description: fullDescription.trim(),
-      category: category as ProjectCategory,
-      category_other: category === "Other" ? categoryOther.trim() || null : null,
-      visibility,
+      category: cat,
+      category_other: cat === "Other" ? categoryOther.trim() || null : null,
+      visibility: overrides?.visibility ?? visibility,
       tech_stack_ids: selectedStackIds,
       live_url: liveUrl.trim(),
       impact_note: impactNote.trim(),
@@ -275,9 +310,27 @@ export function ProjectFormPage() {
     return categoryOther.trim().split(/\s+/).filter(Boolean).length;
   }
 
-  function validateStep1(): boolean {
+  /** Step 1 next: title required; ZIP strongly encouraged for create. Descriptions can come from AI. */
+  function validateStep1ForNext(): boolean {
+    if (!title.trim()) {
+      setStepError("Add a project title.");
+      return false;
+    }
+    if (!isEdit && !sourceIndexed && !workspaceZip) {
+      setStepError("Upload a project ZIP so we can detect tech and unlock AI description.");
+      return false;
+    }
+    if (liveUrl.trim() && !/^https?:\/\/\S+$/i.test(liveUrl.trim())) {
+      setStepError("Enter the live demo as a full link starting with http:// or https://.");
+      return false;
+    }
+    setStepError(null);
+    return true;
+  }
+
+  function validateDescriptionsForSubmit(): boolean {
     if (!title.trim() || !shortDescription.trim() || !fullDescription.trim()) {
-      setStepError("Please fill in title, short description, and full description.");
+      setStepError("Please fill in title, short description, and full description (or generate them with AI).");
       return false;
     }
     if (liveUrl.trim() && !/^https?:\/\/\S+$/i.test(liveUrl.trim())) {
@@ -307,9 +360,134 @@ export function ProjectFormPage() {
     return true;
   }
 
-  function goNext() {
+  function applyDetectedStacks(
+    projectId: string,
+    detectedIds: number[],
+    confirmedIds: number[],
+    warnings: string[] = [],
+    optionsOverride?: TechStackItem[]
+  ) {
+    const rawIds = detectedIds.length > 0 ? detectedIds : confirmedIds;
+    const fromServer = [
+      ...new Set(
+        rawIds
+          .map((id) => (typeof id === "number" ? id : Number(id)))
+          .filter((id): id is number => Number.isFinite(id))
+      ),
+    ];
+    if (fromServer.length > 0) {
+      setSelectedStackIds(fromServer);
+      const catalog = optionsOverride ?? stackOptions;
+      const names = catalog
+        .filter((t) => {
+          const id = stackNumericId(t);
+          return id !== null && fromServer.includes(id);
+        })
+        .map((t) => t.name);
+      if (!categorySuggested || !category) {
+        const suggested = suggestCategoryFromTech(names);
+        setCategory(suggested);
+        setCategorySuggested(true);
+      }
+    }
+    setTechConfirmContext({ projectId, warnings: [...warnings], detected: fromServer });
+    return fromServer;
+  }
+
+  /** Create a private draft (if needed), upload ZIP, detect tech, suggest category. */
+  async function ensureDraftAndUploadZip(): Promise<string | null> {
+    if (!title.trim()) {
+      setStepError("Add a project title before uploading.");
+      return null;
+    }
+    if (!workspaceZip && !sourceIndexed) {
+      setStepError("Choose a .zip of your project folder.");
+      return null;
+    }
+    if (!workspaceZip && sourceIndexed && draftProjectId) {
+      return draftProjectId;
+    }
+
+    setError(null);
+    setStepError(null);
+    setDetectingStacks(true);
+    setUploadPercent(0);
+    try {
+      let projectId = draftProjectId;
+      if (!projectId) {
+        setSubmitPhase("Creating draft…");
+        const created = await createProject(
+          projectPayloadBase({
+            category: (category as ProjectCategory) || "Other",
+            visibility: "Private",
+          })
+        );
+        projectId = String(created?.id ?? "").trim();
+        if (!projectId) throw new Error("Server did not return a project id.");
+        setDraftProjectId(projectId);
+      } else {
+        // Keep title/descriptions in sync before indexing.
+        await updateProject(projectId, {
+          ...projectPayloadBase({
+            category: (category as ProjectCategory) || "Other",
+            visibility: visibility || "Private",
+          }),
+          cover_image_url: savedCoverUrl,
+          demo_video_url: savedDemoUrl,
+        });
+      }
+
+      if (workspaceZip) {
+        setSubmitPhase("Uploading workspace…");
+        const uploadRes = await uploadProjectWorkspace(projectId, workspaceZip, (percent) => {
+          setUploadPercent(percent);
+          setSubmitPhase(percent < 100 ? `Uploading… ${percent}%` : "Detecting tech…");
+        });
+        const [fresh, options] = await Promise.all([
+          fetchProject(projectId),
+          fetchTechStacks().catch(() => null),
+        ]);
+        if (options) setStackOptions(options);
+        const detectedIds = Array.isArray(uploadRes.detected_tech_stack_ids)
+          ? uploadRes.detected_tech_stack_ids
+          : Array.isArray(fresh.detected_tech_stack_ids)
+            ? fresh.detected_tech_stack_ids
+            : [];
+        const confirmedIds = Array.isArray(fresh.tech_stack_ids) ? fresh.tech_stack_ids : [];
+        applyDetectedStacks(
+          projectId,
+          detectedIds,
+          confirmedIds,
+          [],
+          options ?? undefined
+        );
+        setSourceIndexed(true);
+        setWorkspaceZip(null);
+        if (zipInputRef.current) zipInputRef.current.value = "";
+        // Stay on the form — AI descriptions come next; stacks are already applied as chips.
+      }
+      return projectId;
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+      return null;
+    } finally {
+      setDetectingStacks(false);
+      setSubmitPhase(null);
+    }
+  }
+
+  async function goNext() {
     if (step === 1) {
-      if (!validateStep1()) return;
+      if (!validateStep1ForNext()) return;
+      if (!isEdit && workspaceZip && !sourceIndexed) {
+        const id = await ensureDraftAndUploadZip();
+        if (!id) return;
+      } else if (!isEdit && !draftProjectId && sourceIndexed === false && !workspaceZip) {
+        // validate already blocked this
+      } else if (workspaceZip) {
+        const id = await ensureDraftAndUploadZip();
+        if (!id) return;
+      }
       setStep(2);
     } else if (step === 2) {
       if (!validateStep2()) return;
@@ -326,7 +504,7 @@ export function ProjectFormPage() {
     e.preventDefault();
     if (step < 3) return;
     if (submitLock.current || loading || loadingProject) return;
-    if (!validateStep1() || !validateStep2()) {
+    if (!validateDescriptionsForSubmit() || !validateStep2()) {
       setStepError("Please review steps 1 and 2.");
       return;
     }
@@ -343,7 +521,27 @@ export function ProjectFormPage() {
 
       let projectId: string;
 
-      if (isEdit && editProjectId) {
+      if (draftProjectId) {
+        setSubmitPhase(isEdit ? "Saving project…" : "Publishing project…");
+        await updateProject(draftProjectId, {
+          ...projectPayloadBase(),
+          cover_image_url: coverForPut,
+          demo_video_url: demoForPut,
+        });
+        projectId = draftProjectId;
+        if (!isEdit && teammates.length > 0) {
+          setSubmitPhase("Inviting teammates…");
+          for (const mate of teammates) {
+            try {
+              await inviteCollaborator(projectId, {
+                username: mate.username, role: mate.role.trim() || "Collaborator", access: mate.access,
+              });
+            } catch (err) {
+              warnings.push(`Invite for @${mate.username}: ${getApiErrorMessage(err)}`);
+            }
+          }
+        }
+      } else if (isEdit && editProjectId) {
         setSubmitPhase("Saving project…");
         await updateProject(editProjectId, {
           ...projectPayloadBase(),
@@ -358,6 +556,7 @@ export function ProjectFormPage() {
         if (!projectId) {
           throw new Error("Server did not return a project id. Try again.");
         }
+        setDraftProjectId(projectId);
         if (teammates.length > 0) setSubmitPhase("Inviting teammates…");
         for (const mate of teammates) {
           try {
@@ -399,19 +598,16 @@ export function ProjectFormPage() {
           const confirmedIds = Array.isArray(fresh.tech_stack_ids)
             ? fresh.tech_stack_ids
             : [];
-          // Prefer detected for the confirm modal; fall back to already-confirmed.
-          const rawIds = detectedIds.length > 0 ? detectedIds : confirmedIds;
-          const fromServer = [
-            ...new Set(
-              rawIds
-                .map((id) => (typeof id === "number" ? id : Number(id)))
-                .filter((id): id is number => Number.isFinite(id))
-            ),
-          ];
-          if (fromServer.length > 0) {
-            setSelectedStackIds(fromServer);
-          }
-          setTechConfirmContext({ projectId, warnings: [...warnings], detected: fromServer });
+          applyDetectedStacks(
+            projectId,
+            detectedIds,
+            confirmedIds,
+            warnings,
+            options ?? undefined
+          );
+          setSourceIndexed(true);
+          setWorkspaceZip(null);
+          setTechModalExitsForm(true);
           setShowTechConfirmModal(true);
           setDetectingStacks(false);
           setLoading(false);
@@ -425,17 +621,10 @@ export function ProjectFormPage() {
         setDetectingStacks(false);
       }
 
-      if (isEdit) {
-        navigate(`/project/${projectId}`, {
-          replace: true,
-          state: warnings.length > 0 ? { uploadWarnings: warnings } : undefined,
-        });
-      } else {
-        navigate("/profile", {
-          replace: true,
-          state: warnings.length > 0 ? { uploadWarnings: warnings } : undefined,
-        });
-      }
+      navigate(`/project/${projectId}`, {
+        replace: true,
+        state: warnings.length > 0 ? { uploadWarnings: warnings } : undefined,
+      });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -461,10 +650,11 @@ export function ProjectFormPage() {
       });
       const w = techConfirmContext.warnings;
       const pid = techConfirmContext.projectId;
+      const shouldExit = techModalExitsForm;
       setShowTechConfirmModal(false);
       setTechConfirmContext(null);
-      const target = isEdit ? `/project/${pid}` : "/profile";
-      navigate(target, {
+      if (!shouldExit) return;
+      navigate(`/project/${pid}`, {
         replace: true,
         state: w.length > 0 ? { uploadWarnings: w } : undefined,
       });
@@ -479,10 +669,11 @@ export function ProjectFormPage() {
     if (!techConfirmContext) return;
     const w = techConfirmContext.warnings;
     const pid = techConfirmContext.projectId;
+    const shouldExit = techModalExitsForm;
     setShowTechConfirmModal(false);
     setTechConfirmContext(null);
-    const target = isEdit ? `/project/${pid}` : "/profile";
-    navigate(target, {
+    if (!shouldExit) return;
+    navigate(`/project/${pid}`, {
       replace: true,
       state: w.length > 0 ? { uploadWarnings: w } : undefined,
     });
@@ -655,8 +846,13 @@ export function ProjectFormPage() {
               aria-hidden={step !== 1}
             >
               <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Project details
+                Source & story
               </h2>
+              <p className="text-sm text-stone-600">
+                Start with a title and your project ZIP. We detect tech stacks right away so you can
+                write—or generate—descriptions with AI before publishing.
+              </p>
+
               <div>
                 <label
                   htmlFor="title"
@@ -672,41 +868,217 @@ export function ProjectFormPage() {
                   placeholder="e.g. Campus food finder"
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="short_description"
-                  className="block text-sm font-medium text-stone-700 mb-1.5"
-                >
-                  Short description
-                </label>
-                <textarea
-                  id="short_description"
-                  value={shortDescription}
-                  onChange={(e) => setShortDescription(e.target.value)}
-                  rows={3}
-                  placeholder="One line summary"
-                  className={`${fieldClass} resize-y min-h-[88px]`}
+
+              <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                    <FileArchive className="w-4 h-4 text-maroon-600" />
+                    Project folder (.zip)
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {workspaceZip && (
+                      <button
+                        type="button"
+                        onClick={clearZip}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Remove
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => zipInputRef.current?.click()}
+                      className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
+                    >
+                      {workspaceZip || sourceIndexed ? "Replace" : "Choose"}
+                    </button>
+                  </div>
+                </div>
+                <input
+                  ref={zipInputRef}
+                  type="file"
+                  accept=".zip,application/zip"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    e.target.value = "";
+                    if (!f) {
+                      setWorkspaceZip(null);
+                      return;
+                    }
+                    if (f.size > WORKSPACE_ZIP_MAX_BYTES) {
+                      setStepError(
+                        `ZIP is too large (${(f.size / (1024 * 1024)).toFixed(0)} MB). Maximum is ${WORKSPACE_ZIP_MAX_MB} MB. Exclude node_modules, .git, build folders, and large media when possible.`
+                      );
+                      setWorkspaceZip(null);
+                      return;
+                    }
+                    setStepError(null);
+                    setWorkspaceZip(f);
+                    setSourceIndexed(false);
+                  }}
                 />
+                {workspaceZip ? (
+                  <p className="text-sm text-stone-600 truncate">
+                    {workspaceZip.name}{" "}
+                    <span className="text-stone-400">
+                      ({(workspaceZip.size / (1024 * 1024)).toFixed(1)} MB)
+                    </span>
+                  </p>
+                ) : sourceIndexed ? (
+                  <p className="text-sm text-emerald-800">
+                    Workspace indexed. Next: generate or write descriptions, then confirm tech stacks.
+                  </p>
+                ) : (
+                  <p className="text-xs text-stone-500">
+                    Zip your project root (max {WORKSPACE_ZIP_MAX_MB} MB). Leave out{" "}
+                    <span className="font-medium">node_modules</span>,{" "}
+                    <span className="font-medium">.git</span>, and build caches — they inflate size and
+                    are ignored anyway.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={detectingStacks || !workspaceZip || !title.trim()}
+                    onClick={() => void ensureDraftAndUploadZip()}
+                    className="inline-flex items-center gap-2 rounded-xl bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50"
+                  >
+                    {detectingStacks ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {submitPhase ?? "Working…"}
+                      </>
+                    ) : sourceIndexed ? (
+                      "Upload replacement & detect"
+                    ) : (
+                      "Upload & continue"
+                    )}
+                  </button>
+                </div>
+                {detectingStacks && (
+                  <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-3" role="status">
+                    <p className="text-sm font-medium text-maroon-900 mb-2">
+                      {uploadPercent < 100
+                        ? `Uploading… ${uploadPercent}%`
+                        : "Detecting languages and tech…"}
+                    </p>
+                    <div className="h-2 rounded-full bg-maroon-100 overflow-hidden">
+                      <div
+                        className={`h-full bg-maroon-500 transition-[width] ${uploadPercent < 100 ? "" : "animate-pulse"}`}
+                        style={{ width: `${uploadPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div>
-                <label
-                  htmlFor="full_description"
-                  className="block text-sm font-medium text-stone-700 mb-1.5"
-                >
-                  Full description
-                </label>
-                <textarea
-                  id="full_description"
-                  value={fullDescription}
-                  onChange={(e) => setFullDescription(e.target.value)}
-                  rows={6}
-                  placeholder="What it does, what you learned, stack highlights… You can paste working https:// links here too."
-                  className={`${fieldClass} resize-y min-h-[160px]`}
+
+              {draftProjectId && sourceIndexed ? (
+                <GenerateWithAiPanel
+                  projectId={draftProjectId}
+                  currentShort={shortDescription}
+                  currentFull={fullDescription}
+                  onApplied={({ short, full }) => {
+                    if (short) setShortDescription(short);
+                    if (full) setFullDescription(full);
+                  }}
+                  onApprovedContinue={() => {
+                    setStepError(null);
+                    setStep(2);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  continueLabel="Continue to category & visibility"
                 />
-                <p className="mt-1.5 text-xs text-stone-500">
-                  URLs in the description become clickable on the project page.
+              ) : (
+                <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-5 py-4">
+                  <p className="text-sm font-medium text-stone-700">AI descriptions unlock after upload</p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    Upload your ZIP above. You can then generate drafts with AI or write descriptions yourself.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-5 border-t border-stone-100 pt-5">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+                  Descriptions
+                </h3>
+                <div>
+                  <label
+                    htmlFor="short_description"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
+                  >
+                    Short description
+                  </label>
+                  <textarea
+                    id="short_description"
+                    value={shortDescription}
+                    onChange={(e) => setShortDescription(e.target.value)}
+                    rows={3}
+                    placeholder="One-line summary visitors see on cards"
+                    className={`${fieldClass} resize-y min-h-[88px]`}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="full_description"
+                    className="block text-sm font-medium text-stone-700 mb-1.5"
+                  >
+                    Full description
+                  </label>
+                  <textarea
+                    id="full_description"
+                    value={fullDescription}
+                    onChange={(e) => setFullDescription(e.target.value)}
+                    rows={6}
+                    placeholder="What it does, what you learned, stack highlights…"
+                    className={`${fieldClass} resize-y min-h-[160px]`}
+                  />
+                  <p className="mt-1.5 text-xs text-stone-500">
+                    URLs in the description become clickable on the project page.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-sm font-medium text-stone-700 mb-2">
+                  Tech stacks
+                  {categorySuggested && category ? (
+                    <span className="ml-2 text-xs font-normal text-stone-500">
+                      · suggested category “{category}” (confirm on next step)
+                    </span>
+                  ) : null}
+                </span>
+                {loadingStacks ? (
+                  <p className="text-sm text-stone-500">Loading…</p>
+                ) : !sourceIndexed ? (
+                  <p className="text-sm text-stone-500">Detected stacks appear after ZIP upload.</p>
+                ) : stackOptions.length === 0 ? (
+                  <p className="text-sm text-stone-500">No catalog options loaded.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {stackOptions.map((t) => {
+                      const id = stackNumericId(t);
+                      if (id === null) return null;
+                      const selected = selectedStackIds.includes(id);
+                      return (
+                        <button
+                          key={`${t.id}-${t.name}`}
+                          type="button"
+                          onClick={() => toggleStackId(id)}
+                          className={`px-3 py-2 rounded-xl text-sm font-medium transition ${getTechStackToggleClasses(t.name, selected)}`}
+                        >
+                          {t.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-stone-500 mt-2">
+                  Toggle freely — these appear on your project page.
                 </p>
               </div>
+
               <div>
                 <label htmlFor="live_url" className="block text-sm font-medium text-stone-700 mb-1.5">
                   Working / live demo link <span className="text-stone-400 font-normal">(optional)</span>
@@ -756,8 +1128,9 @@ export function ProjectFormPage() {
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={goNext}
-                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900"
+                  onClick={() => void goNext()}
+                  disabled={detectingStacks}
+                  className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-xl bg-maroon-800 text-white font-semibold hover:bg-maroon-900 disabled:opacity-50"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -779,6 +1152,11 @@ export function ProjectFormPage() {
                 <span className="font-medium">Other</span>, add a short custom label (one or two
                 words).
               </p>
+              {categorySuggested && category ? (
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+                  Suggested from your tech stacks: <span className="font-semibold">{category}</span>. Change it if that doesn’t fit.
+                </p>
+              ) : null}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label
@@ -794,6 +1172,7 @@ export function ProjectFormPage() {
                     value={category}
                     onChange={(value) => {
                       setCategory(value);
+                      setCategorySuggested(false);
                       if (value !== "Other") setCategoryOther("");
                     }}
                     options={PROJECT_CATEGORIES}
@@ -854,43 +1233,6 @@ export function ProjectFormPage() {
                   />
                   <p className="mt-1.5 text-xs text-stone-500">
                     Shown as “Other — your label” on the project page.
-                  </p>
-                </div>
-              )}
-              {!isEdit ? (
-                <p className="text-sm text-stone-500 rounded-xl bg-stone-50 border border-stone-100 px-4 py-3">
-                  After you upload a workspace ZIP, languages and tech stacks are detected from your files, dependencies, and imports. You confirm them before they are saved.
-                </p>
-              ) : (
-                <div>
-                  <span className="block text-sm font-medium text-stone-700 mb-2">
-                    Tech stacks (manual override on edit)
-                  </span>
-                  {loadingStacks ? (
-                    <p className="text-sm text-stone-500">Loading…</p>
-                  ) : stackOptions.length === 0 ? (
-                    <p className="text-sm text-stone-500">No options available.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {stackOptions.map((t) => {
-                        const id = stackNumericId(t);
-                        if (id === null) return null;
-                        const selected = selectedStackIds.includes(id);
-                        return (
-                          <button
-                            key={`${t.id}-${t.name}`}
-                            type="button"
-                            onClick={() => toggleStackId(id)}
-                            className={`px-3 py-2 rounded-xl text-sm font-medium transition ${getTechStackToggleClasses(t.name, selected)}`}
-                          >
-                            {t.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <p className="text-xs text-stone-500 mt-2">
-                    Uploading a new ZIP re-indexes files and updates stacks from file types when you save.
                   </p>
                 </div>
               )}
@@ -1054,55 +1396,6 @@ export function ProjectFormPage() {
                 )}
               </div>
 
-              <div className="border-t border-stone-100 pt-6 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                  Workspace
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
-                      <FileArchive className="w-4 h-4 text-maroon-600" />
-                      Project folder (.zip)
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {workspaceZip && (
-                        <button
-                          type="button"
-                          onClick={clearZip}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Remove
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => zipInputRef.current?.click()}
-                        className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
-                      >
-                        {workspaceZip ? "Replace" : "Choose"}
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    ref={zipInputRef}
-                    type="file"
-                    accept=".zip,application/zip"
-                    className="hidden"
-                    onChange={(e) => setWorkspaceZip(e.target.files?.[0] ?? null)}
-                  />
-                  {workspaceZip ? (
-                    <p className="text-sm text-stone-600 truncate">{workspaceZip.name}</p>
-                  ) : (
-                    <p className="text-xs text-stone-500">
-                      {isEdit
-                        ? "Optional. Upload a new ZIP to replace the indexed workspace."
-                        : "Optional. Zip your project root — files are indexed and known tech stacks are set from file types."}
-                    </p>
-                  )}
-                </div>
-              </div>
-
               <div className="border-t border-stone-100 pt-6 space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                   Teammates
@@ -1123,20 +1416,16 @@ export function ProjectFormPage() {
                 )}
               </div>
 
-              {detectingStacks && (
-                <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-4" role="status">
-                  <p className="text-sm font-medium text-maroon-900 mb-2">
-                    {uploadPercent < 100
-                      ? `Uploading your ZIP… ${uploadPercent}%`
-                      : "Reading your files and detecting languages and tech…"}
-                  </p>
-                  <div className="h-2 rounded-full bg-maroon-100 overflow-hidden">
-                    <div
-                      className={`h-full bg-maroon-500 transition-[width] ${uploadPercent < 100 ? "" : "animate-pulse"}`}
-                      style={{ width: `${uploadPercent}%` }}
-                    />
-                  </div>
-                </div>
+              {isEdit && editProjectId && (
+                <ProjectIntelligenceControls
+                  projectId={editProjectId}
+                  shortDescription={shortDescription}
+                  fullDescription={fullDescription}
+                  onApplyDescriptions={({ short, full }) => {
+                    if (short != null) setShortDescription(short);
+                    if (full != null) setFullDescription(full);
+                  }}
+                />
               )}
 
               <div className="flex flex-wrap justify-between gap-3 pt-4 border-t border-stone-100">
@@ -1199,9 +1488,9 @@ export function ProjectFormPage() {
               Confirm tech stacks
             </h3>
             <p className="mt-2 text-sm text-stone-600">
-              We detected these from your workspace (file types, dependency files, and imports); they
-              are listed first. Toggle to confirm what should appear on the project. Re-uploading later will not wipe these
-              until you save here again.
+              {techModalExitsForm
+                ? "We detected these from your workspace. Confirm what should appear on the project, then continue."
+                : "Confirm stacks for this draft. You stay on the form to finish descriptions and publish."}
             </p>
             {loadingStacks ? (
               <p className="mt-6 text-sm text-stone-500">Loading options…</p>

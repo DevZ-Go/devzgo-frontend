@@ -71,12 +71,16 @@ export function ExploreFilters({
 
   return (
     <div className={classes.root} data-ui ref={menuRef}>
-      {/* Compact search input with consistent small search icon */}
-      <div className="relative inline-flex items-center">
-        <Search className="pointer-events-none absolute left-3 h-3.5 w-3.5 opacity-60 shrink-0 text-current" />
+      {/* Compact search input — icon inset so it never overlaps the placeholder */}
+      <div className="relative inline-flex min-w-0 items-center">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 z-[1] h-3.5 w-3.5 shrink-0 -translate-y-1/2 opacity-55 text-current"
+          aria-hidden
+        />
         <input
           type="text"
-          className={`${classes.input} !pl-8.5 !pr-7`}
+          className={classes.input}
+          style={{ paddingLeft: "2.35rem", paddingRight: filters.search ? "2rem" : "0.9rem" }}
           placeholder="Search projects..."
           value={filters.search}
           onChange={(e) => update("search", e.target.value)}
@@ -87,7 +91,7 @@ export function ExploreFilters({
             type="button"
             onClick={() => update("search", "")}
             aria-label="Clear search"
-            className="absolute right-2.5 p-0.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+            className="absolute right-2.5 top-1/2 z-[1] -translate-y-1/2 p-0.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
           >
             <X className="h-3.5 w-3.5" />
           </button>

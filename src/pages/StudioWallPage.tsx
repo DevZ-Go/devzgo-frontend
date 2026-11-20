@@ -223,25 +223,36 @@ export function StudioWallPage({
     ? resolveApiAssetUrl(activeProject.cover_image_url || activeProject.image_url)
     : "";
 
+  const onDarkGlass = viewMode === "cinematic";
+  const glassControl = onDarkGlass
+    ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-white/25 bg-white/12 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] backdrop-blur-md transition-all cursor-pointer hover:bg-white/18"
+    : "inline-flex h-9 items-center gap-1.5 rounded-full border border-[#4A121A]/18 bg-[#FAF7F2]/55 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#4A121A] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md transition-all cursor-pointer hover:bg-[#FAF7F2]/75";
+  const glassInput = onDarkGlass
+    ? "explore-glass-search h-9 w-36 sm:w-52 rounded-full border border-[#FFF8CA]/22 bg-transparent text-xs font-sans text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] backdrop-blur-md focus:border-[#FFF8CA]/45 focus:outline-none transition-all"
+    : "h-9 w-36 sm:w-52 rounded-full border border-[#4A121A]/18 bg-[#FAF7F2]/65 text-xs font-sans text-[#4A121A] placeholder:text-[#4A121A]/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md focus:border-[#4A121A]/40 focus:outline-none transition-all";
+  const glassMenu = onDarkGlass
+    ? "absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-[#FFF8CA]/25 bg-[#1A0B0E] p-4 shadow-[0_16px_40px_rgba(0,0,0,0.55)] space-y-3.5 text-left text-[#FFF8CA]"
+    : "absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-[#4A121A]/20 bg-[#FAF7F2] p-4 shadow-[0_16px_40px_rgba(45,18,13,0.18)] space-y-3.5 text-left text-[#4A121A]";
+  const glassSelect = onDarkGlass
+    ? "w-full rounded-xl border border-[#FFF8CA]/25 bg-[#2A1217] px-3 py-2 text-xs font-sans text-[#FFF8CA] focus:outline-none"
+    : "w-full rounded-xl border border-[#4A121A]/20 bg-white px-3 py-2 text-xs font-sans text-[#4A121A] focus:outline-none";
+  const modeIdle = onDarkGlass ? "text-[#FFF8CA]/75 hover:text-[#FFF8CA]" : "text-[#4A121A]/70 hover:text-[#4A121A]";
+  const modeShell = onDarkGlass
+    ? "inline-flex h-9 items-center rounded-full border border-white/25 bg-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-md"
+    : "inline-flex h-9 items-center rounded-full border border-[#4A121A]/15 bg-[#FAF7F2]/55 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md";
+
   return (
     <ExploreStage title="projects studio" tone="paper" data={data}>
-      {/* Top Header & Integrated Right-Side Action Controls */}
-      <header className="shrink-0 border-b border-[#4A121A]/15 bg-[#FAF7F2] dark:bg-[#1A0B0E] px-4 py-2.5 sm:px-8 z-30">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-          {/* Left: Title & Count */}
-          <div className="flex items-center gap-3">
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#4A121A] dark:text-[#FFF8CA] m-0">
-              projects studio
-            </h1>
-            <span className="hidden sm:inline-block h-4 w-px bg-[#4A121A]/20 dark:bg-white/20" />
-            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-[#4A121A]/70 dark:text-[#FAF7F2]/70">
-              EXPLORE STUDENT CREATIONS · {projects.length} {projects.length === 1 ? "BUILD" : "BUILDS"}
-            </span>
-          </div>
-
-          {/* Right: Search, Filters, View Mode & TV World Switcher */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-            {/* Search & Filters */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {/* Floating liquid-glass toolbar — no title strip; cinematic bg stays visible */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-3 sm:px-5 sm:pt-4">
+          <div
+            className={`explore-glass-toolbar pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-[1.35rem] px-2.5 py-2 sm:gap-2.5 sm:px-3 ${
+              onDarkGlass ? "" : "explore-glass-toolbar--light"
+            }`}
+            role="toolbar"
+            aria-label="Explore controls"
+          >
             <ExploreFilters
               filters={data.filters}
               onChange={data.setFilters}
@@ -249,19 +260,15 @@ export function StudioWallPage({
               hasFilters={data.hasFilters}
               onClear={data.clearFilters}
               classes={{
-                root: "flex items-center gap-2",
-                input:
-                  "h-9 w-36 sm:w-52 rounded-full border border-[#4A121A]/25 bg-white dark:bg-[#2A1217] px-3.5 text-xs font-sans text-[#4A121A] dark:text-[#FAF7F2] placeholder-[#4A121A]/40 focus:border-[#4A121A] focus:outline-none transition-all shadow-xs",
-                button:
-                  "inline-flex h-9 items-center gap-1.5 rounded-full border border-[#4A121A]/25 bg-[#FAF7F2] dark:bg-[#2A1217] hover:bg-[#F2ECE1] px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#4A121A] dark:text-[#FAF7F2] transition-all shadow-xs cursor-pointer",
-                menu: "absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-[#4A121A]/20 bg-[#FAF7F2] dark:bg-[#2A1217] p-4 shadow-xl space-y-3.5 text-left text-[#4A121A] dark:text-[#FAF7F2]",
-                select:
-                  "w-full rounded-xl border border-[#4A121A]/25 bg-white dark:bg-[#1A0B0E] px-3 py-2 text-xs font-sans text-[#4A121A] dark:text-[#FAF7F2] focus:outline-none",
+                root: `flex flex-wrap items-center gap-2 ${onDarkGlass ? "text-[#FFF8CA]" : "text-[#4A121A]"}`,
+                input: glassInput,
+                button: glassControl,
+                menu: glassMenu,
+                select: glassSelect,
               }}
             />
 
-            {/* Mode Switcher [Cinematic Gallery / Directory Grid] */}
-            <div className="inline-flex h-9 items-center rounded-full border border-[#4A121A]/25 bg-[#FAF7F2] dark:bg-[#2A1217] p-1 shadow-xs">
+            <div className={modeShell}>
               <button
                 type="button"
                 onClick={() => setViewMode("cinematic")}
@@ -269,8 +276,8 @@ export function StudioWallPage({
                 title="Cinematic luxury gallery slider view"
                 className={`inline-flex h-full items-center px-3.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider transition-all cursor-pointer ${
                   viewMode === "cinematic"
-                    ? "bg-[#4A121A] text-[#FAF7F2] shadow-xs"
-                    : "text-[#4A121A]/70 dark:text-[#FAF7F2]/70 hover:text-[#4A121A]"
+                    ? "bg-[#780D18]/90 text-[#FFF8CA] shadow-sm"
+                    : modeIdle
                 }`}
               >
                 <span className="hidden md:inline">Cinematic</span>
@@ -283,8 +290,8 @@ export function StudioWallPage({
                 title="Directory grid view"
                 className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider transition-all cursor-pointer ${
                   viewMode === "grid"
-                    ? "bg-[#4A121A] text-[#FAF7F2] shadow-xs"
-                    : "text-[#4A121A]/70 dark:text-[#FAF7F2]/70 hover:text-[#4A121A]"
+                    ? "bg-[#780D18]/90 text-[#FFF8CA] shadow-sm"
+                    : modeIdle
                 }`}
               >
                 <LayoutGrid className="w-3 h-3" />
@@ -293,10 +300,9 @@ export function StudioWallPage({
               </button>
             </div>
 
-            {/* Switch to TV World */}
             <Link
               to="/explore/tv"
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#4A121A] bg-[#4A121A] hover:bg-[#6B0B0C] px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#FAF7F2] transition-all shadow-xs hover:scale-[1.02]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#FFF8CA]/35 bg-[#780D18]/85 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md transition-all hover:bg-[#6B0B0C]"
               title="Switch to TV World interactive retro room"
             >
               <Tv className="w-3.5 h-3.5" />
@@ -304,17 +310,16 @@ export function StudioWallPage({
             </Link>
           </div>
         </div>
-      </header>
 
-      {/* Main Body */}
+      {/* Main Body — top padding clears the floating toolbar */}
       {data.projects === null ? (
-        <div className="flex h-full flex-1 items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C]">
+        <div className="flex h-full flex-1 items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] pt-16">
           <p className="font-serif italic text-2xl text-[#4A121A]/70 animate-pulse">
             Curating the gallery frames…
           </p>
         </div>
       ) : projects.length === 0 ? (
-        <div className="flex h-full flex-1 flex-col items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] p-6 text-center">
+        <div className="flex h-full flex-1 flex-col items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] p-6 pt-20 text-center">
           <p className="font-serif text-xl text-[#4A121A] dark:text-[#FAF7F2]">
             No projects match these filters.
           </p>
@@ -369,7 +374,7 @@ export function StudioWallPage({
           </div>
 
           {/* Foreground Layout: Left Hero Text + Right Floating Cards Carousel */}
-          <div className="relative z-10 flex h-full w-full flex-col justify-between p-6 sm:p-10 md:p-14">
+          <div className="relative z-10 flex h-full w-full flex-col justify-between p-6 pt-20 sm:p-10 sm:pt-24 md:p-14 md:pt-24">
             {/* Center Area: Left Hero Content + Right Carousel */}
             <div className="flex flex-1 items-center justify-between gap-8 min-h-0">
               {/* Left Side: Dramatic Hero Text Overlay */}
@@ -416,16 +421,39 @@ export function StudioWallPage({
                       </div>
                     )}
 
-                    {/* Action Buttons: Like + Discover Project + Team */}
+                    {/* Creator / collaborators — tap avatar stack to open profiles */}
+                    {(() => {
+                      const team = teamFromProject(activeProject);
+                      const owner = team.find((p) => p.is_owner) || team[0];
+                      if (!owner) return null;
+                      return (
+                        <div className="flex flex-wrap items-center gap-3 pt-1">
+                          <ProjectTeamAvatars people={team} maxVisible={5} onDark size="md" />
+                          <div className="min-w-0">
+                            <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FFF8CA]/65">
+                              {team.length > 1 ? "Built by the team" : "Created by"}
+                            </p>
+                            <p className="truncate font-sans text-sm font-semibold text-[#FFF8CA]">
+                              @{owner.username}
+                              {team.length > 1 ? (
+                                <span className="ml-1.5 font-medium text-[#FFF8CA]/70">
+                                  · {team.length} people
+                                </span>
+                              ) : null}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Action Buttons: Like + Discover Project */}
                     <div className="flex flex-wrap items-center gap-3.5 pt-3">
-                      {/* Tactile Like Button */}
                       <HeroLikeButton
                         projectId={String(activeProject.id)}
                         initialLikes={activeProject.likes_count ?? activeProject.likes ?? 0}
                         initialLiked={Boolean(activeProject.is_liked)}
                       />
 
-                      {/* Main Pill Button: DISCOVER PROJECT */}
                       <Link
                         to={`/project/${activeProject.id}`}
                         className="group inline-flex items-center gap-2.5 rounded-full border border-white/40 bg-white/10 hover:bg-[#FFF3B0] hover:border-[#FFF3B0] hover:text-[#4A121A] text-white px-6 sm:px-7 py-2.5 sm:py-3 font-sans text-xs font-semibold uppercase tracking-[0.16em] backdrop-blur-md transition-all duration-300 shadow-xl hover:scale-105 active:scale-95"
@@ -433,11 +461,6 @@ export function StudioWallPage({
                         <span>Discover Project</span>
                         <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                       </Link>
-
-                      {/* Creator / Team Avatars */}
-                      <div className="hidden sm:flex items-center pl-2">
-                        <ProjectTeamAvatars people={teamFromProject(activeProject)} maxVisible={4} />
-                      </div>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -555,7 +578,7 @@ export function StudioWallPage({
         </div>
       ) : (
         /* ================= VERTICAL DIRECTORY GRID (Preserved Mode) ================= */
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 bg-[#F7F2EB] dark:bg-[#18080C]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-20 sm:px-8 sm:pt-24 bg-[#F7F2EB] dark:bg-[#18080C]">
           <ul className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pb-12">
             {projects.map((project, idx) => {
               const cover = resolveApiAssetUrl(project.cover_image_url || project.image_url);
@@ -630,7 +653,21 @@ export function StudioWallPage({
 
                     <div className="mt-2.5 pt-2 px-0.5 border-t border-[#4A121A]/15 space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <ProjectTeamAvatars people={teamFromProject(project)} maxVisible={4} />
+                        {(() => {
+                          const team = teamFromProject(project);
+                          const owner = team.find((p) => p.is_owner) || team[0];
+                          return (
+                            <div className="flex min-w-0 items-center gap-2">
+                              <ProjectTeamAvatars people={team} maxVisible={4} />
+                              {owner && (
+                                <span className="truncate text-[11px] font-semibold text-[#4A121A]/75 dark:text-[#FAF7F2]/75">
+                                  @{owner.username}
+                                  {team.length > 1 ? ` +${team.length - 1}` : ""}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <Link
                           to={`/project/${project.id}`}
                           className="px-3.5 py-1 rounded-full border border-[#4A121A] bg-[#4A121A] hover:bg-[#6B0B0C] text-[#FAF7F2] text-xs font-sans font-semibold uppercase tracking-wider transition-all shadow-xs shrink-0"
@@ -659,6 +696,7 @@ export function StudioWallPage({
           </ul>
         </div>
       )}
+      </div>
     </ExploreStage>
   );
 }

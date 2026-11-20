@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import { BrandMark, DevZLockup } from "./BrandMark";
+import { DevZLockup } from "./BrandMark";
 import { fetchUnreadMessagesCount } from "../api/messages";
 import { fetchMyProfile } from "../api/profiles";
 import { resolveApiAssetUrl } from "../api/config";
@@ -456,21 +456,15 @@ export function Navbar({ variant = "default" }: NavbarProps) {
         className="fixed top-0 left-0 right-0 z-50 bg-[#F7F2E8]/95 dark:bg-[#20100C]/95 backdrop-blur-md border-b border-[#E5DACB] dark:border-[#3D1812] shadow-xs transition-colors duration-300"
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 py-2.5 flex items-center justify-between gap-3">
-          {/* Left: DevZ Go Logo */}
+          {/* Left: same DevZ-Go lockup as Home (light-surface tone) */}
           <Link
             to={homePath}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="flex items-center gap-2 group shrink-0"
+            className="group inline-flex items-center shrink-0"
             title="DevZ-Go Home"
             aria-label="DevZ-Go Home"
           >
-            <BrandMark />
-            <span className="font-serif text-xl sm:text-2xl font-bold text-[#780D18] dark:text-[#FFF8CA] tracking-tight group-hover:opacity-90 transition-opacity">
-              DevZ
-            </span>
-            <span className="font-cursive italic text-2xl sm:text-3xl font-bold text-[#780D18] dark:text-[#E2A5A8] -ml-1">
-              Go
-            </span>
+            <DevZLockup tone="light" />
           </Link>
 
           {/* Center: Home · Explore · Network · Messages · More (with Icons & Labels) */}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchTransparency } from "../api/career";
+import { fetchPiGlobalPref, patchPiGlobalPref } from "../api/projectIntelligence";
 import {
   cancelAccountDelete,
   changePassword,
@@ -31,6 +32,89 @@ import { ui } from "../styles/editorial";
 
 const inputClass = `${ui.input} py-3`;
 
+function ProjectIntelligenceSettings() {
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pref = await fetchPiGlobalPref();
+        if (!cancelled) {
+          setAutoAnalyze(Boolean(pref.auto_analyze_default));
+          setLoaded(true);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const msg = getApiErrorMessage(err);
+          if (/not enabled|404/i.test(msg)) setUnavailable(true);
+          else setMessage({ ok: false, text: msg });
+          setLoaded(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setMessage(null);
+    try {
+      await patchPiGlobalPref({ auto_analyze_default: autoAnalyze });
+      setMessage({ ok: true, text: "Saved. This does not re-analyze older private projects automatically." });
+    } catch (err) {
+      setMessage({ ok: false, text: getApiErrorMessage(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!loaded) return <p className="text-sm text-stone-500">Loading…</p>;
+  if (unavailable) {
+    return (
+      <div className="space-y-2">
+        <h2 className="font-serif text-2xl text-stone-900">Project Intelligence</h2>
+        <p className="text-sm text-stone-500">
+          Project Intelligence is not enabled on this server yet. When it is, you can control automatic source analysis here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={save} className="space-y-4">
+      <div>
+        <h2 className="font-serif text-2xl text-stone-900">Project Intelligence</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          Automatically analyze uploaded or imported source for evidence and plain-language insights.
+          This never sends private code to an external AI provider by itself — that requires a separate per-project consent.
+        </p>
+      </div>
+      <SwitchRow
+        label="Automatically analyze source files when I add a project"
+        checked={autoAnalyze}
+        onChange={setAutoAnalyze}
+      />
+      <p className="text-xs text-stone-500">
+        Turning this on does not queue historical private projects. You can still refresh evidence from a project’s edit page.
+      </p>
+      <Save busy={busy} disabled={!loaded}>Save Project Intelligence</Save>
+      {message && (
+        <p role="status" className={`font-sans text-sm ${message.ok ? "text-forest-700" : "text-crimson-700"}`}>
+          {message.text}
+        </p>
+      )}
+    </form>
+  );
+}
+
 function ForgotPasswordLink({ email }: { email?: string | null }) {
   const to = email ? `/forgot-password?email=${encodeURIComponent(email)}` : "/forgot-password";
   return (
@@ -48,6 +132,7 @@ const SECTIONS = [
   ["availability", "Availability"],
   ["challenges", "Challenges"],
   ["privacy", "Privacy"],
+  ["project-intelligence", "Project Intelligence"],
   ["transparency", "Career evidence"],
   ["safety", "Blocked & muted"],
   ["notifications", "Notifications"],
@@ -126,7 +211,7 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { recruiter } = useAccount();
-  const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges" || id === "transparency")));
+  const sections = SECTIONS.filter(([id]) => !(recruiter && (id === "availability" || id === "challenges" || id === "transparency" || id === "project-intelligence")));
   const requested = params.get("section");
   const section: Section = sections.some(([id]) => id === requested) ? requested as Section : "account";
   const transparency = useQuery({
@@ -707,6 +792,8 @@ export function SettingsPage() {
         <Save busy={busy} disabled={!ready}>Save privacy</Save>
       </form>
     );
+  } else if (section === "project-intelligence") {
+    panel = <ProjectIntelligenceSettings />;
   } else if (section === "transparency") {
     const data = transparency.data as {
       analyzed?: string[];
