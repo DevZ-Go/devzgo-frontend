@@ -9,7 +9,9 @@ export type GroupCategory =
   | "web_cloud"
   | "game_dev"
   | "open_source"
-  | "general";
+  | "general"
+  | "other"
+  | (string & {});
 
 export type ProjectKind = "embedded_hardware" | "software";
 
@@ -112,6 +114,8 @@ export interface GroupProjectShowcase {
   createdAt: string;
 }
 
+export type GroupVisibility = "public" | "private";
+
 export interface NetworkGroup {
   id: string;
   slug: string; // e.g., "robotics-club"
@@ -119,6 +123,7 @@ export interface NetworkGroup {
   tagline: string;
   about: string;
   category: GroupCategory;
+  visibility?: GroupVisibility;
   bannerUrl?: string | null;
   avatarUrl?: string | null;
   hostId: string;
@@ -129,15 +134,18 @@ export interface NetworkGroup {
   projectCount: number;
   announcementCount: number;
   isMember?: boolean;
+  hasPendingRequest?: boolean;
   userRole?: ClubMemberRole | null;
   userCustomTitle?: string | null;
   members: GroupMember[];
+  pendingRequests?: GroupMember[];
   tags: string[];
   policies?: string;
   customRoles?: ClubCustomRole[];
   /** Present on profile /mine payloads */
   membershipRole?: ClubMemberRole | null;
   membershipTitle?: string | null;
+  membershipJoinedAt?: string | null;
   createdAt: string;
 }
 

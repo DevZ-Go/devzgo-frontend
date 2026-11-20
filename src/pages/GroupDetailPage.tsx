@@ -14,6 +14,9 @@ import {
   Pin,
   Sparkles,
   Share2,
+  Lock,
+  Clock,
+  X,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
@@ -32,6 +35,8 @@ import {
   joinGroup,
   leaveGroup,
   patchClub,
+  approveClubJoinRequest,
+  declineClubJoinRequest,
   toggleLikeAnnouncement,
   addAnnouncementComment,
 } from "../api/groups";
@@ -135,6 +140,10 @@ export function GroupDetailPage() {
   const canManageRoles = isHost || isFounderManager;
   const isExecutive = isHost || isFounderManager || isClubExecutiveRole(group.userRole);
   const isMember = group.isMember || isHost || isFounderManager;
+  const isPrivate = group.visibility === "private";
+  const isPending = Boolean(group.hasPendingRequest);
+  const pendingRequests = group.pendingRequests ?? [];
+  const lockedPrivate = isPrivate && !isMember;
 
   const handleJoinLeave = async () => {
     if (isMember) {
@@ -148,13 +157,35 @@ export function GroupDetailPage() {
       } catch (err) {
         alert(getApiErrorMessage(err) || "Could not leave club");
       }
-    } else {
-      const updated = await joinGroup(group.id, {
-        id: String(user?.id ?? "usr-me"),
-        name: user?.username || "DevZ-Go Member",
-        username: user?.username || "developer",
-      });
+    } else if (!isPending) {
+      try {
+        const updated = await joinGroup(group.id, {
+          id: String(user?.id ?? "usr-me"),
+          name: user?.username || "DevZ-Go Member",
+          username: user?.username || "developer",
+        });
+        setGroup(updated);
+      } catch (err) {
+        alert(getApiErrorMessage(err) || "Could not send request");
+      }
+    }
+  };
+
+  const handleApproveRequest = async (targetUserId: string) => {
+    try {
+      const updated = await approveClubJoinRequest(group.id, targetUserId);
       setGroup(updated);
+    } catch (err) {
+      alert(getApiErrorMessage(err) || "Could not approve request");
+    }
+  };
+
+  const handleDeclineRequest = async (targetUserId: string) => {
+    try {
+      const updated = await declineClubJoinRequest(group.id, targetUserId);
+      setGroup(updated);
+    } catch (err) {
+      alert(getApiErrorMessage(err) || "Could not decline request");
     }
   };
 
@@ -217,11 +248,17 @@ export function GroupDetailPage() {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#2D120D] via-[#2D120D]/60 to-transparent" />
 
-            <div className="absolute top-4 left-4 sm:left-6 flex items-center gap-2">
+            <div className="absolute top-4 left-4 sm:left-6 flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA] text-xs font-mono font-bold uppercase tracking-wider border border-[#FFF8CA]/30 shadow-xs">
                 {group.category === "robotics" ? <Cpu className="w-3.5 h-3.5 text-[#CDE3E8]" /> : <Users className="w-3.5 h-3.5" />}
                 {group.category.replace("_", " ")}
               </span>
+
+              {isPrivate && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#2D120D]/90 text-[#FFF8CA] text-xs font-mono font-bold uppercase tracking-wider border border-[#FFF8CA]/30 shadow-xs">
+                  <Lock className="w-3 h-3 text-[#CDE3E8]" /> Private
+                </span>
+              )}
 
               {group.isMember && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#CDE3E8] text-[#2D120D] text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
@@ -288,28 +325,72 @@ export function GroupDetailPage() {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button
                 type="button"
+                disabled={isPending}
                 onClick={handleJoinLeave}
-                className={`px-6 py-2.5 rounded-full font-sans text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer ${
+                className={`px-6 py-2.5 rounded-full font-sans text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer disabled:cursor-default ${
                   isMember
                     ? "bg-[#FFF8CA] hover:bg-white text-[#2D120D]"
+                    : isPending
+                    ? "bg-[#FFF8CA]/90 text-[#6B0B0C] border border-[#6B0B0C]/30"
                     : "bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] border border-[#FFF8CA]/30"
                 }`}
               >
-                {isMember ? (isHost ? "President" : "Leave Club") : "Join This Club"}
+                {isMember
+                  ? isHost
+                    ? "President"
+                    : "Leave Club"
+                  : isPending
+                  ? "Request Sent ✓"
+                  : isPrivate
+                  ? "Request to Enter"
+                  : "Join This Club"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setShowcaseModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#CDE3E8] hover:bg-white text-[#2D120D] text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-[#6B0B0C]" />
-                <span>Showcase Project</span>
-              </button>
+              {!lockedPrivate && (
+                <button
+                  type="button"
+                  onClick={() => setShowcaseModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#CDE3E8] hover:bg-white text-[#2D120D] text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-[#6B0B0C]" />
+                  <span>Showcase Project</span>
+                </button>
+              )}
             </div>
           </div>
         </header>
 
+        {lockedPrivate ? (
+          <div className="rounded-3xl border-2 border-[#6B0B0C]/25 bg-white p-8 sm:p-12 text-center shadow-sm max-w-2xl mx-auto space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B0B0C] text-[#FFF8CA] shadow-md">
+              <Lock className="w-7 h-7" />
+            </div>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#2D120D]">
+              This is a Private Club Channel
+            </h2>
+            <p className="text-sm text-[#2D120D]/75 max-w-md mx-auto leading-relaxed">
+              {isPending
+                ? "Your request to enter has been sent via Messages to the club's President and Executives. Once approved, you'll receive a message and unlock full access."
+                : "Request access to enter this channel. A message will automatically be sent to the club's President and Executives so they can let you in."}
+            </p>
+            <div className="pt-2">
+              {isPending ? (
+                <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FFF8CA] text-[#6B0B0C] border border-[#6B0B0C]/30 text-xs sm:text-sm font-bold">
+                  <Clock className="w-4 h-4" /> Waiting for President / Executive Approval
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleJoinLeave}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs sm:text-sm font-bold shadow-md transition cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4" /> Request to Enter Channel
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Tab Navigation */}
         <div className="flex items-center justify-between border-b-2 border-[#2D120D]/15 pb-2 mb-8">
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none">
@@ -350,6 +431,11 @@ export function GroupDetailPage() {
             >
               <Users className="w-4 h-4" />
               <span>Members &amp; Execs ({group.members.length})</span>
+              {isExecutive && pendingRequests.length > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-[#FFF8CA] text-[#6B0B0C] px-2 py-0.5 text-[10px] font-mono font-bold">
+                  {pendingRequests.length} pending
+                </span>
+              )}
             </button>
           </div>
 
@@ -755,6 +841,65 @@ export function GroupDetailPage() {
               </section>
             )}
 
+            {/* Pending Join Requests (Visible to President & Executives) */}
+            {isExecutive && pendingRequests.length > 0 && (
+              <section className="rounded-3xl border-2 border-[#6B0B0C]/30 bg-[#FFF8CA]/50 p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-[#6B0B0C]/15 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[#6B0B0C]" />
+                    <h2 className="font-serif text-xl font-bold text-[#2D120D]">
+                      Pending Join Requests ({pendingRequests.length})
+                    </h2>
+                  </div>
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#6B0B0C] font-semibold">
+                    Private Club Approval
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {pendingRequests.map((req) => (
+                    <div
+                      key={req.userId}
+                      className="flex items-center justify-between gap-3 rounded-2xl bg-white border border-[#2D120D]/15 p-3.5 shadow-2xs"
+                    >
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#6B0B0C] text-[#FFF8CA] font-serif font-bold text-sm flex items-center justify-center shrink-0">
+                          {(req.name || "?")[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            to={`/profile/${req.username || req.userId}`}
+                            className="font-bold text-sm text-[#2D120D] hover:text-[#6B0B0C] truncate block"
+                          >
+                            {req.name}
+                          </Link>
+                          <p className="text-[11px] text-[#2D120D]/60 truncate">@{req.username}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleApproveRequest(req.userId)}
+                          className="inline-flex items-center gap-1 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] px-3 py-1.5 text-[11px] font-bold text-[#FFF8CA] transition cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeclineRequest(req.userId)}
+                          className="inline-flex items-center gap-1 rounded-full border border-[#2D120D]/20 bg-white hover:bg-red-50 hover:text-red-700 px-2.5 py-1.5 text-[11px] font-semibold text-[#2D120D]/75 transition cursor-pointer"
+                          title="Decline request"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Executive Board Section */}
             <section className="space-y-4">
               <div className="flex items-center gap-2 border-b border-[#2D120D]/15 pb-2">
@@ -900,6 +1045,8 @@ export function GroupDetailPage() {
               )}
             </section>
           </div>
+        )}
+        </>
         )}
       </main>
 

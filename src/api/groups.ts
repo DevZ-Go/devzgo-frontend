@@ -936,17 +936,39 @@ export async function uploadClubAvatar(groupId: string, file: File): Promise<Net
   return mapClub(res.data);
 }
 
+export async function approveClubJoinRequest(
+  groupId: string,
+  targetUserId: string
+): Promise<NetworkGroup> {
+  const res = await api.post<NetworkGroup>(
+    `/groups/${encodeURIComponent(groupId)}/requests/${encodeURIComponent(targetUserId)}/approve`
+  );
+  return mapClub(res.data);
+}
+
+export async function declineClubJoinRequest(
+  groupId: string,
+  targetUserId: string
+): Promise<NetworkGroup> {
+  const res = await api.post<NetworkGroup>(
+    `/groups/${encodeURIComponent(groupId)}/requests/${encodeURIComponent(targetUserId)}/decline`
+  );
+  return mapClub(res.data);
+}
+
 export async function createNetworkGroup(data: {
   name: string;
   tagline: string;
   about: string;
   category: GroupCategory;
+  visibility?: "public" | "private";
   tags: string[];
   policies?: string;
   bannerUrl?: string;
   bannerFile?: File | null;
   avatarUrl?: string;
   host: { id: string; name: string; username: string; headline?: string };
+  hostRole?: ClubMemberRole;
   hostTitle?: string;
 }): Promise<NetworkGroup> {
   try {
@@ -955,10 +977,12 @@ export async function createNetworkGroup(data: {
       tagline: data.tagline,
       about: data.about,
       category: data.category,
+      visibility: data.visibility || "public",
       tags: data.tags,
       policies: data.policies || "",
       bannerUrl: data.bannerUrl || undefined,
       avatarUrl: data.avatarUrl || undefined,
+      hostRole: data.hostRole || undefined,
       hostTitle: data.hostTitle || undefined,
     });
     if (res.data?.id) {

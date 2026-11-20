@@ -477,14 +477,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   to={to}
                   data-tour={tourKey(to)}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-cursive text-lg md:text-[19px] font-semibold tracking-wide leading-none transition-all duration-200 ${
                     active
                       ? "bg-[#780D18] text-white shadow-xs"
                       : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span>{label}</span>
+                  <span className="leading-none">{label}</span>
                   {to === "/messages" && <UnreadBadge count={unreadMessages} />}
                 </Link>
               );
@@ -496,13 +496,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
-                className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-cursive text-lg md:text-[19px] font-semibold tracking-wide leading-none transition-all ${
                   isMoreActive
                     ? "bg-[#780D18] text-white shadow-xs"
                     : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
                 }`}
               >
-                <span>More</span>
+                <span className="leading-none">More</span>
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden />
               </button>
 
@@ -618,10 +618,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             {!recruiter && (
               <Link
                 to="/add-project"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#780D18] hover:bg-[#5C0A12] text-white rounded-full text-sm font-bold shadow-xs transition-all hover:scale-[1.02]"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#780D18] hover:bg-[#5C0A12] text-white rounded-full font-cursive text-base md:text-[17px] font-bold tracking-wide leading-none shadow-xs transition-all hover:scale-[1.02]"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Add Project</span>
+                <span className="leading-none">Add Project</span>
               </Link>
             )}
 

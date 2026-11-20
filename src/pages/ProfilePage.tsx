@@ -1144,7 +1144,15 @@ function ProfileClubsTab({ userId, own }: { userId: string; own: boolean }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
       {clubs.map((club: NetworkGroup) => {
         const role = club.membershipRole || club.userRole;
-        const title = club.membershipTitle || club.userCustomTitle || clubRoleLabel(role);
+        const roleLabel = clubRoleLabel(role);
+        const title = club.membershipTitle || club.userCustomTitle || roleLabel;
+        const joinedRaw =
+          club.membershipJoinedAt ||
+          club.members?.find((m) => m.userId === userId)?.joinedAt ||
+          club.createdAt;
+        const joinedLabel = joinedRaw
+          ? new Date(joinedRaw).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+          : null;
         return (
           <Link
             key={club.id}
@@ -1156,13 +1164,19 @@ function ProfileClubsTab({ userId, own }: { userId: string; own: boolean }) {
                 {(club.name || "?").slice(0, 1)}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-serif text-xl text-stone-900 truncate">{club.name}</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-serif text-xl text-stone-900 truncate">{club.name}</h3>
+                  <span className="shrink-0 rounded-full bg-maroon-800/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-maroon-800">
+                    {roleLabel}
+                  </span>
+                </div>
                 <p className="text-xs font-semibold text-maroon-800 mt-0.5">{title}</p>
                 {club.tagline && (
                   <p className="mt-2 text-sm text-stone-600 line-clamp-2">{club.tagline}</p>
                 )}
-                <p className="mt-3 text-[11px] text-stone-400">
-                  {club.memberCount} members · {clubRoleLabel(role)}
+                <p className="mt-3 text-[11px] text-stone-500">
+                  {club.memberCount} {club.memberCount === 1 ? "member" : "members"}
+                  {joinedLabel ? ` · Joined ${joinedLabel}` : ""}
                 </p>
               </div>
             </div>
