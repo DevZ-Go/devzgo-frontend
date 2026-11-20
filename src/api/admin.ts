@@ -296,3 +296,121 @@ export async function grantAdminPiPremium(body: {
   const { data } = await api.post("/admin/project-intelligence/premium", body);
   return data;
 }
+
+export type AdminPiUserSummary = {
+  user_id: string;
+  email: string;
+  username: string;
+  full_name: string;
+  year_month: string;
+  month: {
+    ai_projects_used: number;
+    regenerations_used: number;
+    requests_count: number;
+    tokens_in: number;
+    tokens_out: number;
+    cost_usd: number;
+  };
+  lifetime: {
+    cost_usd: number;
+    tokens_in: number;
+    tokens_out: number;
+    ledger_calls: number;
+  };
+  visitor_ai_projects: number;
+  owned_projects: number;
+  projects_with_ai_publication: number;
+};
+
+export type AdminPiUserDetail = AdminPiUserSummary & {
+  months: {
+    year_month: string;
+    ai_projects_used: number;
+    regenerations_used: number;
+    requests_count: number;
+    tokens_in: number;
+    tokens_out: number;
+    cost_usd: number;
+  }[];
+  ledger: {
+    id: string;
+    project_id: string | null;
+    project_title: string | null;
+    job_id: string | null;
+    provider: string;
+    model: string;
+    tokens_in: number;
+    tokens_out: number;
+    estimated_cost_usd: number;
+    created_at: string | null;
+  }[];
+  generations: {
+    id: string;
+    user_id?: string;
+    project_id: string;
+    project_title: string | null;
+    kind: string;
+    status: string;
+    model: string | null;
+    prompt_version: string;
+    counts_as_project: boolean;
+    tokens_in: number;
+    tokens_out: number;
+    actual_cost_usd: number | null;
+    error: string | null;
+    created_at: string | null;
+    completed_at: string | null;
+  }[];
+  visitor_requests: {
+    id: string;
+    project_id: string;
+    was_cache_hit: boolean;
+    created_at: string | null;
+  }[];
+  projects: {
+    id: string;
+    title: string;
+    visibility: string;
+    has_publication: boolean;
+    quality_status: string | null;
+    schema_version: string | null;
+    publish_simple: boolean;
+    updated_at: string | null;
+  }[];
+};
+
+export type AdminPiRegenerateResult = {
+  ok: boolean;
+  project_id: string;
+  project_title: string;
+  draft_id: string;
+  job_id: string | null;
+  generation_record_id: string;
+  published: boolean;
+  quality_status: string | null;
+  completed_at: string;
+};
+
+export async function fetchAdminPiUsers(params?: {
+  q?: string;
+  limit?: number;
+}): Promise<{ users: AdminPiUserSummary[] }> {
+  const { data } = await api.get("/admin/project-intelligence/users", { params });
+  return data;
+}
+
+export async function fetchAdminPiUserDetail(
+  userId: string,
+  params?: { ledger_limit?: number },
+): Promise<AdminPiUserDetail> {
+  const { data } = await api.get(`/admin/project-intelligence/users/${userId}`, { params });
+  return data;
+}
+
+export async function adminRegenerateProjectSummary(
+  projectId: string,
+  body?: { publish?: boolean; include_detailed?: boolean },
+): Promise<AdminPiRegenerateResult> {
+  const { data } = await api.post(`/admin/project-intelligence/projects/${projectId}/regenerate`, body ?? {});
+  return data;
+}

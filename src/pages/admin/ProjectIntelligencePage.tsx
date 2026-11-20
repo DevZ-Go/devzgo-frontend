@@ -1,9 +1,14 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  adminRegenerateProjectSummary,
+  fetchAdminPiUserDetail,
+  fetchAdminPiUsers,
   fetchAdminProjectIntelligence,
   grantAdminPiPremium,
   patchAdminProjectIntelligence,
+  type AdminPiUserDetail,
+  type AdminPiUserSummary,
 } from "../../api/admin";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { ui } from "../../styles/editorial";
@@ -30,6 +35,12 @@ export function ProjectIntelligencePage() {
   const [premiumEmail, setPremiumEmail] = useState("");
   const [premiumDays, setPremiumDays] = useState("");
 
+  const [usageQuery, setUsageQuery] = useState("");
+  const [usageSearch, setUsageSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [regenProjectId, setRegenProjectId] = useState("");
+  const [regenDetailed, setRegenDetailed] = useState(false);
+
   useEffect(() => {
     const s = query.data?.settings;
     if (!s) return;
@@ -45,6 +56,19 @@ export function ProjectIntelligencePage() {
     setDailyBudget(Number(s.global_daily_budget_usd ?? 50));
     setMonthlyBudget(Number(s.global_monthly_budget_usd ?? 500));
   }, [query.data]);
+
+  const usersQuery = useQuery({
+    queryKey: ["admin", "project-intelligence", "users", usageSearch],
+    queryFn: () => fetchAdminPiUsers({ q: usageSearch || undefined, limit: 50 }),
+    retry: false,
+  });
+
+  const detailQuery = useQuery({
+    queryKey: ["admin", "project-intelligence", "user", selectedUserId],
+    queryFn: () => fetchAdminPiUserDetail(selectedUserId!),
+    enabled: Boolean(selectedUserId),
+    retry: false,
+  });
 
   const save = useMutation({
     mutationFn: () =>
@@ -83,6 +107,27 @@ export function ProjectIntelligencePage() {
     onError: (err) => setMessage(getApiErrorMessage(err)),
   });
 
+  const regenerate = useMutation({
+    mutationFn: (projectId: string) =>
+      adminRegenerateProjectSummary(projectId, {
+        publish: true,
+        include_detailed: regenDetailed,
+      }),
+    onSuccess: async (data) => {
+      setMessage(
+        `Regenerated “${data.project_title}”${data.published ? " and published" : ""}${
+          data.quality_status ? ` · quality: ${data.quality_status}` : ""
+        }.`,
+      );
+      if (selectedUserId) {
+        await qc.invalidateQueries({ queryKey: ["admin", "project-intelligence", "user", selectedUserId] });
+      }
+      await qc.invalidateQueries({ queryKey: ["admin", "project-intelligence", "users"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "project-intelligence"] });
+    },
+    onError: (err) => setMessage(getApiErrorMessage(err)),
+  });
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
@@ -95,13 +140,15 @@ export function ProjectIntelligencePage() {
   }
 
   const overview = query.data?.overview;
+  const users = usersQuery.data?.users ?? [];
+  const detail = detailQuery.data;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-serif text-2xl text-stone-900">Project Intelligence</h2>
         <p className="mt-1 text-sm text-stone-500">
-          Quotas, spending ceilings, and Premium assignment. API keys are never shown here.
+          Quotas, spend, per-user AI usage, and admin summary regeneration. API keys are never shown here.
         </p>
         <p className="mt-2 text-xs text-stone-500">
           Feature flag:{" "}
@@ -196,20 +243,328 @@ export function ProjectIntelligencePage() {
         </div>
       </div>
 
-      {overview?.near_quota_users && overview.near_quota_users.length > 0 && (
-        <div className={`space-y-2 ${ui.card} p-5`}>
-          <h3 className="font-semibold text-stone-900">Users near quota</h3>
-          <ul className="space-y-1 text-sm text-stone-600">
-            {overview.near_quota_users.map((u) => (
-              <li key={u.user_id}>
-                {u.user_id.slice(0, 8)}… · {u.ai_projects_used} projects · ${Number(u.cost_usd || 0).toFixed(2)}
+      <div className={`space-y-4 ${ui.card} p-5`}>
+        <div>
+          <h3 className="font-semibold text-stone-900">AI usage by user</h3>
+          <p className="mt-1 text-xs text-stone-500">
+            Search by email or username. Open a row for month history, ledger calls, generations, and projects.
+          </p>
+        </div>
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setUsageSearch(usageQuery.trim());
+          }}
+        >
+          <input
+            className={`${ui.input} min-w-[16rem] flex-1`}
+            placeholder="Search email or username"
+            value={usageQuery}
+            onChange={(e) => setUsageQuery(e.target.value)}
+          />
+          <button type="submit" className={`${ui.btn} ${ui.primary}`}>
+            Search
+          </button>
+        </form>
+
+        {usersQuery.isLoading && <p className="text-sm text-stone-500">Loading users…</p>}
+        {usersQuery.isError && (
+          <p className="text-sm text-crimson-700">{getApiErrorMessage(usersQuery.error)}</p>
+        )}
+
+        {!usersQuery.isLoading && users.length === 0 && (
+          <p className="text-sm text-stone-500">No AI usage rows yet.</p>
+        )}
+
+        {users.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[40rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-stone-200 text-[11px] uppercase tracking-wide text-stone-400">
+                  <th className="py-2 pr-3 font-semibold">User</th>
+                  <th className="py-2 pr-3 font-semibold">Month cost</th>
+                  <th className="py-2 pr-3 font-semibold">AI projects</th>
+                  <th className="py-2 pr-3 font-semibold">Lifetime</th>
+                  <th className="py-2 font-semibold" />
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <UserRow
+                    key={u.user_id}
+                    user={u}
+                    selected={selectedUserId === u.user_id}
+                    onSelect={() =>
+                      setSelectedUserId((cur) => (cur === u.user_id ? null : u.user_id))
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {overview?.near_quota_users && overview.near_quota_users.length > 0 && (
+          <div className="border-t border-stone-100 pt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Near quota</p>
+            <ul className="mt-2 space-y-1 text-sm text-stone-600">
+              {overview.near_quota_users.map((u) => (
+                <li key={u.user_id}>
+                  <button
+                    type="button"
+                    className="text-left underline-offset-2 hover:underline"
+                    onClick={() => setSelectedUserId(u.user_id)}
+                  >
+                    {u.user_id.slice(0, 8)}… · {u.ai_projects_used} projects · $
+                    {Number(u.cost_usd || 0).toFixed(2)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedUserId && (
+          <UserDetailPanel
+            loading={detailQuery.isLoading}
+            error={detailQuery.isError ? getApiErrorMessage(detailQuery.error) : null}
+            detail={detail}
+            regenerating={regenerate.isPending}
+            onRegenerate={(projectId) => {
+              setMessage(null);
+              regenerate.mutate(projectId);
+            }}
+          />
+        )}
+      </div>
+
+      <div className={`space-y-3 ${ui.card} p-5`}>
+        <h3 className="font-semibold text-stone-900">Regenerate project summary</h3>
+        <p className="text-xs text-stone-500">
+          Runs a fresh AI brief for any project. Does not consume the owner&apos;s monthly allowance; platform
+          cost is still logged. Publishes when quality passes the gate.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            className={`${ui.input} min-w-[18rem] flex-1`}
+            placeholder="Project UUID"
+            value={regenProjectId}
+            onChange={(e) => setRegenProjectId(e.target.value)}
+          />
+          <label className="flex items-center gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              checked={regenDetailed}
+              onChange={(e) => setRegenDetailed(e.target.checked)}
+            />
+            Include detailed / technical
+          </label>
+          <button
+            type="button"
+            className={`${ui.btn} ${ui.primary}`}
+            disabled={!regenProjectId.trim() || regenerate.isPending}
+            onClick={() => {
+              setMessage(null);
+              regenerate.mutate(regenProjectId.trim());
+            }}
+          >
+            {regenerate.isPending ? "Regenerating…" : "Regenerate"}
+          </button>
+        </div>
+      </div>
+
+      {message && <p className="text-sm text-stone-700">{message}</p>}
+    </div>
+  );
+}
+
+function UserRow({
+  user,
+  selected,
+  onSelect,
+}: {
+  user: AdminPiUserSummary;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <tr className={`border-b border-stone-100 ${selected ? "bg-stone-50" : ""}`}>
+      <td className="py-2 pr-3">
+        <div className="font-medium text-stone-900">{user.full_name || user.username}</div>
+        <div className="text-xs text-stone-500">
+          @{user.username} · {user.email}
+        </div>
+      </td>
+      <td className="py-2 pr-3 text-stone-700">${Number(user.month.cost_usd || 0).toFixed(2)}</td>
+      <td className="py-2 pr-3 text-stone-700">
+        {user.month.ai_projects_used}
+        <span className="text-stone-400"> / {user.month.regenerations_used} regen</span>
+      </td>
+      <td className="py-2 pr-3 text-stone-700">
+        ${Number(user.lifetime.cost_usd || 0).toFixed(2)}
+        <span className="text-stone-400"> · {user.lifetime.ledger_calls} calls</span>
+      </td>
+      <td className="py-2 text-right">
+        <button type="button" className={`${ui.btn} text-xs`} onClick={onSelect}>
+          {selected ? "Hide" : "Detail"}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function UserDetailPanel({
+  loading,
+  error,
+  detail,
+  regenerating,
+  onRegenerate,
+}: {
+  loading: boolean;
+  error: string | null;
+  detail: AdminPiUserDetail | undefined;
+  regenerating: boolean;
+  onRegenerate: (projectId: string) => void;
+}) {
+  if (loading) return <p className="text-sm text-stone-500">Loading detail…</p>;
+  if (error) return <p className="text-sm text-crimson-700">{error}</p>;
+  if (!detail) return null;
+
+  return (
+    <div className="space-y-4 border-t border-stone-100 pt-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Month tokens" value={`${detail.month.tokens_in} in / ${detail.month.tokens_out} out`} />
+        <Stat label="Month requests" value={String(detail.month.requests_count)} />
+        <Stat label="Visitor AI projects" value={String(detail.visitor_ai_projects)} />
+        <Stat
+          label="Owned / published AI"
+          value={`${detail.owned_projects} / ${detail.projects_with_ai_publication}`}
+        />
+      </div>
+
+      {detail.months.length > 0 && (
+        <Section title="Month history">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="text-stone-400">
+                  <th className="py-1 pr-2">Month</th>
+                  <th className="py-1 pr-2">Projects</th>
+                  <th className="py-1 pr-2">Regen</th>
+                  <th className="py-1 pr-2">Requests</th>
+                  <th className="py-1 pr-2">Tokens</th>
+                  <th className="py-1">Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.months.map((m) => (
+                  <tr key={m.year_month} className="border-t border-stone-100 text-stone-700">
+                    <td className="py-1 pr-2">{m.year_month}</td>
+                    <td className="py-1 pr-2">{m.ai_projects_used}</td>
+                    <td className="py-1 pr-2">{m.regenerations_used}</td>
+                    <td className="py-1 pr-2">{m.requests_count}</td>
+                    <td className="py-1 pr-2">
+                      {m.tokens_in}/{m.tokens_out}
+                    </td>
+                    <td className="py-1">${Number(m.cost_usd || 0).toFixed(4)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      <Section title={`Ledger (${detail.ledger.length})`}>
+        {detail.ledger.length === 0 ? (
+          <p className="text-xs text-stone-500">No ledger rows.</p>
+        ) : (
+          <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-stone-600">
+            {detail.ledger.map((r) => (
+              <li key={r.id}>
+                {r.created_at?.slice(0, 19) || "—"} · {r.model} · {r.tokens_in}/{r.tokens_out} · $
+                {Number(r.estimated_cost_usd || 0).toFixed(4)}
+                {r.project_title ? ` · ${r.project_title}` : r.project_id ? ` · ${r.project_id.slice(0, 8)}…` : ""}
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </Section>
 
-      {message && <p className="text-sm text-stone-700">{message}</p>}
+      <Section title={`Generations (${detail.generations.length})`}>
+        {detail.generations.length === 0 ? (
+          <p className="text-xs text-stone-500">No generation records.</p>
+        ) : (
+          <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-stone-600">
+            {detail.generations.map((g) => (
+              <li key={g.id}>
+                {g.created_at?.slice(0, 19) || "—"} · {g.kind}/{g.status} · {g.model || "—"}
+                {g.actual_cost_usd != null ? ` · $${Number(g.actual_cost_usd).toFixed(4)}` : ""}
+                {g.project_title ? ` · ${g.project_title}` : ""}
+                {g.error ? ` · err: ${g.error}` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title={`Visitor requests (${detail.visitor_requests.length})`}>
+        {detail.visitor_requests.length === 0 ? (
+          <p className="text-xs text-stone-500">None.</p>
+        ) : (
+          <ul className="max-h-32 space-y-1 overflow-y-auto text-xs text-stone-600">
+            {detail.visitor_requests.map((v) => (
+              <li key={v.id}>
+                {v.created_at?.slice(0, 19) || "—"} · {v.project_id.slice(0, 8)}…
+                {v.was_cache_hit ? " · cache" : " · new"}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title={`Owned projects (${detail.projects.length})`}>
+        {detail.projects.length === 0 ? (
+          <p className="text-xs text-stone-500">No projects.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {detail.projects.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-50 py-1"
+              >
+                <div>
+                  <div className="font-medium text-stone-900">{p.title}</div>
+                  <div className="text-xs text-stone-500">
+                    {p.visibility}
+                    {p.has_publication
+                      ? ` · AI ${p.quality_status || "published"}${p.publish_simple ? " · live" : ""}`
+                      : " · no AI publication"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`${ui.btn} text-xs`}
+                  disabled={regenerating}
+                  onClick={() => onRegenerate(p.id)}
+                >
+                  Regenerate
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">{title}</p>
+      <div className="mt-2">{children}</div>
     </div>
   );
 }
