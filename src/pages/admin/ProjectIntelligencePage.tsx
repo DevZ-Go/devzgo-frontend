@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   adminRegenerateProjectSummary,
+  fetchAdminPiProjects,
   fetchAdminPiUserDetail,
   fetchAdminPiUsers,
   fetchAdminProjectIntelligence,
@@ -40,6 +41,8 @@ export function ProjectIntelligencePage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [regenProjectId, setRegenProjectId] = useState("");
   const [regenDetailed, setRegenDetailed] = useState(false);
+  const [projectQuery, setProjectQuery] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
 
   useEffect(() => {
     const s = query.data?.settings;
@@ -67,6 +70,12 @@ export function ProjectIntelligencePage() {
     queryKey: ["admin", "project-intelligence", "user", selectedUserId],
     queryFn: () => fetchAdminPiUserDetail(selectedUserId!),
     enabled: Boolean(selectedUserId),
+    retry: false,
+  });
+
+  const projectsQuery = useQuery({
+    queryKey: ["admin", "project-intelligence", "projects", projectSearch],
+    queryFn: () => fetchAdminPiProjects({ q: projectSearch || undefined, limit: 25 }),
     retry: false,
   });
 
@@ -209,8 +218,11 @@ export function ProjectIntelligencePage() {
       </form>
 
       <div className={`space-y-3 ${ui.card} p-5`}>
-        <h3 className="font-semibold text-stone-900">Assign Premium</h3>
-        <p className="text-xs text-stone-500">Manual only — no payments. Optional expiry in days.</p>
+        <h3 className="font-semibold text-stone-900">Assign Project Intelligence Premium</h3>
+        <p className="text-xs text-stone-500">
+          Manual only — no payments. Optional expiry in days. For Resume Studio + PI together, use Admin → People or Overview.
+          Platform admins already have every premium feature.
+        </p>
         <div className="flex flex-wrap gap-2">
           <input
             className={ui.input}
@@ -342,24 +354,82 @@ export function ProjectIntelligencePage() {
       <div className={`space-y-3 ${ui.card} p-5`}>
         <h3 className="font-semibold text-stone-900">Regenerate project summary</h3>
         <p className="text-xs text-stone-500">
-          Runs a fresh AI brief for any project. Does not consume the owner&apos;s monthly allowance; platform
-          cost is still logged. Publishes when quality passes the gate.
+          Search by project title, owner email/username, or UUID. Does not consume the owner&apos;s monthly
+          allowance; platform cost is still logged. Also available from Browse → Projects when you open a row.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
+        <form
+          className="flex flex-wrap gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setProjectSearch(projectQuery.trim());
+          }}
+        >
+          <input
+            className={`${ui.input} min-w-[16rem] flex-1`}
+            placeholder="Search projects by title, owner, or UUID"
+            value={projectQuery}
+            onChange={(e) => setProjectQuery(e.target.value)}
+          />
+          <button type="submit" className={`${ui.btn} ${ui.primary}`}>
+            Search
+          </button>
+        </form>
+        <label className="flex items-center gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            checked={regenDetailed}
+            onChange={(e) => setRegenDetailed(e.target.checked)}
+          />
+          Include detailed / technical on regenerate
+        </label>
+
+        {projectsQuery.isLoading && <p className="text-sm text-stone-500">Searching projects…</p>}
+        {projectsQuery.isError && (
+          <p className="text-sm text-crimson-700">{getApiErrorMessage(projectsQuery.error)}</p>
+        )}
+        {(projectsQuery.data?.projects ?? []).length > 0 && (
+          <ul className="space-y-2">
+            {projectsQuery.data!.projects.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 py-2 text-sm"
+              >
+                <div>
+                  <div className="font-medium text-stone-900">{p.title}</div>
+                  <div className="text-xs text-stone-500">
+                    @{p.owner_username} · {p.owner_email} · {String(p.visibility)}
+                    {p.has_publication
+                      ? ` · AI ${p.quality_status || "published"}${p.publish_simple ? " · live" : ""}`
+                      : " · no AI publication"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`${ui.btn} ${ui.primary} text-xs`}
+                  disabled={regenerate.isPending}
+                  onClick={() => {
+                    setRegenProjectId(p.id);
+                    setMessage(null);
+                    regenerate.mutate(p.id);
+                  }}
+                >
+                  {regenerate.isPending && regenProjectId === p.id ? "Regenerating…" : "Regenerate"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {projectsQuery.isFetched && (projectsQuery.data?.projects ?? []).length === 0 && (
+          <p className="text-sm text-stone-500">No projects matched.</p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
           <input
             className={`${ui.input} min-w-[18rem] flex-1`}
-            placeholder="Project UUID"
+            placeholder="Or paste project UUID"
             value={regenProjectId}
             onChange={(e) => setRegenProjectId(e.target.value)}
           />
-          <label className="flex items-center gap-2 text-sm text-stone-700">
-            <input
-              type="checkbox"
-              checked={regenDetailed}
-              onChange={(e) => setRegenDetailed(e.target.checked)}
-            />
-            Include detailed / technical
-          </label>
           <button
             type="button"
             className={`${ui.btn} ${ui.primary}`}
@@ -369,7 +439,7 @@ export function ProjectIntelligencePage() {
               regenerate.mutate(regenProjectId.trim());
             }}
           >
-            {regenerate.isPending ? "Regenerating…" : "Regenerate"}
+            {regenerate.isPending ? "Regenerating…" : "Regenerate by ID"}
           </button>
         </div>
       </div>

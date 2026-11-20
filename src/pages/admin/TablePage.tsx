@@ -1,7 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchCatalog, fetchRow, fetchTable, type TableColumn } from "../../api/admin";
+import {
+  adminRegenerateProjectSummary,
+  fetchCatalog,
+  fetchRow,
+  fetchTable,
+  type TableColumn,
+} from "../../api/admin";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { ui } from "../../styles/editorial";
 import { Banner, Loading, display, panel, titleCase } from "./bits";
@@ -143,6 +149,7 @@ function RowDrawer({
     setShort(typeof next.short_description === "string" ? next.short_description : "");
   }, [detail.data]);
   const [busy, setBusy] = useState(false);
+  const [regenBusy, setRegenBusy] = useState(false);
   const full = detail.data?.row ?? row;
   const id = typeof full.id === "string" ? full.id : "";
 
@@ -159,6 +166,28 @@ function RowDrawer({
       setError(getApiErrorMessage(err));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function regenerateSummary(detailed = false) {
+    if (!id) return;
+    setMessage(null);
+    setError(null);
+    setRegenBusy(true);
+    try {
+      const result = await adminRegenerateProjectSummary(id, {
+        publish: true,
+        include_detailed: detailed,
+      });
+      setMessage(
+        `AI summary regenerated${result.published ? " and published" : ""}${
+          result.quality_status ? ` · quality: ${result.quality_status}` : ""
+        }.`,
+      );
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setRegenBusy(false);
     }
   }
 
@@ -183,6 +212,12 @@ function RowDrawer({
               <Tiny disabled={busy} onClick={() => void run("project.comments", { enabled: false })}>Comments off</Tiny>
               <Tiny disabled={busy} onClick={() => void run("project.likes_hidden", { hidden: true })}>Hide likes</Tiny>
               <Tiny disabled={busy} onClick={() => void run("project.likes_hidden", { hidden: false })}>Show likes</Tiny>
+              <Tiny disabled={busy || regenBusy} onClick={() => void regenerateSummary(false)}>
+                {regenBusy ? "Regenerating…" : "Regenerate AI summary"}
+              </Tiny>
+              <Tiny disabled={busy || regenBusy} onClick={() => void regenerateSummary(true)}>
+                Regenerate AI (detailed)
+              </Tiny>
               <Tiny disabled={busy} onClick={() => void run("project.delete")}>Delete project</Tiny>
             </>
           )}

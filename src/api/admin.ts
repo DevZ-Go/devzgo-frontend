@@ -208,17 +208,25 @@ export interface UsageStat {
   label: string;
   count: number;
   people: number;
+  group?: string;
+  kind?: string;
+  share?: number;
 }
 
 export interface Insights {
   days: number;
   visits: number;
   people: number;
-  pages: UsageStat[];
-  gallery: UsageStat;
-  tv: UsageStat;
-  horizontal: UsageStat;
-  vertical: UsageStat;
+  audience?: string;
+  areas?: string[];
+  /** Newer API shape from /admin/insights */
+  rows?: UsageStat[];
+  /** Legacy shape (still supported by the Insights page) */
+  pages?: UsageStat[];
+  gallery?: UsageStat;
+  tv?: UsageStat;
+  horizontal?: UsageStat;
+  vertical?: UsageStat;
 }
 
 export async function fetchInsights(days: number): Promise<Insights> {
@@ -390,6 +398,27 @@ export type AdminPiRegenerateResult = {
   quality_status: string | null;
   completed_at: string;
 };
+
+export type AdminPiProjectHit = {
+  id: string;
+  title: string;
+  visibility: string;
+  owner_id: string;
+  owner_email: string;
+  owner_username: string;
+  has_publication: boolean;
+  quality_status: string | null;
+  publish_simple: boolean;
+  updated_at: string | null;
+};
+
+export async function fetchAdminPiProjects(params?: {
+  q?: string;
+  limit?: number;
+}): Promise<{ projects: AdminPiProjectHit[] }> {
+  const { data } = await api.get("/admin/project-intelligence/projects", { params });
+  return data;
+}
 
 export async function fetchAdminPiUsers(params?: {
   q?: string;

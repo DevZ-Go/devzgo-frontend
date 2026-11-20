@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInsights, type UsageStat } from "../../api/admin";
 import { ui } from "../../styles/editorial";
@@ -10,10 +10,30 @@ export function InsightsPage() {
   const [days, setDays] = useState<(typeof RANGES)[number]>(30);
   const insights = useQuery({ queryKey: ["admin", "insights", days], queryFn: () => fetchInsights(days) });
 
-  if (insights.isLoading) return <Loading label="Gathering visits" />;
-  if (!insights.data) return <p className={ui.error}>Insights could not be loaded.</p>;
   const data = insights.data;
-  const busiest = data.pages[0]?.count ?? 0;
+  const pages = useMemo(() => {
+    const rows = data?.pages ?? data?.rows ?? [];
+    return rows.filter((row) => (row.kind ?? "page") === "page");
+  }, [data]);
+  const features = useMemo(() => {
+    const rows = data?.pages ?? data?.rows ?? [];
+    return rows.filter((row) => row.kind === "feature");
+  }, [data]);
+
+  const gallery = data?.gallery ?? pickStat(pages, "visit.gallery", "Gallery");
+  const tv = data?.tv ?? pickStat(pages, "visit.tv", "TV World");
+  const horizontal = data?.horizontal ?? pickStat(features, "scroll.horizontal", "Horizontal scrolling");
+  const vertical = data?.vertical ?? pickStat(features, "scroll.vertical", "Vertical scrolling");
+  const busiest = pages[0]?.count ?? 0;
+
+  if (insights.isLoading) return <Loading label="Gathering visits" />;
+  if (insights.isError || !data) {
+    return <p className={ui.error}>Insights could not be loaded.</p>;
+  }
+
+  const areas = data.areas?.length
+    ? data.areas
+    : Array.from(new Set(pages.map((p) => p.group).filter(Boolean) as string[]));
 
   return (
     <div className="space-y-4">
@@ -39,7 +59,10 @@ export function InsightsPage() {
           </div>
         </div>
         <p className="mt-4 font-serif text-3xl font-bold text-[#2D120D]">
-          {data.visits} <span className="font-sans text-base font-semibold text-stone-500">visits from {data.people} {data.people === 1 ? "person" : "people"}</span>
+          {data.visits}{" "}
+          <span className="font-sans text-base font-semibold text-stone-500">
+            visits from {data.people} {data.people === 1 ? "person" : "people"}
+          </span>
         </p>
       </section>
 
@@ -47,44 +70,96 @@ export function InsightsPage() {
         <Split
           title="Gallery and TV World"
           hint="Gallery is the project studio. TV World is the retro room."
-          left={data.gallery}
-          right={data.tv}
+          left={gallery}
+          right={tv}
         />
         <Split
           title="Gallery scrolling"
           hint="Counted when the gallery is on screen, and again when someone switches direction."
-          left={data.horizontal}
-          right={data.vertical}
+          left={horizontal}
+          right={vertical}
         />
       </div>
 
-      <section className={panel}>
-        <h2 className={ui.heading}>Pages people open</h2>
-        {data.pages.length === 0 && (
-          <p className="mt-3 text-sm text-stone-600">Nothing has been counted in this stretch yet. Visits begin the next time someone moves through DevZ-Go.</p>
-        )}
-        <ol className="mt-4 space-y-3">
-          {data.pages.map((page) => (
-            <li key={page.key}>
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold text-[#2D120D]">{page.label}</p>
-                <p className="shrink-0 text-sm tabular-nums text-stone-600">
-                  {page.count} <span className="text-xs text-stone-500">· {page.people} {page.people === 1 ? "person" : "people"}</span>
-                </p>
-              </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[#E7E5E4]" aria-hidden>
-                <div className="h-full rounded-full bg-[#6B0B0C]" style={{ width: `${busiest ? Math.max(6, Math.round((page.count / busiest) * 100)) : 0}%` }} />
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {areas.map((area) => {
+        const groupPages = pages.filter((p) => (p.group || "Other") === area);
+        if (groupPages.length === 0) return null;
+        const localBusy = Math.max(...groupPages.map((p) => p.count), 0);
+        return (
+          <section key={area} className={panel}>
+            <h2 className={ui.heading}>{area}</h2>
+            <ol className="mt-4 space-y-3">
+              {groupPages.map((page) => (
+                <li key={page.key}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-semibold text-[#2D120D]">{page.label}</p>
+                    <p className="shrink-0 text-sm tabular-nums text-stone-600">
+                      {page.count}{" "}
+                      <span className="text-xs text-stone-500">
+                        · {page.people} {page.people === 1 ? "person" : "people"}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[#E7E5E4]" aria-hidden>
+                    <div
+                      className="h-full rounded-full bg-[#6B0B0C]"
+                      style={{
+                        width: `${localBusy ? Math.max(6, Math.round((page.count / localBusy) * 100)) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })}
+
+      {pages.length === 0 && (
+        <section className={panel}>
+          <h2 className={ui.heading}>Pages people open</h2>
+          <p className="mt-3 text-sm text-stone-600">
+            Nothing has been counted in this stretch yet. Visits begin the next time someone moves through DevZ-Go.
+          </p>
+        </section>
+      )}
+
+      {pages.length > 0 && areas.length === 0 && (
+        <section className={panel}>
+          <h2 className={ui.heading}>Pages people open</h2>
+          <ol className="mt-4 space-y-3">
+            {pages.map((page) => (
+              <li key={page.key}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#2D120D]">{page.label}</p>
+                  <p className="shrink-0 text-sm tabular-nums text-stone-600">
+                    {page.count}{" "}
+                    <span className="text-xs text-stone-500">
+                      · {page.people} {page.people === 1 ? "person" : "people"}
+                    </span>
+                  </p>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[#E7E5E4]" aria-hidden>
+                  <div
+                    className="h-full rounded-full bg-[#6B0B0C]"
+                    style={{ width: `${busiest ? Math.max(6, Math.round((page.count / busiest) * 100)) : 0}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   );
 }
 
+function pickStat(rows: UsageStat[], key: string, label: string): UsageStat {
+  return rows.find((r) => r.key === key) ?? { key, label, count: 0, people: 0 };
+}
+
 function Split({ title, hint, left, right }: { title: string; hint: string; left: UsageStat; right: UsageStat }) {
-  const total = left.count + right.count;
+  const total = (left?.count ?? 0) + (right?.count ?? 0);
   const leftShare = total ? Math.round((left.count / total) * 100) : 0;
   const rightShare = total ? 100 - leftShare : 0;
   return (
@@ -115,7 +190,9 @@ function Side({ stat, swatch, share }: { stat: UsageStat; swatch: string; share:
         {stat.label}
       </p>
       <p className="mt-1 font-serif text-2xl font-bold text-[#2D120D]">{stat.count}</p>
-      <p className="text-xs text-stone-500">{share}% · {stat.people} {stat.people === 1 ? "person" : "people"}</p>
+      <p className="text-xs text-stone-500">
+        {share}% · {stat.people} {stat.people === 1 ? "person" : "people"}
+      </p>
     </div>
   );
 }

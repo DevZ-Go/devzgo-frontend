@@ -54,9 +54,11 @@ export function OverviewPage() {
       {error && <Banner tone="bad">{error}</Banner>}
 
       <section className={`${panel} space-y-3`}>
-        <h2 className={ui.heading}>Resume Studio Premium</h2>
+        <h2 className={ui.heading}>Premium access</h2>
         <p className="text-sm text-stone-600">
-          Grant Premium to every developer, or open a person page for one account. Optional days set the same expiry for everyone; each person is emailed when access ends.
+          Grant <strong>Resume Studio</strong> and <strong>Project Intelligence Premium</strong> to every developer, or open a person
+          page for one account. Optional days set the same expiry for everyone; each person is emailed when access ends.
+          Platform admins already unlock every premium feature automatically.
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">

@@ -103,9 +103,11 @@ export function PersonPage() {
 
       {row.account_type === "developer" && (
         <section className={`${panel} space-y-3`}>
-          <h3 className={ui.heading}>Resume Studio Premium</h3>
+          <h3 className={ui.heading}>Premium access</h3>
           <p className="text-sm text-stone-600">
-            Unlocks generate/export only. Matching and badges stay the same. Leave days blank for no expiry — they get an email when access ends.
+            Grants <strong>Resume Studio</strong> (generate/export) and <strong>Project Intelligence Premium</strong> together.
+            Matching and badges stay the same. Leave days blank for no expiry — they get an email when access ends.
+            Platform admins already have every premium feature without a grant.
           </p>
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">
