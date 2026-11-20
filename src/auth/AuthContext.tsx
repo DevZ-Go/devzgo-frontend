@@ -17,6 +17,7 @@ interface AuthContextValue {
   token: string | null;
   user: AuthUser | null;
   isAuthenticated: boolean;
+  isReady: boolean;
   login: (token: string) => void;
   logout: () => void;
   /** Load /auth/me using the current token. Call after login or on app load. */
@@ -37,12 +38,14 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setTokenState] = useState<string | null>(loadStoredToken);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isReady, setIsReady] = useState<boolean>(() => !loadStoredToken());
 
   const login = useCallback((newToken: string) => {
     queryClient.clear();
     setUser(null);
     setToken(newToken);
     setTokenState(newToken);
+    setIsReady(false);
   }, []);
 
   const logout = useCallback(() => {
@@ -50,7 +53,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     removeToken();
     setTokenState(null);
     setUser(null);
+    setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setIsReady(true);
+      return;
+    }
+    // Safety fallback: if backend is unreachable, settle isReady so app is never stuck indefinitely
+    const timer = window.setTimeout(() => setIsReady(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [token]);
 
   useEffect(() => {
     const onExpired = () => {
@@ -72,6 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const t = getToken();
     if (!t) {
       setUser(null);
+      setIsReady(true);
       return null;
     }
     try {
@@ -84,6 +99,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         logout();
       }
       throw err;
+    } finally {
+      setIsReady(true);
     }
   }, [logout]);
 
@@ -92,11 +109,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       token,
       user,
       isAuthenticated: Boolean(token),
+      isReady,
       login,
       logout,
       refreshUser,
     }),
-    [token, user, login, logout, refreshUser]
+    [token, user, isReady, login, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
