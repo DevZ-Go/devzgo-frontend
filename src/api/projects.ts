@@ -273,10 +273,14 @@ export async function updateProject(
 
 export interface ProjectComment {
   id: string;
+  parent_id?: string | null;
   body: string;
   created_at: string;
   author: { id: string; username: string; full_name: string; avatar_url: string | null };
   can_delete: boolean;
+  likes_count?: number;
+  is_liked?: boolean;
+  replies?: ProjectComment[];
 }
 
 /** Newest first; pass the previous page's `next_page` to load older comments. */
@@ -286,13 +290,30 @@ export async function fetchProjectComments(projectId: string, page?: string | nu
   return data;
 }
 
-export async function addProjectComment(projectId: string, body: string): Promise<ProjectComment> {
-  const { data } = await api.post<ProjectComment>(`/projects/${encodeURIComponent(projectId)}/comments`, { body });
+export async function addProjectComment(
+  projectId: string,
+  body: string,
+  parentId?: string | null,
+): Promise<ProjectComment> {
+  const { data } = await api.post<ProjectComment>(`/projects/${encodeURIComponent(projectId)}/comments`, {
+    body,
+    parent_id: parentId || undefined,
+  });
   return data;
 }
 
 export async function deleteProjectComment(projectId: string, commentId: string): Promise<void> {
   await api.delete(`/projects/${encodeURIComponent(projectId)}/comments/${encodeURIComponent(commentId)}`);
+}
+
+export async function toggleProjectCommentLike(
+  projectId: string,
+  commentId: string,
+): Promise<{ comment_id: string; likes_count: number; is_liked: boolean }> {
+  const { data } = await api.post<{ comment_id: string; likes_count: number; is_liked: boolean }>(
+    `/projects/${encodeURIComponent(projectId)}/comments/${encodeURIComponent(commentId)}/like`,
+  );
+  return data;
 }
 
 export async function setProjectLiked(

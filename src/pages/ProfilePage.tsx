@@ -42,8 +42,10 @@ import { CareerTimeline, type CareerSection } from "../components/career/CareerT
 import { BadgeGallery } from "../components/career/BadgeGallery";
 import { PortfolioShowcase } from "../components/career/PortfolioShowcase";
 import { ShowcasedBadges } from "../components/career/ShowcasedBadges";
+import { fetchUserClubs } from "../api/groups";
+import { clubRoleLabel, type NetworkGroup } from "../types/groups";
 
-const TABS = ["projects", "collaborations", "portfolio", "badges", "activity"] as const;
+const TABS = ["projects", "collaborations", "clubs", "portfolio", "badges", "activity"] as const;
 type ProfileTab = (typeof TABS)[number];
 const PORTFOLIO_SECTIONS = ["overview", "experience", "education", "certifications"] as const;
 type PortfolioSection = (typeof PORTFOLIO_SECTIONS)[number];
@@ -638,6 +640,17 @@ export function ProfilePage() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab("clubs")}
+            className={`shrink-0 pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+              activeTab === "clubs"
+                ? "border-maroon-700 text-maroon-800 font-medium"
+                : "border-transparent text-stone-500 hover:text-stone-800"
+            }`}
+          >
+            Clubs
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab("portfolio")}
             className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
               activeTab === "portfolio"
@@ -774,6 +787,10 @@ export function ProfilePage() {
 
         {activeTab === "collaborations" && devProfile && (
           <ProfileTeams userId={devProfile.userId || devProfile.id} own={isOwnProfile} />
+        )}
+
+        {activeTab === "clubs" && devProfile && (
+          <ProfileClubsTab userId={devProfile.userId || devProfile.id} own={isOwnProfile} />
         )}
 
         {activeTab === "portfolio" && devProfile && (
@@ -1077,6 +1094,81 @@ export function ProfilePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ProfileClubsTab({ userId, own }: { userId: string; own: boolean }) {
+  const clubsQuery = useQuery({
+    queryKey: ["profile-clubs", userId],
+    queryFn: () => fetchUserClubs(userId),
+    enabled: Boolean(userId),
+  });
+  const clubs = clubsQuery.data ?? [];
+
+  if (clubsQuery.isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24 text-stone-500">
+        <Loader2 className="w-8 h-8 text-maroon-700 animate-spin" />
+        <p className="text-sm">Loading clubs…</p>
+      </div>
+    );
+  }
+
+  if (clubsQuery.isError) {
+    return (
+      <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-16 text-center text-sm text-stone-500">
+        {getApiErrorMessage(clubsQuery.error) || "Could not load clubs."}
+      </div>
+    );
+  }
+
+  if (clubs.length === 0) {
+    return (
+      <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-16 text-center shadow-sm">
+        <Users className="mx-auto mb-3 h-8 w-8 text-stone-400" />
+        <p className="text-sm text-stone-600 mb-4">
+          {own ? "You are not in any clubs yet." : "This developer has not joined any clubs yet."}
+        </p>
+        <Link
+          to="/network/groups"
+          className="inline-flex px-5 py-2 rounded-xl bg-maroon-800 text-white text-xs font-semibold"
+        >
+          Browse clubs
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {clubs.map((club: NetworkGroup) => {
+        const role = club.membershipRole || club.userRole;
+        const title = club.membershipTitle || club.userCustomTitle || clubRoleLabel(role);
+        return (
+          <Link
+            key={club.id}
+            to={`/network/groups/${club.slug || club.id}`}
+            className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm hover:border-maroon-700/40 transition"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-maroon-800 text-amber-50 font-serif text-lg font-bold">
+                {(club.name || "?").slice(0, 1)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif text-xl text-stone-900 truncate">{club.name}</h3>
+                <p className="text-xs font-semibold text-maroon-800 mt-0.5">{title}</p>
+                {club.tagline && (
+                  <p className="mt-2 text-sm text-stone-600 line-clamp-2">{club.tagline}</p>
+                )}
+                <p className="mt-3 text-[11px] text-stone-400">
+                  {club.memberCount} members · {clubRoleLabel(role)}
+                </p>
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

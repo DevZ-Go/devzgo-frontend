@@ -129,8 +129,17 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
     ...(simple.capabilities || []),
     ...((simple.key_features as string[] | undefined) || []),
   ].filter(Boolean);
+  const developer = data.developer || {};
   const hasSimple =
-    Boolean(simple.what_it_does || simple.how_it_works || simple.why_use_it || features.length);
+    Boolean(
+      simple.what_is_this ||
+        simple.what_it_does ||
+        simple.how_it_works ||
+        simple.why_use_it ||
+        features.length ||
+        developer.short_description ||
+        developer.full_description,
+    );
   const hasTech = Boolean(
     technical.architecture ||
       (technical.technologies || []).length ||
@@ -140,7 +149,7 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
 
   return (
     <div className="space-y-4">
-      {showCommunityCta && !visitor?.summary_ready && (
+      {showCommunityCta && !visitor?.summary_ready && !hasSimple && !hasTech && (
         <CommunityGenerateCard
           visitor={visitor!}
           pending={communityGenerate.isPending}
@@ -166,17 +175,27 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
           {openSimple && (
             <div className="space-y-5 border-t border-stone-100 px-6 py-6 sm:px-8">
               <Block title="What is this?">
-                <p>{simple.what_is_this || simple.what_it_does || "Not confirmed yet."}</p>
+                <p>
+                  {simple.what_is_this ||
+                    simple.what_it_does ||
+                    developer.short_description ||
+                    developer.title ||
+                    "Not confirmed yet."}
+                </p>
               </Block>
               <Block title="What does it do?">
-                <p>{simple.what_it_does || "Not confirmed yet."}</p>
+                <p>{simple.what_it_does || developer.short_description || "Not confirmed yet."}</p>
               </Block>
-              <Block title="Why would someone use it?">
-                <p>{simple.why_use_it || "Not confirmed from the available evidence."}</p>
-              </Block>
-              <Block title="Who could benefit?">
-                <p>{simple.who_benefits || "Not confirmed from the available evidence."}</p>
-              </Block>
+              {(simple.why_use_it || !developer.short_description) && (
+                <Block title="Why would someone use it?">
+                  <p>{simple.why_use_it || "Not confirmed from the available evidence."}</p>
+                </Block>
+              )}
+              {simple.who_benefits && (
+                <Block title="Who could benefit?">
+                  <p>{simple.who_benefits}</p>
+                </Block>
+              )}
               {features.length > 0 && (
                 <Block title="Main features">
                   <ul className="list-disc space-y-1 pl-5">
@@ -187,7 +206,7 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
                 </Block>
               )}
               <Block title="How it works, simply">
-                <p>{simple.how_it_works || "Not confirmed yet."}</p>
+                <p>{simple.how_it_works || developer.full_description || "Not confirmed yet."}</p>
               </Block>
             </div>
           )}

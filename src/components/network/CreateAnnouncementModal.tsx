@@ -6,7 +6,7 @@ import { createGroupAnnouncement } from "../../api/groups";
 
 interface CreateAnnouncementModalProps {
   groupId: string;
-  userRole: "host" | "executive";
+  userRole: "host" | "president" | "vice_president" | "treasurer" | "executive";
   userCustomTitle?: string | null;
   onClose: () => void;
   onSuccess: (newAnnouncement: GroupAnnouncement) => void;

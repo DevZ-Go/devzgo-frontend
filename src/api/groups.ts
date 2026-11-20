@@ -5,7 +5,10 @@ import type {
   GroupProjectShowcase,
   GroupCategory,
   ProjectKind,
+  ClubMemberRole,
+  ClubCustomRole,
 } from "../types/groups";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const STORAGE_KEY_GROUPS = "devzgo_network_groups_v2";
 const STORAGE_KEY_ANNOUNCEMENTS = "devzgo_group_announcements_v2";
@@ -539,7 +542,8 @@ export async function joinGroup(
   user: { id: string; name: string; username: string; headline?: string }
 ): Promise<NetworkGroup> {
   try {
-    await api.post(`/groups/${groupId}/join`);
+    const res = await api.post<NetworkGroup>(`/groups/${groupId}/join`);
+    if (res.data?.id) return res.data;
   } catch {
     // offline handling
   }
@@ -575,9 +579,10 @@ export async function joinGroup(
  */
 export async function leaveGroup(groupId: string, userId: string): Promise<NetworkGroup> {
   try {
-    await api.post(`/groups/${groupId}/leave`);
-  } catch {
-    // offline handling
+    const res = await api.post<NetworkGroup>(`/groups/${groupId}/leave`);
+    if (res.data?.id) return res.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to leave club");
   }
 
   const list = getStoredGroups();
@@ -597,18 +602,22 @@ export async function leaveGroup(groupId: string, userId: string): Promise<Netwo
 }
 
 /**
- * The host can assign custom titles and roles (executive / member) to individual members.
+ * President can assign club positions (including transferring presidency) and custom titles.
  */
 export async function updateMemberRole(
   groupId: string,
   targetUserId: string,
-  role: "executive" | "member",
+  role: ClubMemberRole,
   customTitle?: string
 ): Promise<NetworkGroup> {
   try {
-    await api.put(`/groups/${groupId}/members/${targetUserId}/role`, { role, customTitle });
-  } catch {
-    // offline
+    const res = await api.put<NetworkGroup>(`/groups/${groupId}/members/${targetUserId}/role`, {
+      role,
+      customTitle,
+    });
+    if (res.data?.id) return res.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to update role");
   }
 
   const list = getStoredGroups();
@@ -617,14 +626,52 @@ export async function updateMemberRole(
 
   const member = group.members.find((m) => m.userId === targetUserId);
   if (member) {
-    member.role = role;
+    member.role = role === "president" ? "host" : role;
     if (customTitle !== undefined) {
-      member.customTitle = customTitle.trim() || (role === "executive" ? "Executive Member" : "Member");
+      member.customTitle = customTitle.trim() || "Member";
+    }
+    if (role === "president" || role === "host") {
+      group.hostId = member.userId;
+      group.hostName = member.name;
+      group.hostUsername = member.username;
+      group.hostTitle = member.customTitle || "President";
+      group.members = group.members.map((m) =>
+        m.userId !== member.userId && (m.role === "host" || m.role === "president")
+          ? { ...m, role: "executive", customTitle: m.customTitle === "President" ? "Executive" : m.customTitle }
+          : m
+      );
     }
     saveStoredGroups(list);
   }
 
   return group;
+}
+
+export async function fetchUserClubs(userId: string): Promise<NetworkGroup[]> {
+  const res = await api.get<NetworkGroup[]>(`/groups/users/${encodeURIComponent(userId)}/clubs`);
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function fetchMyClubs(): Promise<NetworkGroup[]> {
+  const res = await api.get<NetworkGroup[]>("/groups/mine");
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function addClubCustomRole(groupId: string, title: string): Promise<ClubCustomRole> {
+  const res = await api.post<ClubCustomRole>(`/groups/${groupId}/custom-roles`, { title });
+  return res.data;
+}
+
+export async function deleteClubCustomRole(groupId: string, roleId: string): Promise<void> {
+  await api.delete(`/groups/${groupId}/custom-roles/${encodeURIComponent(roleId)}`);
+}
+
+export async function patchClub(
+  groupId: string,
+  data: Partial<{ name: string; tagline: string; about: string; policies: string; tags: string[]; category: string }>,
+): Promise<NetworkGroup> {
+  const res = await api.patch<NetworkGroup>(`/groups/${groupId}`, data);
+  return res.data;
 }
 
 /**
@@ -857,7 +904,7 @@ export async function addAnnouncementComment(
 }
 
 /**
- * Create a new group (current user becomes host).
+ * Create a new group (current user becomes president).
  */
 export async function createNetworkGroup(data: {
   name: string;
@@ -865,11 +912,26 @@ export async function createNetworkGroup(data: {
   about: string;
   category: GroupCategory;
   tags: string[];
+  policies?: string;
   bannerUrl?: string;
   avatarUrl?: string;
   host: { id: string; name: string; username: string; headline?: string };
   hostTitle?: string;
 }): Promise<NetworkGroup> {
+  try {
+    const res = await api.post<NetworkGroup>("/groups", {
+      name: data.name,
+      tagline: data.tagline,
+      about: data.about,
+      category: data.category,
+      tags: data.tags,
+      policies: data.policies || "",
+    });
+    if (res.data?.id) return res.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to create club");
+  }
+
   const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const newGroup: NetworkGroup = {
     id: `grp-${Date.now()}`,
@@ -879,18 +941,19 @@ export async function createNetworkGroup(data: {
     about: data.about,
     category: data.category,
     tags: data.tags,
+    policies: data.policies || "",
     bannerUrl: data.bannerUrl || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
     avatarUrl: data.avatarUrl || null,
     hostId: data.host.id,
     hostName: data.host.name,
     hostUsername: data.host.username,
-    hostTitle: data.hostTitle || "Host & Founder",
+    hostTitle: data.hostTitle || "President",
     memberCount: 1,
     projectCount: 0,
     announcementCount: 0,
     isMember: true,
     userRole: "host",
-    userCustomTitle: data.hostTitle || "Host & Founder",
+    userCustomTitle: data.hostTitle || "President",
     createdAt: new Date().toISOString(),
     members: [
       {
@@ -899,7 +962,7 @@ export async function createNetworkGroup(data: {
         username: data.host.username,
         headline: data.host.headline,
         role: "host",
-        customTitle: data.hostTitle || "Host & Founder",
+        customTitle: data.hostTitle || "President",
         joinedAt: new Date().toISOString(),
       },
     ],

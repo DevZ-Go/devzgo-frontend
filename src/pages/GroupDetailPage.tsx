@@ -24,15 +24,18 @@ import type {
   GroupMember,
   ProjectKind,
 } from "../types/groups";
+import { clubRoleLabel, isClubExecutiveRole } from "../types/groups";
 import {
   fetchGroup,
   fetchGroupAnnouncements,
   fetchGroupProjects,
   joinGroup,
   leaveGroup,
+  patchClub,
   toggleLikeAnnouncement,
   addAnnouncementComment,
 } from "../api/groups";
+import { getApiErrorMessage } from "../utils/apiError";
 import { useAuth } from "../auth/AuthContext";
 import { DevpostProjectModal } from "../components/network/DevpostProjectModal";
 import { ShowcaseProjectModal } from "../components/network/ShowcaseProjectModal";
@@ -119,18 +122,25 @@ export function GroupDetailPage() {
     );
   }
 
-  const isHost = group.hostId === user?.id || group.userRole === "host";
-  const isExecutive = isHost || group.userRole === "executive";
+  const isHost =
+    group.hostId === user?.id ||
+    group.userRole === "host" ||
+    group.userRole === "president";
+  const isExecutive = isHost || isClubExecutiveRole(group.userRole);
   const isMember = group.isMember || isHost;
 
   const handleJoinLeave = async () => {
     if (isMember) {
       if (isHost) {
-        alert("As the host, you cannot leave your own group. You can assign another host first.");
+        alert("As president, transfer the presidency to someone else before leaving the club.");
         return;
       }
-      const updated = await leaveGroup(group.id, String(user?.id ?? "usr-me"));
-      setGroup(updated);
+      try {
+        const updated = await leaveGroup(group.id, String(user?.id ?? "usr-me"));
+        setGroup(updated);
+      } catch (err) {
+        alert(getApiErrorMessage(err) || "Could not leave club");
+      }
     } else {
       const updated = await joinGroup(group.id, {
         id: String(user?.id ?? "usr-me"),
@@ -167,8 +177,8 @@ export function GroupDetailPage() {
       ? projects
       : projects.filter((p) => p.kind === projectKindFilter);
 
-  const executives = group.members.filter((m) => m.role === "host" || m.role === "executive");
-  const generalMembers = group.members.filter((m) => m.role === "member");
+  const executives = group.members.filter((m) => isClubExecutiveRole(m.role));
+  const generalMembers = group.members.filter((m) => !isClubExecutiveRole(m.role));
 
   return (
     <div className="min-h-screen bg-[#FFFDF0] text-[#2D120D] font-sans antialiased selection:bg-[#6B0B0C] selection:text-[#FFF8CA]">
@@ -242,7 +252,7 @@ export function GroupDetailPage() {
               {/* Host & Executives summary pill */}
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#FFF8CA]/80">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-[#FFF8CA]/20">
-                  <span className="text-[#CDE3E8] font-bold">Host:</span>
+                  <span className="text-[#CDE3E8] font-bold">President:</span>
                   <Link
                     to={`/profile/${group.hostUsername || group.hostId}`}
                     className="font-bold text-[#FFF8CA] hover:text-[#CDE3E8] underline decoration-[#FFF8CA]/40 underline-offset-2"
@@ -278,7 +288,7 @@ export function GroupDetailPage() {
                     : "bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] border border-[#FFF8CA]/30"
                 }`}
               >
-                {isMember ? (isHost ? "Host Controls" : "Leave Group") : "Join This Club"}
+                {isMember ? (isHost ? "President" : "Leave Club") : "Join This Club"}
               </button>
 
               <button
@@ -713,12 +723,29 @@ export function GroupDetailPage() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-[#6B0B0C] shrink-0" />
                   <span>
-                    <strong>Host Access:</strong> You can assign custom executive titles (e.g. Lead
-                    Hardware Engineer, VP of Software) or promote/demote members by clicking "Manage
-                    Title &amp; Role" on any card.
+                    <strong>President access:</strong> Assign President, Vice President, Treasurer,
+                    Executive, or Member. You can transfer the presidency (a person may only be
+                    president of one club). Add custom executive titles for your club&apos;s policy.
                   </span>
                 </div>
               </div>
+            )}
+
+            {(group.policies || isExecutive) && (
+              <section className="rounded-3xl border border-[#2D120D]/15 bg-white p-5 space-y-3">
+                <h2 className="font-serif text-xl font-bold text-[#2D120D]">Club policies</h2>
+                {isExecutive ? (
+                  <ClubPoliciesEditor
+                    groupId={group.id}
+                    policies={group.policies || ""}
+                    onSaved={(policies) => setGroup((prev) => (prev ? { ...prev, policies } : prev))}
+                  />
+                ) : (
+                  <p className="text-sm text-[#2D120D]/80 whitespace-pre-wrap">
+                    {group.policies || "No club policies published yet."}
+                  </p>
+                )}
+              </section>
             )}
 
             {/* Executive Board Section */}
@@ -750,12 +777,12 @@ export function GroupDetailPage() {
                           </Link>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
-                              member.role === "host"
+                              member.role === "host" || member.role === "president"
                                 ? "bg-[#2D120D] text-[#FFF8CA]"
                                 : "bg-[#6B0B0C] text-[#FFF8CA]"
                             }`}
                           >
-                            {member.role === "host" ? "Host" : "Exec"}
+                            {clubRoleLabel(member.role)}
                           </span>
                         </div>
 
@@ -781,7 +808,7 @@ export function GroupDetailPage() {
                         View Profile →
                       </Link>
 
-                      {isHost && member.role !== "host" && (
+                      {isHost && (
                         <button
                           type="button"
                           onClick={() => setManagingMember(member)}
@@ -897,7 +924,15 @@ export function GroupDetailPage() {
       {announcementModalOpen && isExecutive && (
         <CreateAnnouncementModal
           groupId={group.id}
-          userRole={isHost ? "host" : "executive"}
+          userRole={
+            isHost
+              ? "host"
+              : group.userRole === "vice_president" ||
+                  group.userRole === "treasurer" ||
+                  group.userRole === "executive"
+                ? group.userRole
+                : "executive"
+          }
           userCustomTitle={group.userCustomTitle}
           onClose={() => setAnnouncementModalOpen(false)}
           onSuccess={(newAnn) => {
@@ -911,8 +946,13 @@ export function GroupDetailPage() {
         <ManageMemberRoleModal
           groupId={group.id}
           member={managingMember}
+          customRoles={group.customRoles}
           onClose={() => setManagingMember(null)}
-          onSuccess={(updated) => {
+          onSuccess={(updated, club) => {
+            if (club) {
+              setGroup(club);
+              return;
+            }
             setGroup((prev) => {
               if (!prev) return null;
               return {
@@ -923,6 +963,56 @@ export function GroupDetailPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function ClubPoliciesEditor({
+  groupId,
+  policies,
+  onSaved,
+}: {
+  groupId: string;
+  policies: string;
+  onSaved: (policies: string) => void;
+}) {
+  const [value, setValue] = useState(policies);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue(policies);
+  }, [policies]);
+
+  return (
+    <div className="space-y-2">
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rows={5}
+        placeholder="Describe how your club runs elections, exec roles, meeting rules…"
+        className="w-full rounded-2xl border border-[#2D120D]/20 bg-[#FFFDF0] px-3 py-2 text-sm text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
+      />
+      {error && <p className="text-xs text-red-700">{error}</p>}
+      <button
+        type="button"
+        disabled={saving || value === policies}
+        onClick={async () => {
+          setSaving(true);
+          setError(null);
+          try {
+            const club = await patchClub(groupId, { policies: value });
+            onSaved(club.policies || value);
+          } catch (err) {
+            setError(getApiErrorMessage(err) || "Failed to save policies");
+          } finally {
+            setSaving(false);
+          }
+        }}
+        className="rounded-full bg-[#6B0B0C] px-4 py-2 text-xs font-bold text-[#FFF8CA] disabled:opacity-50"
+      >
+        {saving ? "Saving…" : "Save policies"}
+      </button>
     </div>
   );
 }

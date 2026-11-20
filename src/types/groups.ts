@@ -13,13 +13,27 @@ export type GroupCategory =
 
 export type ProjectKind = "embedded_hardware" | "software";
 
+/** Built-in club positions. Frontend still maps president ↔ "host" for older UI. */
+export type ClubMemberRole =
+  | "host"
+  | "president"
+  | "vice_president"
+  | "treasurer"
+  | "executive"
+  | "member";
+
+export interface ClubCustomRole {
+  id: string;
+  title: string;
+}
+
 export interface GroupMember {
   userId: string;
   name: string;
   username: string;
   avatarUrl?: string | null;
   headline?: string | null;
-  role: "host" | "executive" | "member";
+  role: ClubMemberRole;
   customTitle?: string | null; // e.g. "Lead Hardware Architect", "VP of Software", "Team Captain"
   joinedAt: string;
 }
@@ -41,7 +55,7 @@ export interface GroupAnnouncement {
   authorName: string;
   authorUsername: string;
   authorAvatar?: string | null;
-  authorRole: "host" | "executive";
+  authorRole: ClubMemberRole;
   authorTitle?: string | null;
   badge: "Official Announcement" | "Meeting & Workshop" | "Project Call" | "General Update";
   title: string;
@@ -115,9 +129,42 @@ export interface NetworkGroup {
   projectCount: number;
   announcementCount: number;
   isMember?: boolean;
-  userRole?: "host" | "executive" | "member" | null;
+  userRole?: ClubMemberRole | null;
   userCustomTitle?: string | null;
   members: GroupMember[];
   tags: string[];
+  policies?: string;
+  customRoles?: ClubCustomRole[];
+  /** Present on profile /mine payloads */
+  membershipRole?: ClubMemberRole | null;
+  membershipTitle?: string | null;
   createdAt: string;
+}
+
+export function isClubExecutiveRole(role?: ClubMemberRole | null): boolean {
+  return (
+    role === "host" ||
+    role === "president" ||
+    role === "vice_president" ||
+    role === "treasurer" ||
+    role === "executive"
+  );
+}
+
+export function clubRoleLabel(role?: ClubMemberRole | null): string {
+  switch (role) {
+    case "host":
+    case "president":
+      return "President";
+    case "vice_president":
+      return "Vice President";
+    case "treasurer":
+      return "Treasurer";
+    case "executive":
+      return "Executive";
+    case "member":
+      return "Member";
+    default:
+      return "Member";
+  }
 }
