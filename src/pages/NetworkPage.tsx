@@ -181,31 +181,33 @@ export function NetworkPage() {
         </div>
       )}
 
-      {/* ── TOP SECTION: Powder Sky Blue & Mint Gingham Hero + Espresso Brown Typography + Stickers ── */}
-      <section className="relative pt-16 pb-10 overflow-hidden pattern-sky-stars border-b-2 border-[#284E45]/20">
-        {/* Top Striped Awning Trim in Forest Teal, Mint Sage & Lemon Chiffon */}
+      {/* ── TOP SECTION: Compact Warm Rosewood Beige & Maroon Gingham Banner + Stickers ── */}
+      <section className="relative pt-14 pb-5 overflow-hidden pattern-maroon-stars border-b-2 border-[#6B0B0C]/20">
+        {/* Top Striped Awning Trim in Maroon, Warm Beige & Lemon Chiffon */}
         <div
-          className="w-full h-5 mb-6 shadow-2xs"
+          className="w-full h-3.5 mb-3.5 shadow-2xs"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, #284E45 0px, #284E45 16px, #E2F0CB 16px, #E2F0CB 32px, #FFF8CA 32px, #FFF8CA 48px)",
+              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 16px, #EAD5C5 16px, #EAD5C5 32px, #FFF8CA 32px, #FFF8CA 48px)",
           }}
         />
 
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <NetworkPlaces current="feed" />
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="[&>nav]:mb-0">
+              <NetworkPlaces current="feed" />
+            </div>
 
             {/* Clean Search & View Mode Switcher */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto mb-6">
-              <div className="inline-flex p-1 rounded-full bg-white/90 backdrop-blur-xs border border-[#284E45]/25 shadow-2xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+              <div className="inline-flex p-1 rounded-full bg-white/90 backdrop-blur-xs border border-[#6B0B0C]/25 shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setViewMode("feed")}
-                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full font-sans text-xs font-semibold transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full font-sans text-xs font-semibold transition ${
                     viewMode === "feed"
-                      ? "bg-[#284E45] text-[#FAF6EC] shadow-2xs"
-                      : "text-[#3E2217] hover:bg-[#E2F0CB]"
+                      ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-2xs"
+                      : "text-[#2D120D] hover:bg-[#FFF8CA]"
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
@@ -214,10 +216,10 @@ export function NetworkPage() {
                 <button
                   type="button"
                   onClick={() => setViewMode("constellation")}
-                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full font-sans text-xs font-semibold transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full font-sans text-xs font-semibold transition ${
                     viewMode === "constellation"
-                      ? "bg-[#3E2217] text-[#FFF8CA] shadow-2xs"
-                      : "text-[#3E2217] hover:bg-[#E2F0CB]"
+                      ? "bg-[#2D120D] text-[#FFF8CA] shadow-2xs"
+                      : "text-[#2D120D] hover:bg-[#FFF8CA]"
                   }`}
                 >
                   <Compass className="w-3.5 h-3.5" />
@@ -225,26 +227,26 @@ export function NetworkPage() {
                 </button>
               </div>
 
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-[#3E2217]/70" />
+              <div className="relative flex-1 sm:w-60">
+                <Search className="absolute left-3.5 top-2 w-4 h-4 text-[#2D120D]/70" />
                 <input
                   type="text"
                   placeholder="Search people or notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-full bg-white/95 backdrop-blur-xs border border-[#284E45]/25 font-sans text-xs sm:text-sm text-[#3E2217] placeholder-[#3E2217]/50 focus:outline-none focus:ring-2 focus:ring-[#284E45] focus:border-[#284E45] transition shadow-2xs"
+                  className="w-full pl-9 pr-4 py-1.5 rounded-full bg-white/95 backdrop-blur-xs border border-[#6B0B0C]/25 font-sans text-xs sm:text-sm text-[#2D120D] placeholder-[#2D120D]/50 focus:outline-none focus:ring-2 focus:ring-[#6B0B0C] focus:border-[#6B0B0C] transition shadow-2xs"
                 />
               </div>
             </div>
           </div>
 
-          {/* Holiday Market / Flipbook Inspired Header + Left Sticker + Right Snail Sketch */}
-          <div className="relative pt-2 pb-10">
+          {/* Compact Horizontal Banner + Left Sticker + Right Snail Sketch */}
+          <div className="relative py-1 pb-4">
             {/* Left Side Decorative Stickers in the Open Space */}
-            <div className="hidden lg:flex flex-col items-center gap-3 lg:absolute lg:left-2 xl:left-6 lg:top-1/2 lg:-translate-y-1/2 z-10">
+            <div className="hidden lg:flex items-center lg:absolute lg:left-2 xl:left-6 lg:top-1/2 lg:-translate-y-1/2 z-10">
               <StickerBadge
                 name="daisyLadybug"
-                size="lg"
+                size="md"
                 variant="polaroid"
                 caption="sketchbook notes"
                 className="-rotate-6 hover:rotate-0 transition-transform duration-300"
@@ -253,51 +255,46 @@ export function NetworkPage() {
                 name="maroonMiffy"
                 size="sm"
                 variant="circle"
-                className="rotate-6 -mt-3 ml-16"
+                className="rotate-6 -ml-4 mt-14"
               />
             </div>
 
-            {/* Center Scallop-Inspired Gingham Card (Holiday Market & Celebfest Reference) */}
-            <div className="max-w-xl mx-auto text-center relative z-10 rounded-[2.2rem] pattern-blue-gingham border-2 border-[#3E2217]/25 px-6 py-8 sm:px-10 sm:py-9 shadow-[0_14px_35px_rgba(62,34,23,0.12)]">
-              <span className="inline-block px-3.5 py-1 rounded-full bg-[#E2F0CB] border border-[#284E45]/30 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#284E45] mb-2">
+            {/* Center Compact Gingham Banner Card */}
+            <div className="max-w-2xl mx-auto text-center relative z-10 rounded-[1.75rem] pattern-maroon-gingham border-2 border-[#6B0B0C]/25 px-5 py-4 sm:px-8 sm:py-5 shadow-[0_10px_28px_rgba(45,18,13,0.12)]">
+              <span className="inline-block px-3 py-0.5 rounded-full bg-[#FFF8CA] border border-[#6B0B0C]/30 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-[#6B0B0C] mb-1">
                 COMMUNITY SPACE
               </span>
-              <h1 className="font-cake text-5xl sm:text-7xl md:text-8xl font-bold uppercase text-[#3E2217] tracking-tight leading-none break-words">
-                DEV SOCIAL
-              </h1>
-              <p className="font-cursive text-3xl sm:text-4xl text-[#284E45] mt-1">
-                Creators &amp; Connections
-              </p>
-
-              {/* Decorative Star Divider */}
-              <div className="my-3.5 flex items-center justify-center gap-3 text-[#3E2217]">
-                <span className="h-px w-12 bg-[#3E2217]/25" />
-                <span className="h-1.5 w-1.5 rounded-full bg-[#3E2217]/35" aria-hidden="true" />
-                <span className="h-px w-12 bg-[#3E2217]/25" />
+              <div className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-0.5">
+                <h1 className="font-cake text-4xl sm:text-5xl md:text-6xl font-bold uppercase text-[#2D120D] tracking-tight leading-none break-words m-0">
+                  DEV SOCIAL
+                </h1>
+                <p className="font-cursive text-2xl sm:text-3xl text-[#6B0B0C] leading-none">
+                  Creators &amp; Connections
+                </p>
               </div>
 
-              {/* Simple, Clean Description */}
-              <p className="font-sans text-sm sm:text-base text-[#3E2217]/85 leading-relaxed max-w-md mx-auto font-medium">
+              {/* Simple, Clean 1-line Description */}
+              <p className="font-sans text-xs sm:text-sm text-[#2D120D]/85 leading-snug max-w-lg mx-auto font-medium mt-2">
                 A cozy space to share project updates, discover fellow builders,
                 and connect with creators across the community.
               </p>
             </div>
 
-            {/* Right Side of Dev Social: Snail Sketch Card in the Open Space */}
-            <div className="mt-6 lg:mt-0 lg:absolute lg:right-2 xl:right-6 lg:top-1/2 lg:-translate-y-1/2 flex justify-center z-10">
-              <div className="relative w-44 sm:w-52 lg:w-52 xl:w-60 rotate-[3deg] hover:rotate-0 transition-transform duration-300 rounded-2xl bg-[#FFF8CA] p-2.5 pb-4 border-2 border-[#3E2217] shadow-[0_14px_32px_rgba(62,34,23,0.22)]">
-                {/* Mint Sage Washi Tape Accent */}
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#E2F0CB] text-[#284E45] text-[9px] font-bold font-sans tracking-widest uppercase border border-[#284E45]/30 shadow-2xs whitespace-nowrap">
+            {/* Right Side of Dev Social: Compact Snail Sketch Card */}
+            <div className="hidden lg:flex justify-center lg:absolute lg:right-2 xl:right-6 lg:top-1/2 lg:-translate-y-1/2 z-10">
+              <div className="relative w-32 xl:w-36 rotate-[3deg] hover:rotate-0 transition-transform duration-300 rounded-xl bg-[#FFF8CA] p-1.5 pb-2.5 border-2 border-[#2D120D] shadow-[0_10px_24px_rgba(45,18,13,0.2)]">
+                {/* Warm Rosewood Washi Tape Accent */}
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#F5DDD6] text-[#6B0B0C] text-[8px] font-bold font-sans tracking-widest uppercase border border-[#6B0B0C]/30 shadow-2xs whitespace-nowrap">
                   COZY PACE
                 </div>
-                <div className="rounded-xl overflow-hidden border border-[#3E2217]/20 bg-[#FAF6EC]">
+                <div className="rounded-lg overflow-hidden border border-[#3E2217]/20 bg-[#FAF6EC]">
                   <img
                     src={snailSketch}
                     alt="Cozy snail sketch"
-                    className="w-full h-full object-cover"
+                    className="w-full h-24 xl:h-28 object-cover"
                   />
                 </div>
-                <p className="font-cursive text-base text-[#3E2217] text-center mt-2 leading-none">
+                <p className="font-cursive text-xs text-[#2D120D] text-center mt-1.5 leading-none">
                   slow &amp; thoughtful builds ~
                 </p>
               </div>
@@ -331,26 +328,26 @@ export function NetworkPage() {
         </div>
       </section>
 
-      {/* ── Checkered Gingham Border Transition (Forest Teal, Mint Sage & Lemon Chiffon) ── */}
+      {/* ── Checkered Gingham Border Transition (Maroon, Warm Beige & Lemon Chiffon) ── */}
       <div className="w-full overflow-hidden">
         <div
-          className="w-full h-5"
+          className="w-full h-2.5"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, #284E45 0px, #284E45 48px, #CBE4EE 48px, #CBE4EE 96px, #FFF8CA 96px, #FFF8CA 144px)",
+              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 48px, #EAD5C5 48px, #EAD5C5 96px, #FFF8CA 96px, #FFF8CA 144px)",
           }}
         />
         <div
-          className="w-full h-5"
+          className="w-full h-2.5"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, #CBE4EE 0px, #CBE4EE 48px, #FFF8CA 48px, #FFF8CA 96px, #3E2217 96px, #3E2217 144px)",
+              "repeating-linear-gradient(90deg, #EAD5C5 0px, #EAD5C5 48px, #FFF8CA 48px, #FFF8CA 96px, #2D120D 96px, #2D120D 144px)",
           }}
         />
       </div>
 
-      {/* ── SCROLL SECTION: Lemon Chiffon Network Section with Forest Teal, Espresso Brown & Powder Blue Accents ── */}
-      <main className="bg-[#FFF8CA] pt-10 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* ── SCROLL SECTION: Lemon Chiffon Network Section with Maroon & Coffee Bean Accents ── */}
+      <main className="bg-[#FFF8CA] pt-6 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <StickerBadge
           name="starrySnail"
           size="md"

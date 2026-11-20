@@ -357,6 +357,22 @@ code {
   background-size: 64px 64px;
 }
 
+.pattern-maroon-stars {
+  background-color: #E3CBC3;
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 248, 202, 0.65) 1.5px, transparent 2px),
+    radial-gradient(circle at 76% 68%, rgba(255, 248, 202, 0.65) 1.5px, transparent 2px);
+  background-size: 64px 64px;
+}
+
+.pattern-maroon-gingham {
+  background-color: #FFFDF5;
+  background-image:
+    linear-gradient(90deg, rgba(107, 11, 12, 0.12) 50%, transparent 50%),
+    linear-gradient(rgba(107, 11, 12, 0.12) 50%, transparent 50%);
+  background-size: 44px 44px;
+}
+
 /* Aesthetic Sage-Greenish Textured Paper (Lovebug Clover Reference) */
 .pattern-sage-paper {
   background-color: #DDE8D5;
