@@ -91,13 +91,13 @@ function HeroLikeButton({
  * bottom timeline & index indicator, and integrated right-side filter controls.
  */
 export function StudioWallPage({
-  initialMode = "cinematic",
+  initialMode = "horizontal",
 }: {
-  initialMode?: "cinematic" | "grid" | "horizontal" | "vertical";
+  initialMode?: "horizontal" | "vertical" | "cinematic" | "grid";
 } = {}) {
   const data = useExploreProjects();
-  const [viewMode, setViewMode] = useState<"cinematic" | "grid">(
-    initialMode === "vertical" || initialMode === "grid" ? "grid" : "cinematic"
+  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(
+    initialMode === "vertical" || initialMode === "grid" ? "vertical" : "horizontal"
   );
   const [activeIndex, setActiveIndex] = useState(0);
   const carouselTrackRef = useRef<HTMLDivElement>(null);
@@ -109,7 +109,7 @@ export function StudioWallPage({
   }, [data.appliedKey]);
 
   useEffect(() => {
-    noteGalleryDirection(viewMode === "cinematic" ? "horizontal" : "vertical");
+    noteGalleryDirection(viewMode);
   }, [viewMode]);
 
   // Keep active index in bounds
@@ -132,7 +132,7 @@ export function StudioWallPage({
 
   // Keyboard navigation (Left / Right arrow keys)
   useEffect(() => {
-    if (viewMode !== "cinematic") return;
+    if (viewMode !== "horizontal") return;
     function onKey(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
@@ -191,7 +191,7 @@ export function StudioWallPage({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    if (viewMode !== "cinematic") return;
+    if (viewMode !== "horizontal") return;
     const now = Date.now();
     if (now - lastWheelTime.current < 380) return; // Debounce trackpad horizontal swipes
     if (Math.abs(e.deltaX) > 30 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
@@ -223,10 +223,10 @@ export function StudioWallPage({
     ? resolveApiAssetUrl(activeProject.cover_image_url || activeProject.image_url)
     : "";
 
-  const onDarkGlass = viewMode === "cinematic";
+  const onDarkGlass = viewMode === "horizontal";
   const glassControl = onDarkGlass
-    ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-white/25 bg-white/12 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] backdrop-blur-md transition-all cursor-pointer hover:bg-white/18"
-    : "inline-flex h-9 items-center gap-1.5 rounded-full border border-[#4A121A]/18 bg-[#FAF7F2]/55 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#4A121A] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md transition-all cursor-pointer hover:bg-[#FAF7F2]/75";
+    ? "inline-flex h-9 items-center gap-1.5 rounded-full border border-white/25 bg-white/12 px-3.5 text-xs font-sans font-semibold text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] backdrop-blur-md transition-all cursor-pointer hover:bg-white/18"
+    : "inline-flex h-9 items-center gap-1.5 rounded-full border border-[#4A121A]/18 bg-[#FAF7F2]/55 px-3.5 text-xs font-sans font-semibold text-[#4A121A] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md transition-all cursor-pointer hover:bg-[#FAF7F2]/75";
   const glassInput = onDarkGlass
     ? "explore-glass-search h-9 w-36 sm:w-52 rounded-full border border-[#FFF8CA]/22 bg-transparent text-xs font-sans text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] backdrop-blur-md focus:border-[#FFF8CA]/45 focus:outline-none transition-all"
     : "h-9 w-36 sm:w-52 rounded-full border border-[#4A121A]/18 bg-[#FAF7F2]/65 text-xs font-sans text-[#4A121A] placeholder:text-[#4A121A]/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-md focus:border-[#4A121A]/40 focus:outline-none transition-all";
@@ -268,46 +268,49 @@ export function StudioWallPage({
               }}
             />
 
-            <div className={modeShell}>
+            {/* Unified 3-Way Switch: Horizontal | Vertical | TV World */}
+            <div className={modeShell} role="tablist" aria-label="Explore view modes">
               <button
                 type="button"
-                onClick={() => setViewMode("cinematic")}
-                aria-pressed={viewMode === "cinematic"}
-                title="Cinematic luxury gallery slider view"
-                className={`inline-flex h-full items-center px-3.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  viewMode === "cinematic"
+                role="tab"
+                onClick={() => setViewMode("horizontal")}
+                aria-selected={viewMode === "horizontal"}
+                title="Horizontal gallery slider view"
+                className={`inline-flex h-full items-center px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${
+                  viewMode === "horizontal"
                     ? "bg-[#780D18]/90 text-[#FFF8CA] shadow-sm"
                     : modeIdle
                 }`}
               >
-                <span className="hidden md:inline">Cinematic</span>
-                <span className="md:hidden">Gallery</span>
+                <span className="hidden md:inline">Horizontal</span>
+                <span className="md:hidden">Hoz</span>
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                aria-pressed={viewMode === "grid"}
-                title="Directory grid view"
-                className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  viewMode === "grid"
+                role="tab"
+                onClick={() => setViewMode("vertical")}
+                aria-selected={viewMode === "vertical"}
+                title="Vertical directory grid view"
+                className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${
+                  viewMode === "vertical"
                     ? "bg-[#780D18]/90 text-[#FFF8CA] shadow-sm"
                     : modeIdle
                 }`}
               >
-                <LayoutGrid className="w-3 h-3" />
-                <span className="hidden md:inline">Directory</span>
-                <span className="md:hidden">Grid</span>
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Vertical</span>
+                <span className="md:hidden">Vert</span>
               </button>
+              <Link
+                to="/explore/tv"
+                role="tab"
+                title="Switch to TV World interactive retro room"
+                className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${modeIdle}`}
+              >
+                <Tv className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">TV World</span>
+              </Link>
             </div>
-
-            <Link
-              to="/explore/tv"
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#FFF8CA]/35 bg-[#780D18]/85 px-3.5 text-xs font-sans font-medium uppercase tracking-wider text-[#FFF8CA] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md transition-all hover:bg-[#6B0B0C]"
-              title="Switch to TV World interactive retro room"
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">TV World</span>
-            </Link>
           </div>
         </div>
 
@@ -331,7 +334,7 @@ export function StudioWallPage({
             Clear Filters
           </button>
         </div>
-      ) : viewMode === "cinematic" && activeProject ? (
+      ) : viewMode === "horizontal" && activeProject ? (
         /* ================= CINEMATIC LUXURY GALLERY SLIDER (Globe Express Visuals) ================= */
         <div
           onTouchStart={handleTouchStart}

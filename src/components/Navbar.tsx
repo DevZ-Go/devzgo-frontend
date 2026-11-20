@@ -256,7 +256,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 </>
               )}
                   <Link to="/about-developers" onClick={close} aria-current={isActive("/about-developers") ? "page" : undefined} className={mobileLinkClass("/about-developers", dark)}>
-                <UsersRound className="w-4 h-4 shrink-0" /> About Developers
+                <UsersRound className="w-4 h-4 shrink-0" /> About us
               </Link>
               <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={mobileLinkClass("/settings", dark)}>
                 <Settings className="w-4 h-4 shrink-0" /> Settings
@@ -582,7 +582,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                     className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
                   >
                     <UsersRound className="w-4 h-4 text-[#780D18] dark:text-[#E2A5A8]" />
-                    <span>About Developers</span>
+                    <span>About us</span>
                   </Link>
                   <Link
                     to="/settings"

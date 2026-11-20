@@ -363,14 +363,14 @@ export function LandingPage() {
               </p>
             </div>
 
-            {/* Bottom-Right Inside Card: About Developers Link */}
+            {/* Bottom-Right Inside Card: About us Link */}
             <div className="lg:absolute lg:bottom-6 lg:right-8 z-20 flex justify-end w-full lg:w-auto">
               <Link
                 to="/about-developers"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2D120D]/90 hover:bg-[#6B0B0C] text-[#FFF8CA] border border-[#CDE3E8]/40 font-sans text-xs font-semibold tracking-wider uppercase shadow-lg transition-all hover:scale-[1.02]"
               >
                 <span className="h-2 w-2 rounded-full bg-[#CDE3E8]" />
-                <span>About Developers</span>
+                <span>About us</span>
               </Link>
             </div>
           </div>

@@ -33,7 +33,7 @@ export function Footer() {
             Profile
           </Link>
           <Link to="/about-developers" className="transition-colors text-[#CDE3E8] hover:text-[#FFF8CA] font-semibold">
-            About Developers
+            About us
           </Link>
         </nav>
       </div>
