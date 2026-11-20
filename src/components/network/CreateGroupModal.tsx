@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { X, Users, Check } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { ImagePlus, X, Users, Check } from "lucide-react";
 import type { NetworkGroup, GroupCategory } from "../../types/groups";
 import { useAuth } from "../../auth/AuthContext";
 import { createNetworkGroup } from "../../api/groups";
@@ -20,18 +20,46 @@ const CATEGORIES: { id: GroupCategory; label: string }[] = [
 
 export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) {
   const { user } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [about, setAbout] = useState("");
   const [category, setCategory] = useState<GroupCategory>("robotics");
-  const [hostTitle, setHostTitle] = useState("Club President & Lead Architect");
+  const [hostTitle, setHostTitle] = useState("Club President");
   const [tagsInput, setTagsInput] = useState("Robotics, Hardware, ROS 2, Embedded");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const onPickBanner = (file: File | null) => {
+    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    if (!file) {
+      setBannerFile(null);
+      setBannerPreview(null);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Banner must be an image (PNG, JPG, GIF, or WebP).");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Banner must be 8 MB or smaller.");
+      return;
+    }
+    setError(null);
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+    setBannerUrl("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.id) {
+      setError("Sign in to create a club.");
+      return;
+    }
     if (!name.trim()) {
       setError("Please provide a group name");
       return;
@@ -51,13 +79,14 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
         about: about.trim() || "A collaborative space for club members to build, showcase, and share updates.",
         category,
         tags: tags.length > 0 ? tags : ["Student Organization", "Tech"],
-        bannerUrl: bannerUrl.trim() || undefined,
+        bannerUrl: bannerFile ? undefined : bannerUrl.trim() || undefined,
+        bannerFile,
         host: {
-          id: String(user?.id ?? "usr-me"),
-          name: user?.username || "Club Founder",
-          username: user?.username || "founder",
+          id: String(user.id),
+          name: user.username || "Club Founder",
+          username: user.username || "founder",
         },
-        hostTitle: hostTitle.trim() || "Host & Founder",
+        hostTitle: hostTitle.trim() || "President",
       });
 
       onSuccess(created);
@@ -77,7 +106,7 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl bg-[#FFFDF0] border-2 border-[#2D120D]/25 shadow-2xl p-6 space-y-5 text-[#2D120D]"
+        className="relative w-full max-w-lg rounded-3xl bg-[#FFFDF0] border-2 border-[#2D120D]/25 shadow-2xl p-6 space-y-5 text-[#2D120D] max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 border-b border-[#2D120D]/10">
@@ -97,9 +126,7 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
-            {error}
-          </div>
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -163,7 +190,7 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-                Your Role / Title as Host
+                Your Role / Title
               </label>
               <input
                 type="text"
@@ -188,17 +215,55 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Cover / Banner Image URL (Optional)
+              Cover / Banner
             </label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="hidden"
+              onChange={(e) => onPickBanner(e.target.files?.[0] || null)}
+            />
+            {bannerPreview ? (
+              <div className="relative overflow-hidden rounded-2xl border border-[#2D120D]/20">
+                <img src={bannerPreview} alt="" className="h-28 w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPickBanner(null);
+                    if (fileRef.current) fileRef.current.value = "";
+                  }}
+                  className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#2D120D]/25 bg-white px-3 py-6 text-xs font-semibold text-[#2D120D] hover:border-[#6B0B0C] hover:bg-[#FFF8CA]/40"
+              >
+                <ImagePlus className="h-4 w-4 text-[#6B0B0C]" />
+                Upload banner from device
+              </button>
+            )}
             <input
               type="url"
               value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
+              onChange={(e) => {
+                setBannerUrl(e.target.value);
+                if (e.target.value.trim()) onPickBanner(null);
+              }}
+              placeholder="Or paste an image URL (optional)"
               className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
             />
+            <p className="text-[11px] text-stone-500">
+              If you already lead another club as president, you&apos;ll join this one as Founder and can
+              appoint a president later.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2.5 pt-3 border-t border-[#2D120D]/10">
@@ -211,7 +276,7 @@ export function CreateGroupModal({ onClose, onSuccess }: CreateGroupModalProps) 
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !user}
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-bold transition shadow-xs disabled:opacity-50 cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />

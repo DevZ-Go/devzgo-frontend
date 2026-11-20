@@ -126,8 +126,15 @@ export function GroupDetailPage() {
     group.hostId === user?.id ||
     group.userRole === "host" ||
     group.userRole === "president";
-  const isExecutive = isHost || isClubExecutiveRole(group.userRole);
-  const isMember = group.isMember || isHost;
+  // Founder can manage roles when the club has no president yet (e.g. already leads another club).
+  const hasPresident = group.members.some((m) => m.role === "host" || m.role === "president");
+  const isFounderManager =
+    Boolean(user?.id) &&
+    !hasPresident &&
+    group.members.some((m) => m.userId === user?.id && isClubExecutiveRole(m.role));
+  const canManageRoles = isHost || isFounderManager;
+  const isExecutive = isHost || isFounderManager || isClubExecutiveRole(group.userRole);
+  const isMember = group.isMember || isHost || isFounderManager;
 
   const handleJoinLeave = async () => {
     if (isMember) {
@@ -718,14 +725,14 @@ export function GroupDetailPage() {
         {activeTab === "members" && (
           <div className="space-y-10 max-w-5xl mx-auto">
             {/* Host Controls Guide Note */}
-            {isHost && (
+            {canManageRoles && (
               <div className="p-4 rounded-2xl bg-[#FFF8CA] border-2 border-[#6B0B0C]/30 text-xs text-[#2D120D] flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-[#6B0B0C] shrink-0" />
                   <span>
-                    <strong>President access:</strong> Assign President, Vice President, Treasurer,
-                    Executive, or Member. You can transfer the presidency (a person may only be
-                    president of one club). Add custom executive titles for your club&apos;s policy.
+                    <strong>{isHost ? "President" : "Founder"} access:</strong> Assign President,
+                    Vice President, Treasurer, Executive, or Member. A person may only be president
+                    of one club. Add custom executive titles for your club&apos;s policy.
                   </span>
                 </div>
               </div>
@@ -808,7 +815,7 @@ export function GroupDetailPage() {
                         View Profile →
                       </Link>
 
-                      {isHost && (
+                      {canManageRoles && (
                         <button
                           type="button"
                           onClick={() => setManagingMember(member)}
@@ -877,7 +884,7 @@ export function GroupDetailPage() {
                           View Profile →
                         </Link>
 
-                        {isHost && (
+                        {canManageRoles && (
                           <button
                             type="button"
                             onClick={() => setManagingMember(member)}

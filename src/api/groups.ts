@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { assetUrlOrNull } from "./config";
 import type {
   NetworkGroup,
   GroupAnnouncement,
@@ -9,6 +10,18 @@ import type {
   ClubCustomRole,
 } from "../types/groups";
 import { getApiErrorMessage } from "../utils/apiError";
+
+function mapClub(g: NetworkGroup): NetworkGroup {
+  return {
+    ...g,
+    bannerUrl: assetUrlOrNull(g.bannerUrl) ?? g.bannerUrl ?? null,
+    avatarUrl: assetUrlOrNull(g.avatarUrl) ?? g.avatarUrl ?? null,
+    members: (g.members || []).map((m) => ({
+      ...m,
+      avatarUrl: assetUrlOrNull(m.avatarUrl) ?? m.avatarUrl ?? null,
+    })),
+  };
+}
 
 const STORAGE_KEY_GROUPS = "devzgo_network_groups_v2";
 const STORAGE_KEY_ANNOUNCEMENTS = "devzgo_group_announcements_v2";
@@ -481,9 +494,10 @@ export async function fetchGroups(query?: string, category?: string): Promise<Ne
     const res = await api.get<NetworkGroup[]>("/groups", {
       params: { q: query || undefined, category: category || undefined },
     });
-    if (Array.isArray(res.data) && res.data.length > 0) return res.data;
+    // Empty API list is valid (new local DB) — do not swap in demo localStorage clubs.
+    if (Array.isArray(res.data)) return res.data.map(mapClub);
   } catch {
-    // fallback to local data
+    // offline / API down → demo seed
   }
 
   let list = getStoredGroups();
@@ -508,7 +522,7 @@ export async function fetchGroups(query?: string, category?: string): Promise<Ne
 export async function fetchGroup(groupIdOrSlug: string, currentUserId?: string): Promise<NetworkGroup> {
   try {
     const res = await api.get<NetworkGroup>(`/groups/${encodeURIComponent(groupIdOrSlug)}`);
-    if (res.data?.id) return res.data;
+    if (res.data?.id) return mapClub(res.data);
   } catch {
     // fallback
   }
@@ -543,7 +557,7 @@ export async function joinGroup(
 ): Promise<NetworkGroup> {
   try {
     const res = await api.post<NetworkGroup>(`/groups/${groupId}/join`);
-    if (res.data?.id) return res.data;
+    if (res.data?.id) return mapClub(res.data);
   } catch {
     // offline handling
   }
@@ -580,7 +594,7 @@ export async function joinGroup(
 export async function leaveGroup(groupId: string, userId: string): Promise<NetworkGroup> {
   try {
     const res = await api.post<NetworkGroup>(`/groups/${groupId}/leave`);
-    if (res.data?.id) return res.data;
+    if (res.data?.id) return mapClub(res.data);
   } catch (err) {
     throw new Error(getApiErrorMessage(err) || "Failed to leave club");
   }
@@ -908,6 +922,20 @@ export async function addAnnouncementComment(
 /**
  * Create a new group (current user becomes president).
  */
+export async function uploadClubBanner(groupId: string, file: File): Promise<NetworkGroup> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await api.post<NetworkGroup>(`/groups/${encodeURIComponent(groupId)}/banner`, body);
+  return mapClub(res.data);
+}
+
+export async function uploadClubAvatar(groupId: string, file: File): Promise<NetworkGroup> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await api.post<NetworkGroup>(`/groups/${encodeURIComponent(groupId)}/avatar`, body);
+  return mapClub(res.data);
+}
+
 export async function createNetworkGroup(data: {
   name: string;
   tagline: string;
@@ -916,6 +944,7 @@ export async function createNetworkGroup(data: {
   tags: string[];
   policies?: string;
   bannerUrl?: string;
+  bannerFile?: File | null;
   avatarUrl?: string;
   host: { id: string; name: string; username: string; headline?: string };
   hostTitle?: string;
@@ -928,8 +957,20 @@ export async function createNetworkGroup(data: {
       category: data.category,
       tags: data.tags,
       policies: data.policies || "",
+      bannerUrl: data.bannerUrl || undefined,
+      avatarUrl: data.avatarUrl || undefined,
+      hostTitle: data.hostTitle || undefined,
     });
-    if (res.data?.id) return res.data;
+    if (res.data?.id) {
+      if (data.bannerFile) {
+        try {
+          return await uploadClubBanner(res.data.id, data.bannerFile);
+        } catch {
+          return mapClub(res.data);
+        }
+      }
+      return mapClub(res.data);
+    }
   } catch (err) {
     throw new Error(getApiErrorMessage(err) || "Failed to create club");
   }
