@@ -4,15 +4,16 @@ import { useAccount } from "../../auth/account";
 
 const PLACES = [
   { id: "feed", label: "Community Feed", to: "/network" },
+  { id: "groups", label: "Clubs & Groups", to: "/network/groups" },
   { id: "people", label: "People", to: "/network/connections" },
 ] as const;
 
-export type NetworkPlace = "feed" | "connections" | "requests" | "people";
+export type NetworkPlace = "feed" | "connections" | "requests" | "people" | "groups";
 
 /** Simple, unified top navigation for the Network section. */
 export function NetworkPlaces({ current }: { current: NetworkPlace }) {
   const { recruiter } = useAccount();
-  const activeTab = current === "feed" ? "feed" : "people";
+  const activeTab = current === "groups" ? "groups" : current === "feed" ? "feed" : "people";
   return (
     <nav data-tour="network-places" aria-label="Network" className="mb-6 flex flex-wrap items-center gap-2.5">
       {PLACES.map((place) => {

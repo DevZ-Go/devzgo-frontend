@@ -51,6 +51,8 @@ const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
 const DevelopersPage = page(() => import("./pages/DevelopersPage"), "DevelopersPage");
 const WrapPage = page(() => import("./pages/WrapPage"), "WrapPage");
 const NetworkPage = page(() => import("./pages/NetworkPage"), "NetworkPage");
+const NetworkGroupsPage = page(() => import("./pages/NetworkGroupsPage"), "NetworkGroupsPage");
+const GroupDetailPage = page(() => import("./pages/GroupDetailPage"), "GroupDetailPage");
 const ConnectionsPage = page(() => import("./pages/ConnectionsPage"), "ConnectionsPage");
 const PostPage = page(() => import("./pages/PostPage"), "PostPage");
 const MessagesPage = page(() => import("./pages/MessagesPage"), "MessagesPage");
@@ -121,6 +123,8 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      { path: "/network/groups", element: <ProtectedRoute><NetworkGroupsPage /></ProtectedRoute> },
+      { path: "/network/groups/:groupId", element: <ProtectedRoute><GroupDetailPage /></ProtectedRoute> },
       { path: "/network/connections", element: <ProtectedRoute><ConnectionsPage /></ProtectedRoute> },
       { path: "/network/post/:id", element: <ProtectedRoute><PostPage /></ProtectedRoute> },
       {

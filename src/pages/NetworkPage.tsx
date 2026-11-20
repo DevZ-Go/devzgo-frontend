@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Search, Users, Send, Loader2, Check, UserPlus, Compass, LayoutGrid } from "lucide-react";
+import { MessageSquare, Search, Users, Send, Loader2, Check, UserPlus, Compass, LayoutGrid, Cpu } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
 import { createPost, fetchFeedPage } from "../api/network";
@@ -471,6 +471,52 @@ export function NetworkPage() {
 
             {/* Right Sidebar: Numbered Club Sidebar */}
             <aside className="space-y-6">
+              {/* Featured Clubs & Communities Box */}
+              <div className="relative rounded-3xl border-2 border-[#6B0B0C]/30 bg-[#FFF8CA] p-5 sm:p-6 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#6B0B0C] block">
+                      COMMUNITIES &amp; CLUBS
+                    </span>
+                    <h3 className="font-gift text-2xl text-[#2D120D] font-bold leading-tight">
+                      Clubs &amp; Showcases
+                    </h3>
+                  </div>
+                  <span className="p-2 rounded-full bg-[#6B0B0C] text-[#FFF8CA]">
+                    <Cpu className="w-4 h-4" />
+                  </span>
+                </div>
+
+                <p className="font-sans text-xs text-[#2D120D]/80 mb-4 leading-relaxed">
+                  Join student clubs like <strong>Robotics Club</strong>, participate in executive announcements, and explore Devpost-style hardware &amp; software project showcases.
+                </p>
+
+                <div className="space-y-2">
+                  <Link
+                    to="/network/groups/robotics-club"
+                    className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-white border border-[#2D120D]/15 hover:border-[#6B0B0C] transition group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#6B0B0C]" />
+                      <span className="font-bold text-xs text-[#2D120D] group-hover:text-[#6B0B0C]">
+                        Robotics Club
+                      </span>
+                    </div>
+                    <span className="font-mono text-[10px] text-[#6B0B0C] font-semibold">
+                      Explore →
+                    </span>
+                  </Link>
+
+                  <Link
+                    to="/network/groups"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] px-4 py-2 font-sans text-xs font-semibold transition shadow-xs"
+                  >
+                    <Users className="w-3.5 h-3.5 text-[#CDE3E8]" />
+                    <span>Browse All Clubs</span>
+                  </Link>
+                </div>
+              </div>
+
               {/* 03. Network People Card */}
               <div className="relative rounded-3xl border-2 border-[#284E45]/25 bg-white p-5 sm:p-6 shadow-2xs">
                 <div className="flex items-center justify-between mb-4">
