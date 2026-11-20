@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
+  Code2,
   Layers,
   Link as LinkIcon,
   Sparkles,
@@ -103,8 +104,8 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
         <section className="rounded-2xl border border-stone-200 bg-[#FFFDF8] p-6 shadow-sm">
           <h2 className="font-serif text-2xl text-stone-900">Understand this project</h2>
           <p className="mt-2 text-sm text-stone-600">
-            Run automatic analysis for a basic overview, or generate a polished AI explanation from
-            the edit page.
+            Run automatic analysis for a plain-English overview, or generate a polished AI explanation
+            from the edit page.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
@@ -139,13 +140,14 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
     technical.architecture ||
       (technical.technologies || []).length ||
       (technical.api_routes || []).length ||
+      (technical.ui_pages || []).length ||
+      (technical.data_models || []).length ||
       technical.ai_detailed_description,
   );
   const isAi = Boolean(data.ai_explanation_valid || data.explanation_kind === "ai");
-  // Never show a large visitor generation banner when a usable brief already exists.
   const showOwnerRegen = Boolean(isTeam);
 
-  if (!brief) {
+  if (!brief && !hasTech) {
     return isTeam ? (
       <section className="rounded-2xl border border-stone-200 bg-[#FFFDF8] p-6 shadow-sm">
         <h2 className="font-serif text-2xl text-stone-900">Understand this project</h2>
@@ -162,103 +164,130 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
     ) : null;
   }
 
-  const metaBits = [brief.context, brief.scope].filter(Boolean);
-  const features = (brief.features || []).filter(Boolean).slice(0, 6);
+  const metaBits = brief ? [brief.context, brief.scope].filter(Boolean) : [];
+  const features = (brief?.features || []).filter(Boolean).slice(0, 6);
 
   return (
-    <div className="space-y-4">
-      <section className="overflow-hidden rounded-2xl border border-stone-200/90 bg-[#FFFDF8] shadow-sm">
-        <div className="border-b border-stone-100 px-6 py-5 sm:px-8">
-          <div className="flex flex-wrap items-center gap-2">
-            {isAi ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-maroon-800/8 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-maroon-800">
-                <Sparkles className="h-3 w-3" aria-hidden />
-                AI-explained in simple English
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-stone-600">
-                Project overview
-              </span>
-            )}
-            {showOwnerRegen && (
-              <Link
-                to={`/project/${projectId}/edit`}
-                className="ml-auto text-[11px] font-semibold text-stone-500 hover:text-maroon-800"
-              >
-                Regenerate in edit
-              </Link>
-            )}
-          </div>
-          <h2 className="mt-3 font-serif text-2xl leading-snug text-stone-900 sm:text-[1.75rem]">
-            {brief.headline || "Understand this project"}
-          </h2>
-          {brief.overview && (
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600 sm:text-[15px]">
-              {brief.overview}
-            </p>
-          )}
-          {metaBits.length > 0 && (
-            <p className="mt-3 text-xs leading-relaxed text-stone-500">{metaBits.join(" · ")}</p>
-          )}
-        </div>
-
-        {features.length > 0 && (
-          <div className="grid gap-3 border-b border-stone-100 px-6 py-5 sm:grid-cols-2 sm:px-8">
-            {features.map((f) => (
-              <div key={f} className="flex gap-3">
-                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-maroon-800/10 text-maroon-800">
-                  <Layers className="h-3.5 w-3.5" aria-hidden />
+    <div className="space-y-5">
+      {/* ——— Plain English (separate from technical) ——— */}
+      {brief && (
+        <section
+          aria-labelledby="pi-plain-english-heading"
+          className="overflow-hidden rounded-2xl border border-stone-200/90 bg-[#FFFDF8] shadow-sm"
+        >
+          <div className="border-b border-stone-100 px-6 py-5 sm:px-8">
+            <div className="flex flex-wrap items-center gap-2">
+              {isAi ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-maroon-800/8 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-maroon-800">
+                  <Sparkles className="h-3 w-3" aria-hidden />
+                  Plain English · AI-explained
                 </span>
-                <p className="text-sm leading-snug text-stone-700">{f}</p>
-              </div>
-            ))}
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-stone-600">
+                  Plain English · from project files
+                </span>
+              )}
+              {showOwnerRegen && (
+                <Link
+                  to={`/project/${projectId}/edit`}
+                  className="ml-auto text-[11px] font-semibold text-stone-500 hover:text-maroon-800"
+                >
+                  Regenerate in edit
+                </Link>
+              )}
+            </div>
+            <h2
+              id="pi-plain-english-heading"
+              className="mt-3 font-serif text-2xl leading-snug text-stone-900 sm:text-[1.75rem]"
+            >
+              {brief.headline || "Understand this project"}
+            </h2>
+            {brief.overview && (
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600 sm:text-[15px]">
+                {brief.overview}
+              </p>
+            )}
+            {metaBits.length > 0 && (
+              <p className="mt-3 text-xs leading-relaxed text-stone-500">{metaBits.join(" · ")}</p>
+            )}
           </div>
-        )}
 
-        {(brief.purpose || brief.audience || brief.workflow) && (
-          <div className="space-y-4 px-6 py-5 sm:px-8">
-            {brief.purpose && (
-              <BriefRow icon={Target} title="Why it matters" body={brief.purpose} />
-            )}
-            {brief.audience && (
-              <BriefRow icon={Users} title="Who it helps" body={brief.audience} />
-            )}
-            {brief.workflow && (
-              <BriefRow icon={Workflow} title="How it works" body={brief.workflow} />
-            )}
-          </div>
-        )}
-
-        {brief.limitations && brief.limitations.length > 0 && isTeam && (
-          <div className="border-t border-stone-100 px-6 py-4 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Notes</p>
-            <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-stone-500">
-              {brief.limitations.slice(0, 3).map((l) => (
-                <li key={l}>{l}</li>
+          {features.length > 0 && (
+            <div className="grid gap-3 border-b border-stone-100 px-6 py-5 sm:grid-cols-2 sm:px-8">
+              {features.map((f) => (
+                <div key={f} className="flex gap-3">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-maroon-800/10 text-maroon-800">
+                    <Layers className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  <p className="text-sm leading-snug text-stone-700">{f}</p>
+                </div>
               ))}
-            </ul>
-          </div>
-        )}
-      </section>
+            </div>
+          )}
 
+          {(brief.purpose || brief.audience || brief.workflow) && (
+            <div className="space-y-4 px-6 py-5 sm:px-8">
+              {brief.purpose && (
+                <BriefRow icon={Target} title="Why it matters" body={brief.purpose} />
+              )}
+              {brief.audience && (
+                <BriefRow icon={Users} title="Who it helps" body={brief.audience} />
+              )}
+              {brief.workflow && (
+                <BriefRow icon={Workflow} title="How it works" body={brief.workflow} />
+              )}
+            </div>
+          )}
+
+          {brief.limitations && brief.limitations.length > 0 && isTeam && (
+            <div className="border-t border-stone-100 px-6 py-4 sm:px-8">
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Notes</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-stone-500">
+                {brief.limitations.slice(0, 3).map((l) => (
+                  <li key={l}>{l}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ——— Technical details (separate section) ——— */}
       {hasTech && (
-        <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+        <section
+          aria-labelledby="pi-technical-heading"
+          className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
+        >
           <button
             type="button"
             onClick={() => setOpenTech((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left sm:px-8"
+            className="flex w-full items-center justify-between gap-3 px-6 py-5 text-left sm:px-8"
             aria-expanded={openTech}
           >
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">Technical details</h3>
-              <p className="mt-0.5 text-xs text-stone-500">Source-backed notes for curious readers.</p>
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700">
+                <Code2 className="h-4 w-4" aria-hidden />
+              </span>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Separate from plain English
+                </p>
+                <h2 id="pi-technical-heading" className="text-lg font-semibold text-stone-900">
+                  Technical details
+                </h2>
+                <p className="mt-0.5 text-xs text-stone-500">
+                  Stack, routes, and source-backed notes for developers.
+                </p>
+              </div>
             </div>
-            <ChevronDown className={`h-4 w-4 shrink-0 text-stone-500 transition ${openTech ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-stone-500 transition ${openTech ? "rotate-180" : ""}`}
+            />
           </button>
           {openTech && (
             <div className="space-y-4 border-t border-stone-100 px-6 py-5 sm:px-8">
               {technical.ai_detailed_description && (
-                <TechBlock title="Detailed description">
+                <TechBlock title="Detailed technical description">
                   <p className="whitespace-pre-wrap">{technical.ai_detailed_description}</p>
                 </TechBlock>
               )}
@@ -272,8 +301,28 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
                   <p>{(technical.technologies || []).join(", ")}</p>
                 </TechBlock>
               )}
+              {(technical.ui_pages || []).length > 0 && (
+                <TechBlock title="Screens / pages found in source">
+                  <ul className="space-y-1 text-sm text-stone-700">
+                    {(technical.ui_pages || []).slice(0, 20).map((p, i) => (
+                      <li key={`${p.name}-${p.file}-${i}`}>
+                        {p.name || p.file}
+                        {p.file && isTeam && onOpenFile ? (
+                          <button
+                            type="button"
+                            className="ml-2 inline-flex items-center gap-1 text-xs text-maroon-800 underline"
+                            onClick={() => onOpenFile(p.file!)}
+                          >
+                            <LinkIcon className="h-3 w-3" /> open
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </TechBlock>
+              )}
               {(technical.api_routes || []).length > 0 && (
-                <TechBlock title="API evidence">
+                <TechBlock title="API routes">
                   <ul className="space-y-1 font-mono text-xs text-stone-700">
                     {(technical.api_routes || []).slice(0, 20).map((r, i) => (
                       <li key={`${r.method}-${r.path}-${i}`}>
@@ -290,6 +339,11 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
                       </li>
                     ))}
                   </ul>
+                </TechBlock>
+              )}
+              {(technical.data_models || []).length > 0 && (
+                <TechBlock title="Data models">
+                  <p>{(technical.data_models || []).map((m) => m.name).filter(Boolean).join(", ")}</p>
                 </TechBlock>
               )}
               {claims.data && claims.data.length > 0 && (
@@ -313,12 +367,8 @@ export function UnderstandProject({ projectId, onOpenFile, isTeam }: Props) {
         </section>
       )}
 
-      {/* Quiet note for signed-in visitors only when no valid AI brief and they still have quota —
-          no large generation banner on pages that already explain the project. */}
-      {!isTeam && token && visitorAi.data?.can_generate && !data.ai_explanation_valid && !brief.overview && (
-        <p className="text-xs text-stone-500">
-          An AI explanation is not available yet for this project.
-        </p>
+      {!isTeam && token && visitorAi.data?.can_generate && !data.ai_explanation_valid && !brief?.overview && (
+        <p className="text-xs text-stone-500">An AI explanation is not available yet for this project.</p>
       )}
     </div>
   );
@@ -349,7 +399,7 @@ function BriefRow({
 function TechBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <h4 className="text-sm font-semibold text-stone-800">{title}</h4>
+      <h3 className="text-sm font-semibold text-stone-800">{title}</h3>
       <div className="text-sm leading-relaxed text-stone-600">{children}</div>
     </div>
   );

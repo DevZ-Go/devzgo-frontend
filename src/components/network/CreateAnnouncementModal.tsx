@@ -54,7 +54,9 @@ export function CreateAnnouncementModal({
           name: user?.username || "Club Executive",
           username: user?.username || "executive",
           role: userRole,
-          customTitle: userCustomTitle || (userRole === "host" ? "Club Host" : "Executive"),
+          customTitle:
+            userCustomTitle ||
+            (userRole === "host" || userRole === "president" ? "President" : "Executive"),
         },
       });
       onSuccess(created);

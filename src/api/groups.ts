@@ -703,7 +703,7 @@ export async function createGroupAnnouncement(
       id: string;
       name: string;
       username: string;
-      role: "host" | "executive";
+      role: ClubMemberRole;
       customTitle?: string;
     };
   }
@@ -715,7 +715,9 @@ export async function createGroupAnnouncement(
     authorName: payload.author.name,
     authorUsername: payload.author.username,
     authorRole: payload.author.role,
-    authorTitle: payload.author.customTitle || (payload.author.role === "host" ? "Host" : "Executive"),
+    authorTitle:
+      payload.author.customTitle ||
+      (payload.author.role === "host" || payload.author.role === "president" ? "President" : "Executive"),
     badge: payload.badge,
     title: payload.title,
     content: payload.content,
