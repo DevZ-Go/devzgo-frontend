@@ -461,55 +461,53 @@ export function NetworkPage() {
 
       <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         {/* ========================================================================= */}
-        {/* 1. TOP SCRAPBOOK BANNER: Dev Social + Retro Laptop & Pressed Botanicals   */}
+        {/* 1. TOP BANNER: compact maroon / warm beige scrapbook (Manasi theme)        */}
         {/* ========================================================================= */}
-        <section className="relative rounded-[2rem] bg-[#EFE4D6] border-2 border-[#D9C8B5] p-6 sm:p-8 shadow-sm overflow-hidden mb-6">
-          {/* Subtle Gingham / Grid background texture */}
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg, #3E2217 0px, #3E2217 1px, transparent 1px, transparent 16px), repeating-linear-gradient(90deg, #3E2217 0px, #3E2217 1px, transparent 1px, transparent 16px)",
-            }}
-          />
+        <div
+          className="w-full h-3.5 mb-3.5 rounded-t-[1.5rem] shadow-2xs overflow-hidden"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 16px, #EAD5C5 16px, #EAD5C5 32px, #FFF8CA 32px, #FFF8CA 48px)",
+          }}
+          aria-hidden
+        />
+        <section className="relative rounded-[2rem] pattern-maroon-gingham border-2 border-[#6B0B0C]/25 p-4 sm:p-5 shadow-[0_10px_28px_rgba(45,18,13,0.12)] overflow-hidden mb-6">
+          <div className="absolute inset-0 pattern-maroon-stars opacity-40 pointer-events-none" aria-hidden />
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left: Cute Retro Laptop Sticker */}
             <div className="hidden sm:flex items-center justify-center shrink-0 -rotate-3 hover:rotate-0 transition-transform duration-300">
-              <RetroLaptopSticker className="w-24 h-20 sm:w-28 sm:h-24" />
+              <RetroLaptopSticker className="w-20 h-16 sm:w-24 sm:h-20" />
             </div>
 
             {/* Center: Washi Tape + Serif Italic "Dev Social" Title */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0">
-              <div
-                className="inline-block px-3.5 py-1 -rotate-2 select-none shadow-xs text-[10px] sm:text-xs font-mono font-bold tracking-widest uppercase border border-[#E5D78A]/60 rounded-xs"
-                style={{
-                  backgroundColor: "rgba(255, 246, 179, 0.95)",
-                  color: "#6B0B0C",
-                }}
-              >
-                DevZ-Go Community
+              <div className="inline-block px-3 py-0.5 -rotate-2 select-none shadow-xs text-[9px] sm:text-[10px] font-mono font-bold tracking-[0.2em] uppercase border border-[#6B0B0C]/30 rounded-full bg-[#FFF8CA] text-[#6B0B0C]">
+                Community Space
               </div>
-              <h1 className="font-serif italic font-bold text-4xl sm:text-6xl text-[#6B0B0C] tracking-tight leading-none mt-2">
+              <h1 className="font-serif italic font-bold text-3xl sm:text-5xl text-[#6B0B0C] tracking-tight leading-none mt-1.5">
                 Dev Social
               </h1>
+              <p className="mt-1.5 font-sans text-xs sm:text-sm text-[#2D120D]/80 font-medium max-w-lg">
+                A cozy space to share project updates, discover fellow builders, and connect across the community.
+              </p>
             </div>
 
             {/* Middle-Right: Creators ✦ Builds ✦ Connections Pill */}
             <div className="shrink-0">
-              <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2 rounded-full bg-white/85 border border-[#D9C8B5] backdrop-blur-xs text-xs sm:text-sm font-semibold text-[#3E2217] shadow-xs">
+              <div className="inline-flex items-center gap-2.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/90 border border-[#6B0B0C]/25 backdrop-blur-xs text-xs sm:text-sm font-semibold text-[#2D120D] shadow-xs">
                 <span>Creators</span>
-                <span className="text-[#C98B28] text-xs">✦</span>
+                <span className="text-[#6B0B0C] text-xs">✦</span>
                 <span>Builds</span>
-                <span className="text-[#C98B28] text-xs">✦</span>
+                <span className="text-[#6B0B0C] text-xs">✦</span>
                 <span>Connections</span>
               </div>
             </div>
 
-            {/* Right: Pressed Botanicals Wildflower Illustration with Gingham patch */}
+            {/* Right: Pressed Botanicals with maroon gingham patch */}
             <div className="hidden md:flex items-center justify-center shrink-0 rotate-3 hover:rotate-0 transition-transform duration-300 relative">
-              <div className="absolute inset-0 bg-[#E8DDD0] rounded-2xl border border-[#D9C8B5] pattern-blue-gingham opacity-40 -rotate-6" />
-              <DriedBotanicalsSticker className="w-24 h-28 relative z-10" />
+              <div className="absolute inset-0 rounded-2xl border border-[#6B0B0C]/20 pattern-maroon-gingham opacity-50 -rotate-6" />
+              <DriedBotanicalsSticker className="w-20 h-24 relative z-10" />
             </div>
           </div>
         </section>
