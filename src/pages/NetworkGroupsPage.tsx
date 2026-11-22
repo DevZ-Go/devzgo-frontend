@@ -17,6 +17,11 @@ import { fetchGroups, joinGroup } from "../api/groups";
 import { useAuth } from "../auth/AuthContext";
 import { CreateGroupModal } from "../components/network/CreateGroupModal";
 import { VerifiedClubBadge } from "../components/network/VerifiedClubBadge";
+import {
+  ClubJoinNotice,
+  type ClubJoinNoticeKind,
+} from "../components/network/ClubJoinNotice";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const CATEGORY_TABS: { id: string; label: string; icon?: ComponentType<{ className?: string }> }[] = [
   { id: "all", label: "All Communities" },
@@ -43,6 +48,13 @@ export function NetworkGroupsPage() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [joinNotice, setJoinNotice] = useState<{
+    clubId: string;
+    clubName: string;
+    kind: ClubJoinNoticeKind;
+    emailOptIn: boolean;
+  } | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -78,6 +90,16 @@ export function NetworkGroupsPage() {
         username: user?.username || "developer",
       });
       setGroups((prev) => prev.map((g) => (g.id === grp.id ? updated : g)));
+      setJoinError(null);
+      setJoinNotice({
+        clubId: updated.id,
+        clubName: updated.name,
+        kind: updated.isMember ? "joined" : "pending",
+        emailOptIn: updated.emailBroadcastOptIn !== false,
+      });
+    } catch (err) {
+      setJoinNotice(null);
+      setJoinError(getApiErrorMessage(err) || "Could not join club");
     } finally {
       setJoiningId(null);
     }
@@ -89,6 +111,41 @@ export function NetworkGroupsPage() {
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 pt-28 pb-20">
         <NetworkPlaces current="groups" />
+
+        {joinError && (
+          <div
+            role="status"
+            className="mb-6 flex items-start justify-between gap-3 rounded-2xl border border-[#780D18]/30 bg-white px-4 py-3 shadow-sm"
+          >
+            <p className="text-sm text-[#2D120D]">{joinError}</p>
+            <button
+              type="button"
+              onClick={() => setJoinError(null)}
+              className="text-xs font-bold text-[#780D18] shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {joinNotice && (
+          <ClubJoinNotice
+            clubId={joinNotice.clubId}
+            clubName={joinNotice.clubName}
+            kind={joinNotice.kind}
+            emailOptIn={joinNotice.emailOptIn}
+            showOpenClub
+            onDismiss={() => setJoinNotice(null)}
+            onEmailOptInChange={(value) => {
+              setJoinNotice((prev) => (prev ? { ...prev, emailOptIn: value } : prev));
+              setGroups((prev) =>
+                prev.map((g) =>
+                  g.id === joinNotice.clubId ? { ...g, emailBroadcastOptIn: value } : g
+                )
+              );
+            }}
+          />
+        )}
 
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#780D18] via-[#5C0A12] to-[#2D120D] text-[#F7F1E8] border border-[#780D18]/35 shadow-[0_14px_40px_rgba(120,13,24,0.22)] p-6 sm:p-10 mb-8 sm:mb-10">
           <div className="relative z-10 max-w-3xl space-y-3 sm:space-y-4">

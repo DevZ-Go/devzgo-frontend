@@ -63,6 +63,10 @@ import { ExecutiveBoard } from "../components/network/ExecutiveBoard";
 import { ClubMembersList } from "../components/network/ClubMembersList";
 import { GalleryLightbox } from "../components/network/GalleryLightbox";
 import { VerifiedClubBadge } from "../components/network/VerifiedClubBadge";
+import {
+  ClubJoinNotice,
+  type ClubJoinNoticeKind,
+} from "../components/network/ClubJoinNotice";
 import { assetUrlOrNull } from "../api/config";
 
 export function GroupDetailPage() {
@@ -144,6 +148,10 @@ export function GroupDetailPage() {
   const [fundNote, setFundNote] = useState("");
   const [fundType, setFundType] = useState<"income" | "expense">("expense");
   const [fundSaving, setFundSaving] = useState(false);
+  const [joinNotice, setJoinNotice] = useState<{
+    kind: ClubJoinNoticeKind;
+    emailOptIn: boolean;
+  } | null>(null);
 
   // Quick announcement comment inputs state
   const [annCommentTexts, setAnnCommentTexts] = useState<Record<string, string>>({});
@@ -258,17 +266,16 @@ export function GroupDetailPage() {
       }
     } else if (!isPending) {
       try {
-      const updated = await joinGroup(group.id, {
-        id: String(user?.id ?? "usr-me"),
-        name: user?.username || "DevZ-Go Member",
-        username: user?.username || "developer",
-      });
-      setGroup(updated);
-        if (updated.isMember) {
-          window.alert(
-            "Welcome! Club email updates are enabled for you. You can turn them off anytime in Settings → Notifications."
-          );
-        }
+        const updated = await joinGroup(group.id, {
+          id: String(user?.id ?? "usr-me"),
+          name: user?.username || "DevZ-Go Member",
+          username: user?.username || "developer",
+        });
+        setGroup(updated);
+        setJoinNotice({
+          kind: updated.isMember ? "joined" : "pending",
+          emailOptIn: updated.emailBroadcastOptIn !== false,
+        });
       } catch (err) {
         alert(getApiErrorMessage(err) || "Could not send request");
       }
@@ -500,6 +507,20 @@ export function GroupDetailPage() {
             </div>
           </div>
         </header>
+
+        {joinNotice && (
+          <ClubJoinNotice
+            clubId={group.id}
+            clubName={group.name}
+            kind={joinNotice.kind}
+            emailOptIn={joinNotice.emailOptIn}
+            onDismiss={() => setJoinNotice(null)}
+            onEmailOptInChange={(value) => {
+              setJoinNotice((prev) => (prev ? { ...prev, emailOptIn: value } : prev));
+              setGroup((prev) => (prev ? { ...prev, emailBroadcastOptIn: value } : prev));
+            }}
+          />
+        )}
 
         {isExecutive && group.pendingAvatarUrl && (
           <div className="mb-6 rounded-xl border border-[#780D18]/30 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
