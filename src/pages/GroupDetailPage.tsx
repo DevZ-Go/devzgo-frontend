@@ -18,6 +18,9 @@ import {
   X,
   FolderKanban,
   ImagePlus,
+  CalendarDays,
+  MapPin,
+  Trash2,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
@@ -48,6 +51,7 @@ import {
   declineClubJoinRequest,
   toggleLikeAnnouncement,
   addAnnouncementComment,
+  deleteGroupEvent,
 } from "../api/groups";
 import { ClubBroadcastModal } from "../components/network/ClubBroadcastModal";
 import { EditClubModal } from "../components/network/EditClubModal";
@@ -137,7 +141,9 @@ export function GroupDetailPage() {
     eventId?: string;
     title?: string;
     content?: string;
+    media?: Array<{ url: string; type: string; source: string }>;
   } | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<(typeof events)[number] | null>(null);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
@@ -973,7 +979,7 @@ export function GroupDetailPage() {
                     </div>
 
                     {Array.isArray(ann.mediaUrls) && ann.mediaUrls.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className={`gap-2 ${ann.mediaUrls.length === 1 ? "flex flex-col" : "grid grid-cols-1 sm:grid-cols-2"}`}>
                         {ann.mediaUrls.map((item, idx) => {
                           const url = typeof item === "string" ? item : (item as { url?: string }).url;
                           const type =
@@ -983,11 +989,22 @@ export function GroupDetailPage() {
                           if (!url) return null;
                           const src = assetUrlOrNull(url) || url;
                           return type === "video" ? (
-                            <a key={idx} href={src} target="_blank" rel="noreferrer" className="rounded-lg border border-[#DECDBA] bg-[#2D120D] text-[#F7F1E8] h-28 flex items-center justify-center text-xs font-semibold">
-                              Video
+                            <a
+                              key={idx}
+                              href={src}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-xl border border-[#DECDBA] bg-[#2D120D] text-[#F7F1E8] min-h-[7rem] flex items-center justify-center text-xs font-semibold"
+                            >
+                              Open video
                             </a>
                           ) : (
-                            <img key={idx} src={src} alt="" className="h-28 w-full object-cover rounded-lg border border-[#DECDBA]" />
+                            <img
+                              key={idx}
+                              src={src}
+                              alt=""
+                              className="w-full max-h-[28rem] object-contain rounded-xl border border-[#DECDBA] bg-[#2D120D]/5"
+                            />
                           );
                         })}
                       </div>
@@ -1101,119 +1118,162 @@ export function GroupDetailPage() {
             )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid gap-5 sm:grid-cols-2">
                 {events.map((ev) => {
                   const place =
                     ev.modality === "virtual"
                       ? ev.meetingPlatform || ev.meetingUrl || "Virtual"
-                      : [ev.venueName, ev.roomNumber ? `Room ${ev.roomNumber}` : null, ev.venueAddress || ev.location]
+                      : [ev.venueName, ev.roomNumber ? `Rm ${ev.roomNumber}` : null, ev.venueAddress || ev.location]
                           .filter(Boolean)
                           .join(" · ") || "TBA";
-                  const posterRatio =
-                    ev.posterFormat === "tabloid"
-                      ? ev.posterOrientation === "landscape"
-                        ? "17 / 11"
-                        : "11 / 17"
-                      : ev.posterOrientation === "landscape"
-                        ? "11 / 8.5"
-                        : "8.5 / 11";
+                  const when = ev.startsAt
+                    ? new Date(ev.startsAt).toLocaleString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })
+                    : "Date TBA";
+                  const posterSrc = assetUrlOrNull(ev.posterUrl) || ev.posterUrl || null;
                   return (
                     <article
                       key={ev.id}
-                      className="rounded-xl border border-[#DECDBA] bg-white overflow-hidden flex flex-col sm:flex-row"
+                      className="group rounded-2xl border border-[#DECDBA] bg-white overflow-hidden shadow-[0_10px_28px_rgba(45,18,13,0.06)] flex flex-col"
                     >
-                      <div
-                        className="sm:w-44 bg-[#2D120D] shrink-0 overflow-hidden"
-                        style={{ aspectRatio: posterRatio }}
-                      >
-                        {ev.posterUrl ? (
+                      <div className="relative bg-[#2D120D] min-h-[12rem] sm:min-h-[14rem] flex items-center justify-center overflow-hidden">
+                        {posterSrc ? (
                           <img
-                            src={assetUrlOrNull(ev.posterUrl) || ev.posterUrl}
+                            src={posterSrc}
                             alt=""
                             loading="lazy"
                             decoding="async"
-                            className="w-full h-full object-cover"
+                            className="w-full max-h-[22rem] object-contain"
                           />
                         ) : (
-                          <div className="w-full h-full min-h-[9rem] flex items-center justify-center text-[#F7F1E8]/70 text-xs font-mono uppercase tracking-wider">
-                            {ev.academicTerm || "Event"}
-                      </div>
+                          <div className="px-6 py-10 text-center text-[#F7F1E8]/75">
+                            <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-80" />
+                            <p className="font-serif text-lg font-bold text-[#F7F1E8]">{ev.title}</p>
+                          </div>
                         )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#2D120D]/90 via-[#2D120D]/35 to-transparent p-3 pt-10">
+                          <div className="flex items-end justify-between gap-2">
+                            <h3 className="font-serif text-lg sm:text-xl font-bold text-[#F7F1E8] leading-tight line-clamp-2">
+                              {ev.title}
+                            </h3>
+                            {ev.status !== "published" && (
+                              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider rounded-md bg-white/15 text-[#F7F1E8] px-2 py-0.5">
+                                {ev.status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="p-4 flex-1 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-serif text-xl font-bold text-[#2D120D]">{ev.title}</h3>
-                          {group.verified && <VerifiedClubBadge />}
-                          <span className="text-[10px] font-bold uppercase tracking-wider rounded-md bg-[#F7F1E8] border border-[#DECDBA] px-2 py-0.5">
-                            {ev.status}
+
+                      <div className="p-3.5 sm:p-4 flex-1 flex flex-col gap-2.5">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#2D120D]/80">
+                          <span className="inline-flex items-center gap-1.5 font-semibold">
+                            <CalendarDays className="w-3.5 h-3.5 text-[#780D18]" />
+                            {when}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 min-w-0">
+                            <MapPin className="w-3.5 h-3.5 text-[#780D18] shrink-0" />
+                            <span className="truncate">{place}</span>
                           </span>
                         </div>
+
                         {ev.attractions && (
-                          <p className="inline-flex items-center gap-1.5 rounded-lg bg-[#780D18] text-[#F7F1E8] px-2.5 py-1 text-[11px] font-bold">
-                            {ev.attractions}
-                          </p>
+                          <p className="text-[11px] font-bold text-[#780D18] line-clamp-1">{ev.attractions}</p>
                         )}
-                        <p className="text-xs text-[#6E5952]">
-                          {ev.startsAt?.slice(0, 16).replace("T", " ")}
-                          {ev.endsAt ? ` – ${ev.endsAt.slice(11, 16)}` : ""}
-                        </p>
-                        <p className="text-xs text-[#2D120D]">
-                          <span className="font-semibold capitalize">{(ev.modality || "in_person").replace("_", "-")}</span>
-                          {" · "}
-                          {place}
-                          {ev.academicTerm ? ` · ${ev.academicTerm} ${ev.academicYear || ""}` : ""}
-                        </p>
-                        {ev.description && (
-                          <p className="text-sm text-[#2D120D]/80 line-clamp-3">{ev.description}</p>
-                        )}
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {canEvents && (
-                            <button
-                              type="button"
-                              className="text-[11px] font-semibold text-[#780D18]"
-                              onClick={() => {
-                                setEditingEvent(ev);
-                                setEventModalOpen(true);
-                              }}
+
+                        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
+                          {ev.rsvpUrl && (
+                            <a
+                              href={ev.rsvpUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg bg-[#780D18] px-3 py-1.5 text-[11px] font-bold text-white"
                             >
-                              Edit event
-                            </button>
+                              RSVP
+                            </a>
                           )}
                           {canAnnounce && (
                             <button
                               type="button"
-                              className="text-[11px] font-semibold text-[#780D18]"
+                              className="rounded-lg border border-[#DECDBA] bg-[#F7F1E8] px-3 py-1.5 text-[11px] font-bold text-[#2D120D] hover:border-[#780D18]/40"
                               onClick={() => {
                                 setAnnounceSeed({
                                   eventId: ev.id,
-                                  title: `Event: ${ev.title}`,
-                                  content: `${ev.description || ""}\n\nWhen: ${ev.startsAt?.slice(0, 16).replace("T", " ") || "TBA"}\nWhere: ${place}${ev.attractions ? `\nHighlights: ${ev.attractions}` : ""}`.trim(),
+                                  title: ev.title,
+                                  content: [
+                                    ev.description?.trim() || null,
+                                    when !== "Date TBA" ? `When: ${when}` : null,
+                                    place ? `Where: ${place}` : null,
+                                    ev.attractions ? `Highlights: ${ev.attractions}` : null,
+                                    ev.rsvpUrl ? `RSVP: ${ev.rsvpUrl}` : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join("\n"),
+                                  media: ev.posterUrl
+                                    ? [{ url: ev.posterUrl, type: "image", source: "event_poster" }]
+                                    : [],
                                 });
                                 setAnnouncementModalOpen(true);
                                 setActiveTab("announcements");
                               }}
                             >
-                              Share to announcements
+                              Share
                             </button>
                           )}
                           <button
                             type="button"
-                            className="text-[11px] font-semibold text-[#780D18]"
+                            className="rounded-lg border border-[#DECDBA] bg-white px-3 py-1.5 text-[11px] font-bold text-[#2D120D] hover:border-[#780D18]/40"
                             onClick={() => {
                               setGalleryEventId(ev.id);
                               setActiveTab("gallery");
-                              void fetchClubGallery(groupId, { eventId: ev.id }).then(setGallery).catch(() => setGallery([]));
+                              void fetchClubGallery(groupId, { eventId: ev.id })
+                                .then(setGallery)
+                                .catch(() => setGallery([]));
                             }}
                           >
-                            Add / view photos →
+                            Photos
                           </button>
-                          {ev.rsvpUrl && (
-                            <a href={ev.rsvpUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-[#780D18]">
-                              RSVP →
-                            </a>
+                          {canEvents && (
+                            <button
+                              type="button"
+                              className="rounded-lg border border-[#DECDBA] bg-white px-3 py-1.5 text-[11px] font-bold text-[#2D120D] hover:border-[#780D18]/40"
+                              onClick={() => {
+                                setEditingEvent(ev);
+                                setEventModalOpen(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canEvents && (
+                            <button
+                              type="button"
+                              disabled={deletingEventId === ev.id}
+                              className="inline-flex items-center gap-1 rounded-lg border border-[#780D18]/25 bg-white px-3 py-1.5 text-[11px] font-bold text-[#780D18] hover:bg-[#780D18]/5 disabled:opacity-50 ml-auto"
+                              onClick={() => {
+                                if (!window.confirm(`Delete “${ev.title}”? This cannot be undone.`)) return;
+                                setDeletingEventId(ev.id);
+                                void deleteGroupEvent(groupId, ev.id)
+                                  .then(() => {
+                                    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+                                  })
+                                  .catch((err) => {
+                                    window.alert(getApiErrorMessage(err) || "Could not delete event");
+                                  })
+                                  .finally(() => setDeletingEventId(null));
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              {deletingEventId === ev.id ? "…" : "Delete"}
+                            </button>
                           )}
                         </div>
-                    </div>
+                      </div>
                     </article>
                   );
                 })}
@@ -1689,6 +1749,7 @@ export function GroupDetailPage() {
           initialEventId={announceSeed?.eventId}
           initialTitle={announceSeed?.title}
           initialContent={announceSeed?.content}
+          initialMedia={announceSeed?.media}
           events={events.map((e) => ({ id: e.id, title: e.title }))}
           userRole={
             isHost

@@ -265,7 +265,7 @@ export type ClubEventPayload = {
   meetingUrl?: string;
   meetingPlatform?: string;
   posterUrl?: string | null;
-  posterFormat?: "letter" | "tabloid" | null;
+  posterFormat?: "letter" | "tabloid" | "custom" | null;
   posterOrientation?: "portrait" | "landscape" | null;
   rsvpUrl?: string;
   attractions?: string;
@@ -283,6 +283,23 @@ export async function createGroupEvent(groupId: string, data: ClubEventPayload) 
 export async function patchGroupEvent(groupId: string, eventId: string, data: ClubEventPayload) {
   const res = await api.patch(`/groups/${groupId}/events/${eventId}`, data);
   return res.data;
+}
+
+export async function deleteGroupEvent(groupId: string, eventId: string): Promise<void> {
+  try {
+    await api.delete(`/groups/${groupId}/events/${eventId}`);
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to delete event");
+  }
+}
+
+export async function cancelGroupEvent(groupId: string, eventId: string) {
+  try {
+    const res = await api.post(`/groups/${groupId}/events/${eventId}/cancel`);
+    return res.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to cancel event");
+  }
 }
 
 export async function uploadEventPoster(groupId: string, eventId: string, file: File) {

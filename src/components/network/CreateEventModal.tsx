@@ -21,7 +21,7 @@ import { assetUrlOrNull } from "../../api/config";
 import { getApiErrorMessage } from "../../utils/apiError";
 
 type Modality = "in_person" | "virtual" | "hybrid";
-type PosterFormat = "letter" | "tabloid";
+type PosterFormat = "letter" | "tabloid" | "custom";
 type PosterOrientation = "portrait" | "landscape";
 
 export type EditableClubEvent = {
@@ -80,8 +80,9 @@ function suggestTerm(dateStr: string): { term: string; year: string } {
   return { term: "Winter", year };
 }
 
-/** Letter 8.5×11" · Tabloid 11×17" — ~200 dpi output for sharp on-screen posters */
-function posterAspect(format: PosterFormat, orientation: PosterOrientation) {
+/** Letter / Tabloid paper sizes, or custom free-form. */
+function posterAspect(format: PosterFormat, orientation: PosterOrientation): number | undefined {
+  if (format === "custom") return undefined;
   const letter = 8.5 / 11;
   const tabloid = 11 / 17;
   const base = format === "tabloid" ? tabloid : letter;
@@ -89,6 +90,7 @@ function posterAspect(format: PosterFormat, orientation: PosterOrientation) {
 }
 
 function posterOutput(format: PosterFormat, orientation: PosterOrientation) {
+  if (format === "custom") return { width: 2000, height: 2000 };
   // 200 dpi: letter 1700×2200, tabloid 2200×3400
   const dims =
     format === "tabloid"
@@ -129,7 +131,11 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
   const [academicTerm, setAcademicTerm] = useState(initialEvent?.academicTerm || suggested.term);
   const [academicYear, setAcademicYear] = useState(initialEvent?.academicYear || suggested.year);
   const [posterFormat, setPosterFormat] = useState<PosterFormat>(
-    initialEvent?.posterFormat === "tabloid" ? "tabloid" : "letter"
+    initialEvent?.posterFormat === "tabloid"
+      ? "tabloid"
+      : initialEvent?.posterFormat === "custom"
+        ? "custom"
+        : "custom"
   );
   const [posterOrientation, setPosterOrientation] = useState<PosterOrientation>(
     initialEvent?.posterOrientation === "landscape" ? "landscape" : "portrait"
@@ -174,8 +180,8 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
         status,
         academicTerm,
         academicYear,
-        posterFormat,
-        posterOrientation,
+        posterFormat: posterFormat === "custom" ? "custom" : posterFormat,
+        posterOrientation: posterFormat === "custom" ? undefined : posterOrientation,
         location:
           modality === "virtual"
             ? meetingPlatform || meetingUrl || "Virtual"
@@ -218,22 +224,24 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
             onClick={() => fileRef.current?.click()}
             className="relative w-full overflow-hidden group text-left bg-[#2D120D]"
             style={{
-              aspectRatio: String(aspect),
-              maxHeight: "14rem",
+              aspectRatio: aspect ? String(aspect) : "16 / 10",
+              maxHeight: "16rem",
             }}
           >
             {posterPreview ? (
               <img
                 src={assetUrlOrNull(posterPreview) || posterPreview}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover"
+                className={`absolute inset-0 w-full h-full ${posterFormat === "custom" ? "object-contain bg-[#2D120D]" : "object-cover"}`}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-[#F7F1E8]/85">
                 <ImagePlus className="w-8 h-8" />
                 <span className="text-xs font-bold tracking-wide">Add poster</span>
                 <span className="text-[10px] opacity-70">
-                  {posterFormat === "tabloid" ? "Tabloid 11×17″" : "Letter 8.5×11″"} · {posterOrientation}
+                  {posterFormat === "custom"
+                    ? "Custom size — any crop"
+                    : `${posterFormat === "tabloid" ? "Tabloid 11×17″" : "Letter 8.5×11″"} · ${posterOrientation}`}
                 </span>
               </div>
             )}
@@ -245,18 +253,21 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
                 onChange={(e) => setPosterFormat(e.target.value as PosterFormat)}
                 className="rounded-md bg-black/50 text-white text-[10px] px-2 py-1 border border-white/20"
               >
+                <option value="custom">Custom size</option>
                 <option value="letter">Letter 8.5×11</option>
                 <option value="tabloid">Tabloid 11×17</option>
               </select>
-              <select
-                value={posterOrientation}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setPosterOrientation(e.target.value as PosterOrientation)}
-                className="rounded-md bg-black/50 text-white text-[10px] px-2 py-1 border border-white/20"
-              >
-                <option value="portrait">Portrait</option>
-                <option value="landscape">Landscape</option>
-              </select>
+              {posterFormat !== "custom" && (
+                <select
+                  value={posterOrientation}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => setPosterOrientation(e.target.value as PosterOrientation)}
+                  className="rounded-md bg-black/50 text-white text-[10px] px-2 py-1 border border-white/20"
+                >
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              )}
             </div>
             <button
               type="button"
@@ -478,12 +489,21 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
       {cropFile && (
         <PhotoCropper
           file={cropFile}
-          title={`Crop ${posterFormat === "tabloid" ? "tabloid 11×17" : "letter 8.5×11"} poster`}
+          title={
+            posterFormat === "custom"
+              ? "Crop poster (custom size)"
+              : `Crop ${posterFormat === "tabloid" ? "tabloid 11×17" : "letter 8.5×11"} poster`
+          }
           aspect={aspect}
           cropShape="rect"
           outputWidth={out.width}
           outputHeight={out.height}
           maxBytes={12 * 1024 * 1024}
+          hint={
+            posterFormat === "custom"
+              ? "Free-form crop — keep any size. Drag and zoom to frame the poster."
+              : undefined
+          }
           confirmLabel="Use poster"
           onCancel={() => setCropFile(null)}
           onDone={(cropped) => {

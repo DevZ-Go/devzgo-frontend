@@ -5,6 +5,8 @@ import { useAuth } from "../../auth/AuthContext";
 import { createGroupAnnouncement, uploadAnnouncementMedia } from "../../api/groups";
 import { assetUrlOrNull } from "../../api/config";
 
+type MediaItem = { url: string; type: string; source: string };
+
 interface CreateAnnouncementModalProps {
   groupId: string;
   userRole: "host" | "president" | "vice_president" | "treasurer" | "executive";
@@ -13,12 +15,12 @@ interface CreateAnnouncementModalProps {
   initialEventId?: string | null;
   initialTitle?: string;
   initialContent?: string;
+  /** Pre-attached media (e.g. event poster when sharing an event). */
+  initialMedia?: MediaItem[];
   events?: Array<{ id: string; title: string }>;
   onClose: () => void;
   onSuccess: (newAnnouncement: GroupAnnouncement) => void;
 }
-
-type MediaItem = { url: string; type: string; source: string };
 
 const BADGES: GroupAnnouncement["badge"][] = [
   "Official Announcement",
@@ -39,6 +41,7 @@ export function CreateAnnouncementModal({
   initialEventId,
   initialTitle,
   initialContent,
+  initialMedia = [],
   events = [],
   onClose,
   onSuccess,
@@ -47,12 +50,16 @@ export function CreateAnnouncementModal({
   const fileRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(initialTitle || "");
   const [content, setContent] = useState(initialContent || "");
-  const [badge, setBadge] = useState<GroupAnnouncement["badge"]>("Official Announcement");
+  const [badge, setBadge] = useState<GroupAnnouncement["badge"]>(
+    initialEventId ? "Meeting & Workshop" : "Official Announcement"
+  );
   const [audience, setAudience] = useState<"members" | "public">("members");
   const [status, setStatus] = useState<"draft" | "published">("published");
   const [pinned, setPinned] = useState(false);
   const [eventId, setEventId] = useState(initialEventId || "");
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [media, setMedia] = useState<MediaItem[]>(() =>
+    (initialMedia || []).filter((m) => m?.url).slice(0, 12)
+  );
   const [mediaUrlDraft, setMediaUrlDraft] = useState("");
   const [includePoll, setIncludePoll] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -268,22 +275,27 @@ export function CreateAnnouncementModal({
               </button>
             </div>
             {media.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {media.map((m, i) => (
-                  <div key={`${m.url}-${i}`} className="relative">
+                  <div key={`${m.url}-${i}`} className="relative rounded-xl border border-[#DECDBA] bg-white overflow-hidden">
                     {m.type === "video" ? (
-                      <div className="h-16 w-24 rounded-lg border border-[#DECDBA] bg-white text-[10px] flex items-center justify-center px-1 text-center">
-                        Video
+                      <div className="min-h-[5rem] px-3 py-6 text-xs font-semibold text-center text-[#6E5952]">
+                        Video attached
                       </div>
                     ) : (
-                      <img src={assetUrlOrNull(m.url) || m.url} alt="" className="h-16 w-24 object-cover rounded-lg border border-[#DECDBA]" />
+                      <img
+                        src={assetUrlOrNull(m.url) || m.url}
+                        alt=""
+                        className="w-full max-h-72 object-contain bg-[#2D120D]/5"
+                      />
                     )}
                     <button
                       type="button"
-                      className="absolute -top-1 -right-1 rounded-full bg-[#780D18] text-white p-0.5"
+                      className="absolute top-2 right-2 rounded-full bg-[#780D18] text-white p-1 shadow"
                       onClick={() => setMedia((prev) => prev.filter((_, idx) => idx !== i))}
+                      aria-label="Remove media"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}

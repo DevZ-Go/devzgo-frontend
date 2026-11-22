@@ -68,7 +68,7 @@ export function PhotoCropper({
 }: {
   file: File;
   title?: string;
-  /** Width / height. Square for avatars; 16/9 for project covers. */
+  /** Width / height. Omit for free-form (custom) crop. Square for avatars; 16/9 for covers. */
   aspect?: number;
   cropShape?: "round" | "rect";
   outputWidth?: number;
@@ -113,7 +113,16 @@ export function PhotoCropper({
     setBusy(true);
     setError(null);
     try {
-      const cropped = await cropToFile(src, area, rotation, file.name, outputWidth, outputHeight);
+      let outW = outputWidth;
+      let outH = outputHeight;
+      // Free-form crop: keep the selected area's aspect instead of a fixed paper size.
+      if (aspect == null && area.width > 0 && area.height > 0) {
+        const maxEdge = Math.max(outputWidth, outputHeight, 1600);
+        const scale = maxEdge / Math.max(area.width, area.height);
+        outW = Math.max(1, Math.round(area.width * scale));
+        outH = Math.max(1, Math.round(area.height * scale));
+      }
+      const cropped = await cropToFile(src, area, rotation, file.name, outW, outH);
       if (cropped.size > maxBytes) {
         throw new Error(`Cropped image is still over ${formatMb(maxBytes)}. Zoom in on a smaller area or use a lighter photo.`);
       }
@@ -124,7 +133,14 @@ export function PhotoCropper({
     }
   }
 
-  const ratioLabel = aspect === 1 ? "1:1 square" : aspect === 16 / 9 ? "16:9 landscape" : `${aspect.toFixed(2)}:1`;
+  const ratioLabel =
+    aspect == null
+      ? "any size"
+      : aspect === 1
+        ? "1:1 square"
+        : aspect === 16 / 9
+          ? "16:9 landscape"
+          : `${aspect.toFixed(2)}:1`;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-stone-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="cropper-title">
@@ -136,7 +152,7 @@ export function PhotoCropper({
           </button>
         </div>
 
-        <div className={`relative bg-stone-900 ${aspect >= 1.4 ? "h-56 sm:h-72" : "h-72 sm:h-80"}`}>
+        <div className={`relative bg-stone-900 ${(aspect ?? 1) >= 1.4 ? "h-56 sm:h-72" : "h-72 sm:h-80"}`}>
           {src && (
             <Cropper
               image={src}
