@@ -117,6 +117,8 @@ export interface TablePageData {
   blurb: string;
   primary_key: string[];
   columns: TableColumn[];
+  editable?: string[];
+  removable?: boolean;
   rows: Record<string, unknown>[];
   total: number;
   offset: number;
@@ -158,7 +160,13 @@ export async function fetchTable(name: string, q: string, offset: number, eq: st
   return data;
 }
 
-export async function fetchRow(name: string, pk: string[]): Promise<{ row: Record<string, unknown>; columns: TableColumn[]; blurb: string }> {
+export async function fetchRow(name: string, pk: string[]): Promise<{
+  row: Record<string, unknown>;
+  columns: TableColumn[];
+  blurb: string;
+  editable?: string[];
+  removable?: boolean;
+}> {
   const { data } = await api.get(`/admin/tables/${name}/row`, { ...listParams, params: { pk } });
   return data;
 }

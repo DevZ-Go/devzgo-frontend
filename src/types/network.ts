@@ -125,6 +125,7 @@ export interface FeedActivity {
   project?: ProjectPreview | null;
   likesCount: number;
   isLiked: boolean;
+  isSaved?: boolean;
   commentsCount: number;
   comments: ActivityComment[];
   canEdit?: boolean;

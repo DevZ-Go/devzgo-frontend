@@ -43,6 +43,7 @@ const ResetPasswordPage = page(() => import("./pages/PasswordResetPages"), "Rese
 const AuthCallbackPage = page(() => import("./pages/AuthCallbackPage"), "AuthCallbackPage");
 const GitHubOnboardingPage = page(() => import("./pages/GitHubOnboardingPage"), "GitHubOnboardingPage");
 const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
+const MyActivityPage = page(() => import("./pages/MyActivityPage"), "MyActivityPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
 const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
@@ -78,6 +79,7 @@ const AdminLayout = page(() => import("./pages/admin/AdminLayout"), "AdminLayout
 const AdminOverviewPage = page(() => import("./pages/admin/OverviewPage"), "OverviewPage");
 const AdminInsightsPage = page(() => import("./pages/admin/InsightsPage"), "InsightsPage");
 const AdminPeoplePage = page(() => import("./pages/admin/PeoplePage"), "PeoplePage");
+const AdminClubsPage = page(() => import("./pages/admin/ClubsAdminPage"), "AdminClubsPage");
 const AdminPersonPage = page(() => import("./pages/admin/PersonPage"), "PersonPage");
 const AdminAccessPage = page(() => import("./pages/admin/AccessPage"), "AccessPage");
 const AdminApprovalsPage = page(() => import("./pages/admin/ApprovalsPage"), "ApprovalsPage");
@@ -120,6 +122,7 @@ export const router = createBrowserRouter([
       { path: "/auth/callback", element: <AuthCallbackPage /> },
       { path: "/auth/github/onboarding", element: <GitHubOnboardingPage /> },
       { path: "/settings", element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
+      { path: "/settings/activity", element: <ProtectedRoute><MyActivityPage /></ProtectedRoute> },
       {
         path: "/network",
         element: (
@@ -267,6 +270,7 @@ export const router = createBrowserRouter([
           { path: "project-intelligence", element: <AdminProjectIntelligencePage /> },
           { path: "people", element: <AdminPeoplePage /> },
           { path: "people/:userId", element: <AdminPersonPage /> },
+          { path: "clubs", element: <AdminClubsPage /> },
           { path: "access", element: <AdminAccessPage /> },
           { path: "approvals", element: <AdminApprovalsPage /> },
           { path: "audit", element: <AdminAuditPage /> },

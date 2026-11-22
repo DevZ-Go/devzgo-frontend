@@ -8,21 +8,16 @@ import {
   patchPiProjectPref,
 } from "../../api/projectIntelligence";
 import { getApiErrorMessage } from "../../utils/apiError";
-import { GenerateWithAiPanel } from "./GenerateWithAiPanel";
 
 type Props = {
   projectId: string;
-  shortDescription: string;
-  fullDescription: string;
-  onApplyDescriptions: (fields: { short?: string; full?: string }) => void;
+  /** Kept for call-site compatibility; AI generate lives on step 1 only. */
+  shortDescription?: string;
+  fullDescription?: string;
+  onApplyDescriptions?: (fields: { short?: string; full?: string }) => void;
 };
 
-export function ProjectIntelligenceControls({
-  projectId,
-  shortDescription,
-  fullDescription,
-  onApplyDescriptions,
-}: Props) {
+export function ProjectIntelligenceControls({ projectId }: Props) {
   const qc = useQueryClient();
   const pref = useQuery({
     queryKey: ["pi-project-pref", projectId],
@@ -73,7 +68,7 @@ export function ProjectIntelligenceControls({
         <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Project Intelligence</h3>
         <p className="mt-1 text-xs text-stone-600">
           Evidence analysis runs on your uploaded source without changing your title or descriptions.
-          AI description generation is optional and always requires your approval.
+          AI generation lives on step 1 (Source &amp; story) so you are only asked once per project.
         </p>
       </div>
 
@@ -127,13 +122,6 @@ export function ProjectIntelligenceControls({
           {analyze.isError && <p className="text-xs text-red-700">{getApiErrorMessage(analyze.error)}</p>}
         </div>
       )}
-
-      <GenerateWithAiPanel
-        projectId={projectId}
-        currentShort={shortDescription}
-        currentFull={fullDescription}
-        onApplied={onApplyDescriptions}
-      />
     </div>
   );
 }

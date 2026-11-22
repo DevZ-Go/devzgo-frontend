@@ -8,10 +8,10 @@ import { Banner, Loading, display, panel, statusClass, titleCase, when } from ".
 import { useAdminAction } from "./guard";
 
 const LINKS: [string, string, string][] = [
-  ["projects", "Projects they own", "/admin/browse/projects/projects"],
-  ["posts", "Network posts", "/admin/browse/network/network_activities"],
-  ["messages_sent", "Messages sent", "/admin/browse/messages/messages"],
-  ["messages_received", "Messages received", "/admin/browse/messages/messages"],
+  ["projects", "Projects", "/admin/browse/projects/projects"],
+  ["posts", "Posts", "/admin/browse/network/network_activities"],
+  ["messages_sent", "Sent", "/admin/browse/messages/messages"],
+  ["messages_received", "Inbox", "/admin/browse/messages/messages"],
   ["wraps", "Wraps", "/admin/browse/wraps/monthly_wraps"],
 ];
 
@@ -41,7 +41,7 @@ export function PersonPage() {
     try {
       const result = await perform({ action, target_id: userId, payload });
       if (!result) return;
-      if (result.status === "pending") setMessage(`Submitted for approval (${result.approvals ?? 1} of ${result.required_approvals}). Nothing has changed yet.`);
+      if (result.status === "pending") setMessage(`Queued (${result.approvals ?? 1}/${result.required_approvals}).`);
       else setMessage(result.summary || "Saved.");
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -51,138 +51,150 @@ export function PersonPage() {
   }
 
   if (person.isLoading) return <Loading />;
-  if (!person.data) return <p className={ui.error}>That account could not be loaded.</p>;
+  if (!person.data) return <p className={ui.error}>Account unavailable.</p>;
   const row = person.data.person;
   const counts = person.data.counts;
 
   return (
     <div className="space-y-4">
-      <Link to="/admin/people" className={ui.link}>All people</Link>
+      <Link to="/admin/people" className={ui.link}>
+        ← People
+      </Link>
       {message && <Banner tone="ok">{message}</Banner>}
       {error && <Banner tone="bad">{error}</Banner>}
 
-      <section className={panel}>
+      <section className={`${panel} !p-4`}>
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-serif text-2xl font-bold">@{row.username}</h2>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(row.status)}`}>{row.status}</span>
-          {row.admin_role && <span className="rounded-full bg-[#6B0B0C] px-2 py-0.5 text-xs font-semibold uppercase text-[#FFF8CA]">{row.admin_role}</span>}
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass(row.status)}`}>{row.status}</span>
+          {row.admin_role && (
+            <span className="rounded-full bg-[#6B0B0C] px-2 py-0.5 text-[10px] font-semibold uppercase text-[#FFF8CA]">
+              {row.admin_role}
+            </span>
+          )}
         </div>
-        <p className="mt-1 text-sm text-stone-600">{row.full_name || "No name"} · {row.email}</p>
-        <p className="mt-1 text-xs uppercase tracking-wider text-stone-500">
-          {row.account_type} · {row.has_password ? "password" : "no password"} · {row.github_linked ? "GitHub linked" : "no GitHub"} · joined {when(row.created_at)}
+        <p className="mt-1 text-sm text-stone-600">
+          {row.full_name || "—"} · {row.email}
         </p>
-        {row.suspended_reason && <p className="mt-2 text-sm text-[#991B1B]">Suspension note: {row.suspended_reason}</p>}
-        {row.delete_after && <p className="mt-2 text-sm text-[#991B1B]">Permanent deletion after {when(row.delete_after)}.</p>}
+        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-stone-400">
+          {row.account_type} · {row.has_password ? "pwd" : "no pwd"} · {row.github_linked ? "GitHub" : "no GH"} · {when(row.created_at)}
+        </p>
+        {row.suspended_reason && <p className="mt-2 text-sm text-[#991B1B]">{row.suspended_reason}</p>}
+        {row.delete_after && <p className="mt-2 text-sm text-[#991B1B]">Deletes {when(row.delete_after)}</p>}
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <section className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {LINKS.map(([key, label, href]) => (
-          <Link key={key} to={`${href}?eq=${FILTER[key]}:${row.id}`} className={`${panel} hover:border-[#6B0B0C]`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">{label}</p>
-            <p className="font-serif text-2xl font-bold">{counts[key] ?? 0}</p>
+          <Link key={key} to={`${href}?eq=${FILTER[key]}:${row.id}`} className={`${panel} !p-3 hover:border-[#6B0B0C]`}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">{label}</p>
+            <p className="font-serif text-xl font-bold">{counts[key] ?? 0}</p>
           </Link>
         ))}
-        <div className={panel}>
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Connections</p>
-          <p className="font-serif text-2xl font-bold">{counts.connections ?? 0}</p>
+        <div className={`${panel} !p-3`}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Links</p>
+          <p className="font-serif text-xl font-bold">{counts.connections ?? 0}</p>
         </div>
       </section>
 
-      <section className={`${panel} space-y-3`}>
-        <h3 className={ui.heading}>Sign-in and visibility</h3>
-        <p className="text-sm text-stone-600">These ask you to confirm twice. A pause ends when they sign in. A suspension does not.</p>
-        <div className="flex flex-wrap gap-2">
+      <section className={`${panel} !p-4 space-y-2`}>
+        <h3 className={ui.heading}>Session</h3>
+        <div className="flex flex-wrap gap-1.5">
           <Action disabled={busy} onClick={() => void run("user.pause")}>Pause</Action>
-          <Action disabled={busy} onClick={() => void run("user.unpause")}>Clear pause</Action>
+          <Action disabled={busy} onClick={() => void run("user.unpause")}>Unpause</Action>
           <Action disabled={busy} onClick={() => void run("user.suspend")}>Suspend</Action>
-          <Action disabled={busy} onClick={() => void run("user.unsuspend")}>Restore sign-in</Action>
-          <Action disabled={busy} onClick={() => void run("user.sign_out")}>Sign out everywhere</Action>
-          <Action disabled={busy} onClick={() => void run("user.cancel_delete")}>Cancel deletion</Action>
+          <Action disabled={busy} onClick={() => void run("user.unsuspend")}>Restore</Action>
+          <Action disabled={busy} onClick={() => void run("user.sign_out")}>Sign out</Action>
+          <Action disabled={busy} onClick={() => void run("user.cancel_delete")}>Cancel delete</Action>
         </div>
       </section>
 
       {row.account_type === "developer" && (
-        <section className={`${panel} space-y-3`}>
-          <h3 className={ui.heading}>Premium access</h3>
-          <p className="text-sm text-stone-600">
-            Grants <strong>Resume Studio</strong> (generate/export) and <strong>Project Intelligence Premium</strong> together.
-            Matching and badges stay the same. Leave days blank for no expiry — they get an email when access ends.
-            Platform admins already have every premium feature without a grant.
-          </p>
+        <section className={`${panel} !p-4 space-y-2`}>
+          <h3 className={ui.heading}>Premium</h3>
           <div className="flex flex-wrap items-end gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-              Days
-              <input
-                type="number"
-                min={1}
-                max={3650}
-                placeholder="forever"
-                className={`${ui.input} mt-1 w-28`}
-                value={premiumDays}
-                onChange={(e) => setPremiumDays(e.target.value)}
-                aria-label="Premium days"
-              />
-            </label>
-            <Action
-              disabled={busy}
-              onClick={() => void run("premium.grant", premiumDays.trim() ? { days: Number(premiumDays) } : {})}
-            >
-              Grant Premium
+            <input
+              type="number"
+              min={1}
+              max={3650}
+              placeholder="Days"
+              className={`${ui.input} w-24`}
+              value={premiumDays}
+              onChange={(e) => setPremiumDays(e.target.value)}
+              aria-label="Premium days"
+            />
+            <Action disabled={busy} onClick={() => void run("premium.grant", premiumDays.trim() ? { days: Number(premiumDays) } : {})}>
+              Grant
             </Action>
-            <Action disabled={busy} onClick={() => void run("premium.revoke")}>Revoke Premium</Action>
+            <Action disabled={busy} onClick={() => void run("premium.revoke")}>
+              Revoke
+            </Action>
           </div>
         </section>
       )}
 
-      <section className={`${panel} space-y-3`}>
-        <h3 className={ui.heading}>Account type</h3>
-        <p className="text-sm text-stone-600">
-          Set this person to developer or recruiter whenever you need to. Confirming twice applies it immediately and signs them out, so they come back as the new type.
-        </p>
-        <div className="flex flex-wrap gap-2">
+      <section className={`${panel} !p-4 space-y-2`}>
+        <h3 className={ui.heading}>Type</h3>
+        <div className="flex flex-wrap gap-1.5">
           <Action disabled={busy || row.account_type === "developer"} onClick={() => void run("user.change_type", { account_type: "developer" })}>
-            Make developer
+            Developer
           </Action>
           <Action disabled={busy || row.account_type === "recruiter"} onClick={() => void run("user.change_type", { account_type: "recruiter" })}>
-            Make recruiter
+            Recruiter
           </Action>
         </div>
       </section>
 
-      <section className={`${panel} grid gap-4 md:grid-cols-2`}>
-        <form className="space-y-2" onSubmit={(event) => { event.preventDefault(); void run("user.update_username", { username }); }}>
+      <section className={`${panel} !p-4 grid gap-3 md:grid-cols-2`}>
+        <form
+          className="space-y-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void run("user.update_username", { username });
+          }}
+        >
           <h3 className={ui.heading}>Username</h3>
           <input value={username} onChange={(event) => setUsername(event.target.value)} className={ui.input} placeholder="new handle" aria-label="New username" />
-          <Action disabled={busy}>Change username</Action>
+          <Action disabled={busy}>Save</Action>
         </form>
-        <form className="space-y-2" onSubmit={(event) => { event.preventDefault(); void run("user.update_email", { email }); }}>
+        <form
+          className="space-y-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void run("user.update_email", { email });
+          }}
+        >
           <h3 className={ui.heading}>Email</h3>
           <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" className={ui.input} placeholder="new@email.com" aria-label="New email" />
-          <Action disabled={busy}>Change email</Action>
+          <Action disabled={busy}>Save</Action>
         </form>
       </section>
 
-      <section className="rounded-2xl border-2 border-[#DC2626] bg-[#FEE2E2] p-4 sm:p-5">
-        <h3 className="font-serif text-lg font-bold text-[#991B1B]">Major changes</h3>
-        <p className="mt-1 text-sm text-[#7F1D1D]">
-          These can remove someone’s work. They wait for 2 admin approvals, unless you are signed in as the owner — then a deletion runs as soon as you confirm.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Action disabled={busy} onClick={() => void run("user.schedule_delete")}>Schedule deletion</Action>
-          <Action disabled={busy} onClick={() => void run("user.purge")}>Delete account now</Action>
-          {row.admin_role === "admin" && <Action disabled={busy} onClick={() => void run("admin.revoke")}>Remove admin access</Action>}
+      <section className="rounded-xl border border-[#DC2626] bg-[#FEE2E2] p-4 space-y-2">
+        <h3 className="font-serif text-base font-bold text-[#991B1B]">Danger</h3>
+        <div className="flex flex-wrap gap-1.5">
+          <Action disabled={busy} onClick={() => void run("user.schedule_delete")}>
+            Schedule delete
+          </Action>
+          <Action disabled={busy} onClick={() => void run("user.purge")}>
+            Delete now
+          </Action>
+          {row.admin_role === "admin" && (
+            <Action disabled={busy} onClick={() => void run("admin.revoke")}>
+              Remove admin
+            </Action>
+          )}
         </div>
       </section>
 
       <Record title="Profile" row={person.data.profile} />
-      <Record title="Account record" row={person.data.account} />
+      <Record title="Account" row={person.data.account} />
     </div>
   );
 }
 
 function Action({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) {
   return (
-    <button type={onClick ? "button" : "submit"} disabled={disabled} onClick={onClick} className={`${ui.btn} ${ui.neutral} px-3 py-2 text-sm`}>
+    <button type={onClick ? "button" : "submit"} disabled={disabled} onClick={onClick} className={`${ui.btn} ${ui.neutral} px-3 py-1.5`}>
       {children}
     </button>
   );
@@ -192,12 +204,12 @@ function Record({ title, row }: { title: string; row: Record<string, unknown> | 
   if (!row) return null;
   const entries = Object.entries(row).filter(([key]) => key !== "_pk");
   return (
-    <details className={panel}>
-      <summary className="cursor-pointer font-serif text-lg font-bold">{title}</summary>
+    <details className={`${panel} !p-3`}>
+      <summary className="cursor-pointer font-serif text-base font-bold">{title}</summary>
       <dl className="mt-3 grid gap-2 sm:grid-cols-2">
         {entries.map(([key, value]) => (
-          <div key={key} className="rounded-xl bg-[#FAF7EE] px-3 py-2">
-            <dt className="text-xs font-semibold uppercase tracking-wider text-stone-500">{titleCase(key)}</dt>
+          <div key={key} className="rounded-lg bg-[#FAF7EE] px-3 py-2">
+            <dt className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">{titleCase(key)}</dt>
             <dd className="mt-1 break-words whitespace-pre-wrap text-sm text-[#2D120D]">{display(value, true)}</dd>
           </div>
         ))}

@@ -33,6 +33,7 @@ export interface GroupMember {
   userId: string;
   name: string;
   username: string;
+  email?: string | null;
   avatarUrl?: string | null;
   headline?: string | null;
   role: ClubMemberRole;
@@ -62,6 +63,7 @@ export interface GroupAnnouncement {
   badge: "Official Announcement" | "Meeting & Workshop" | "Project Call" | "General Update";
   title: string;
   content: string;
+  mediaUrls?: string[];
   pinned?: boolean;
   createdAt: string;
   likesCount: number;
@@ -126,6 +128,9 @@ export interface NetworkGroup {
   visibility?: GroupVisibility;
   bannerUrl?: string | null;
   avatarUrl?: string | null;
+  pendingAvatarUrl?: string | null;
+  pendingAvatarApprovals?: string[];
+  pendingAvatarNeeded?: number;
   hostId: string;
   hostName: string;
   hostUsername: string;
@@ -133,6 +138,18 @@ export interface NetworkGroup {
   memberCount: number;
   projectCount: number;
   announcementCount: number;
+  eventCount?: number;
+  institution?: string | null;
+  joinPolicy?: "open" | "request" | "invite";
+  contactSocials?: Record<string, string>;
+  purpose?: string | null;
+  fundsVisibility?: "members" | "executives" | null;
+  verificationStatus?: "none" | "pending" | "verified" | "rejected" | string | null;
+  verificationNote?: string | null;
+  emailBroadcastOptIn?: boolean | null;
+  verified?: boolean;
+  verifiedAt?: string | null;
+  hideOnProfile?: boolean | null;
   isMember?: boolean;
   hasPendingRequest?: boolean;
   userRole?: ClubMemberRole | null;

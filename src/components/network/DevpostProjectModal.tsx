@@ -10,9 +10,9 @@ import {
   Layers,
   Users,
   Send,
-  Sparkles,
   Wrench,
   BatteryCharging,
+  FileText,
 } from "lucide-react";
 import type { GroupProjectShowcase } from "../../types/groups";
 import { useAuth } from "../../auth/AuthContext";
@@ -91,16 +91,16 @@ export function DevpostProjectModal({
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col w-full max-w-4xl max-h-[90vh] rounded-3xl bg-[#FFFDF0] border-2 border-[#2D120D]/25 shadow-2xl overflow-hidden"
+        className="relative flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[#F7F1E8] border border-[#DECDBA] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#2D120D] text-[#FFF8CA] border-b border-[#CDE3E8]/20 shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-[#780D18] text-[#F7F1E8] border-b border-[#780D18] shrink-0">
           <div className="flex items-center gap-2.5 min-w-0 pr-4">
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase tracking-wider ${
                 isEmbedded
-                  ? "bg-[#6B0B0C] text-[#FFF8CA] border border-[#FFF8CA]/30"
+                  ? "bg-[#780D18] text-[#F7F1E8] border border-[#F7F1E8]/30"
                   : "bg-[#CDE3E8] text-[#2D120D]"
               }`}
             >
@@ -117,7 +117,7 @@ export function DevpostProjectModal({
             type="button"
             onClick={onClose}
             aria-label="Close project modal"
-            className="p-1.5 rounded-full text-[#FFF8CA]/80 hover:text-[#FFF8CA] hover:bg-white/10 transition cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg text-[#F7F1E8]/80 hover:text-[#F7F1E8] hover:bg-white/10 transition cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -139,9 +139,9 @@ export function DevpostProjectModal({
 
             <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-[#2D120D]/10 text-xs text-[#2D120D]/75">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#6B0B0C]">Presented by:</span>
+                <span className="font-semibold text-[#780D18]">Presented by:</span>
                 <span className="inline-flex items-center gap-1.5 font-bold text-[#2D120D]">
-                  <span className="w-5 h-5 rounded-full bg-[#6B0B0C] text-[#FFF8CA] inline-flex items-center justify-center text-[10px]">
+                  <span className="w-5 h-5 rounded-lg bg-[#780D18] text-[#F7F1E8] inline-flex items-center justify-center text-[10px]">
                     {currentProject.ownerName[0]}
                   </span>
                   {currentProject.ownerName} (@{currentProject.ownerUsername})
@@ -161,7 +161,7 @@ export function DevpostProjectModal({
                 href={currentProject.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] text-xs font-semibold tracking-wide transition shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2D120D] hover:bg-[#780D18] text-[#F7F1E8] text-xs font-semibold tracking-wide transition shadow-xs"
               >
                 <Github className="w-4 h-4 text-[#CDE3E8]" />
                 <span>GitHub Repository</span>
@@ -174,9 +174,9 @@ export function DevpostProjectModal({
                 href={currentProject.hardwareCadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-semibold tracking-wide transition shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#780D18] hover:bg-[#2D120D] text-[#F7F1E8] text-xs font-semibold tracking-wide transition shadow-xs"
               >
-                <Wrench className="w-4 h-4 text-[#FFF8CA]" />
+                <Wrench className="w-4 h-4 text-[#F7F1E8]" />
                 <span>CAD, Schematics &amp; 3D Files</span>
                 <ExternalLink className="w-3 h-3 opacity-60" />
               </a>
@@ -187,7 +187,7 @@ export function DevpostProjectModal({
                 href={currentProject.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#CDE3E8] hover:bg-[#2D120D] text-[#2D120D] hover:text-[#FFF8CA] text-xs font-semibold tracking-wide transition shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#CDE3E8] hover:bg-[#2D120D] text-[#2D120D] hover:text-[#F7F1E8] text-xs font-semibold tracking-wide transition shadow-xs"
               >
                 <Globe className="w-4 h-4" />
                 <span>Live Project Demo</span>
@@ -198,15 +198,15 @@ export function DevpostProjectModal({
             <button
               type="button"
               onClick={handleLike}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition shadow-xs ml-auto cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition shadow-xs ml-auto cursor-pointer ${
                 currentProject.isLiked
-                  ? "bg-[#6B0B0C] text-[#FFF8CA]"
+                  ? "bg-[#780D18] text-[#F7F1E8]"
                   : "bg-white hover:bg-stone-100 text-[#2D120D] border border-[#2D120D]/20"
               }`}
             >
               <Heart
                 className={`w-4 h-4 ${
-                  currentProject.isLiked ? "fill-current text-[#FFF8CA]" : "text-[#6B0B0C]"
+                  currentProject.isLiked ? "fill-current text-[#F7F1E8]" : "text-[#780D18]"
                 }`}
               />
               <span>{currentProject.likesCount} {currentProject.likesCount === 1 ? "Like" : "Likes"}</span>
@@ -233,7 +233,7 @@ export function DevpostProjectModal({
                       onClick={() => setActiveImage(img)}
                       className={`relative w-20 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition cursor-pointer ${
                         activeImage === img
-                          ? "border-[#6B0B0C] ring-2 ring-[#6B0B0C]/40"
+                          ? "border-[#780D18] ring-2 ring-[#780D18]/40"
                           : "border-transparent opacity-70 hover:opacity-100"
                       }`}
                     >
@@ -247,16 +247,16 @@ export function DevpostProjectModal({
 
           {/* Embedded Hardware Specifications (Devpost-inspired spec card) */}
           {isEmbedded && currentProject.embeddedSpecs && (
-            <div className="rounded-2xl bg-[#FFF8CA]/80 border-2 border-[#2D120D]/20 p-5 space-y-3">
-              <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-                <Cpu className="w-4 h-4 text-[#6B0B0C]" />
+            <div className="rounded-2xl bg-[#F7F1E8]/80 border-2 border-[#2D120D]/20 p-5 space-y-3">
+              <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-[#780D18]">
+                <Cpu className="w-4 h-4 text-[#780D18]" />
                 <span>Embedded Hardware &amp; Component Specs</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {currentProject.embeddedSpecs.microcontroller && (
-                  <div className="p-3 rounded-xl bg-white/90 border border-[#2D120D]/15">
-                    <span className="block font-mono text-[10px] uppercase text-[#6B0B0C] font-bold">
+                  <div className="p-3 rounded-xl bg-white border border-[#2D120D]/15">
+                    <span className="block font-mono text-[10px] uppercase text-[#780D18] font-bold">
                       Compute / Microcontroller
                     </span>
                     <span className="font-semibold text-[#2D120D]">
@@ -266,8 +266,8 @@ export function DevpostProjectModal({
                 )}
 
                 {currentProject.embeddedSpecs.powerSupply && (
-                  <div className="p-3 rounded-xl bg-white/90 border border-[#2D120D]/15">
-                    <span className="block font-mono text-[10px] uppercase text-[#6B0B0C] font-bold flex items-center gap-1">
+                  <div className="p-3 rounded-xl bg-white border border-[#2D120D]/15">
+                    <span className="block font-mono text-[10px] uppercase text-[#780D18] font-bold flex items-center gap-1">
                       <BatteryCharging className="w-3 h-3" /> Power Supply
                     </span>
                     <span className="font-semibold text-[#2D120D]">
@@ -277,8 +277,8 @@ export function DevpostProjectModal({
                 )}
 
                 {currentProject.embeddedSpecs.cadTool && (
-                  <div className="p-3 rounded-xl bg-white/90 border border-[#2D120D]/15">
-                    <span className="block font-mono text-[10px] uppercase text-[#6B0B0C] font-bold flex items-center gap-1">
+                  <div className="p-3 rounded-xl bg-white border border-[#2D120D]/15">
+                    <span className="block font-mono text-[10px] uppercase text-[#780D18] font-bold flex items-center gap-1">
                       <Wrench className="w-3 h-3" /> CAD &amp; Fabrication
                     </span>
                     <span className="font-semibold text-[#2D120D]">
@@ -288,15 +288,15 @@ export function DevpostProjectModal({
                 )}
 
                 {currentProject.embeddedSpecs.sensorsActuators && currentProject.embeddedSpecs.sensorsActuators.length > 0 && (
-                  <div className="p-3 rounded-xl bg-white/90 border border-[#2D120D]/15 sm:col-span-2">
-                    <span className="block font-mono text-[10px] uppercase text-[#6B0B0C] font-bold mb-1">
+                  <div className="p-3 rounded-xl bg-white border border-[#2D120D]/15 sm:col-span-2">
+                    <span className="block font-mono text-[10px] uppercase text-[#780D18] font-bold mb-1">
                       Sensors &amp; Actuators
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {currentProject.embeddedSpecs.sensorsActuators.map((sensor, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-md bg-[#FFF8CA] text-[#2D120D] border border-[#2D120D]/20 font-medium"
+                          className="px-2 py-0.5 rounded-md bg-[#F7F1E8] text-[#2D120D] border border-[#2D120D]/20 font-medium"
                         >
                           {sensor}
                         </span>
@@ -312,7 +312,7 @@ export function DevpostProjectModal({
           <div className="space-y-6">
             <section className="space-y-2">
               <h2 className="font-serif text-xl font-bold text-[#2D120D] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#6B0B0C]" /> What It Does
+                <FileText className="w-4 h-4 text-[#780D18]" /> What it does
               </h2>
               <p className="font-sans text-sm text-[#2D120D]/85 leading-relaxed whitespace-pre-line">
                 {currentProject.description}
@@ -322,7 +322,7 @@ export function DevpostProjectModal({
             {currentProject.howWeBuiltIt && (
               <section className="space-y-2">
                 <h2 className="font-serif text-xl font-bold text-[#2D120D] flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-[#6B0B0C]" /> How We Built It
+                  <Wrench className="w-4 h-4 text-[#780D18]" /> How We Built It
                 </h2>
                 <p className="font-sans text-sm text-[#2D120D]/85 leading-relaxed whitespace-pre-line">
                   {currentProject.howWeBuiltIt}
@@ -333,7 +333,7 @@ export function DevpostProjectModal({
             {currentProject.challengesAccomplishments && (
               <section className="space-y-2">
                 <h2 className="font-serif text-xl font-bold text-[#2D120D] flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#6B0B0C]" /> Challenges &amp; Accomplishments
+                  <Layers className="w-4 h-4 text-[#780D18]" /> Challenges &amp; Accomplishments
                 </h2>
                 <p className="font-sans text-sm text-[#2D120D]/85 leading-relaxed whitespace-pre-line">
                   {currentProject.challengesAccomplishments}
@@ -344,14 +344,14 @@ export function DevpostProjectModal({
 
           {/* Technologies Used */}
           <section className="space-y-2.5 pt-4 border-t border-[#2D120D]/10">
-            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#780D18]">
               Technologies &amp; Tools Used
             </h3>
             <div className="flex flex-wrap gap-2">
               {currentProject.techStacks.map((tech, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1 rounded-full bg-[#2D120D] text-[#FFF8CA] text-xs font-semibold tracking-wide border border-[#CDE3E8]/30 shadow-2xs"
+                  className="px-3 py-1 rounded-lg bg-[#2D120D] text-[#F7F1E8] text-xs font-semibold tracking-wide border border-[#CDE3E8]/30 shadow-2xs"
                 >
                   {tech}
                 </span>
@@ -362,21 +362,21 @@ export function DevpostProjectModal({
           {/* Team Members Section */}
           {currentProject.teamMembers && currentProject.teamMembers.length > 0 && (
             <section className="space-y-3 pt-4 border-t border-[#2D120D]/10">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#6B0B0C] flex items-center gap-1.5">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#780D18] flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" /> Project Builders &amp; Contributors
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {currentProject.teamMembers.map((member, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-white/80 border border-[#2D120D]/15"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-[#2D120D]/15"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#6B0B0C] text-[#FFF8CA] flex items-center justify-center font-bold text-xs">
+                    <div className="w-8 h-8 rounded-lg bg-[#780D18] text-[#F7F1E8] flex items-center justify-center font-bold text-xs">
                       {member.name[0]}
                     </div>
                     <div>
                       <p className="font-semibold text-xs text-[#2D120D]">{member.name}</p>
-                      <p className="font-sans text-[11px] text-[#6B0B0C]">{member.roleInProject}</p>
+                      <p className="font-sans text-[11px] text-[#780D18]">{member.roleInProject}</p>
                     </div>
                   </div>
                 ))}
@@ -387,7 +387,7 @@ export function DevpostProjectModal({
           {/* Comments Thread */}
           <section className="space-y-4 pt-6 border-t border-[#2D120D]/15">
             <h3 className="font-serif text-xl font-bold text-[#2D120D] flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-[#6B0B0C]" />
+              <MessageSquare className="w-4 h-4 text-[#780D18]" />
               <span>Feedback &amp; Community Discussion ({currentProject.commentsCount || 0})</span>
             </h3>
 
@@ -398,12 +398,12 @@ export function DevpostProjectModal({
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Ask a technical question or leave feedback on this project..."
-                className="flex-1 px-4 py-2.5 rounded-full border border-[#2D120D]/25 bg-white text-xs text-[#2D120D] placeholder:text-stone-400 focus:outline-none focus:border-[#6B0B0C]"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-[#2D120D]/25 bg-white text-xs text-[#2D120D] placeholder:text-stone-400 focus:outline-none focus:border-[#780D18]"
               />
               <button
                 type="submit"
                 disabled={!commentText.trim() || submittingComment}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-semibold tracking-wide transition shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#780D18] hover:bg-[#2D120D] text-[#F7F1E8] text-xs font-semibold tracking-wide transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Post</span>
@@ -418,7 +418,7 @@ export function DevpostProjectModal({
                     key={c.id}
                     className="p-3.5 rounded-2xl bg-white border border-[#2D120D]/15 space-y-1"
                   >
-                    <div className="flex items-center justify-between text-[11px] text-[#6B0B0C]">
+                    <div className="flex items-center justify-between text-[11px] text-[#780D18]">
                       <span className="font-bold">{c.authorName}</span>
                       <span className="text-stone-400">
                         {new Date(c.createdAt).toLocaleDateString()}
@@ -437,14 +437,14 @@ export function DevpostProjectModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between px-6 py-3.5 bg-[#FFF8CA] border-t border-[#2D120D]/15 text-xs shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 bg-[#F7F1E8] border-t border-[#2D120D]/15 text-xs shrink-0">
           <span className="text-[#2D120D]/75 font-mono text-[11px]">
             DevZ-Go Community Showcase · Devpost Inspired
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] font-semibold transition cursor-pointer"
+            className="px-4 py-1.5 rounded-lg bg-[#2D120D] hover:bg-[#780D18] text-[#F7F1E8] font-semibold transition cursor-pointer"
           >
             Close Details
           </button>

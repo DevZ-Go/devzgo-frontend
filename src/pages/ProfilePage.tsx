@@ -19,6 +19,7 @@ import {
   Code2,
   Heart,
   MessageSquare,
+  Bookmark,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { Select } from "../components/ui/Select";
@@ -26,7 +27,7 @@ import { ProjectCard } from "../components/ProjectCard";
 import { deleteProject } from "../api/projects";
 import { accessLabel, fetchUserCollaborations } from "../api/collaborations";
 import { fetchMyProfile, fetchProfileProjects, fetchUserProfile, MEMBER_ROLES, updateMyProfile } from "../api/profiles";
-import { fetchFeed } from "../api/network";
+import { fetchFeed, fetchMyActivity, type MyActivityItem, type MyActivityTab } from "../api/network";
 import { ConnectButton } from "../components/ConnectButton";
 import { ProfileCompletion } from "../components/ProfileCompletion";
 import { ProfilePortfolio } from "../components/ProfilePortfolio";
@@ -47,6 +48,11 @@ import { clubRoleLabel, type NetworkGroup } from "../types/groups";
 
 const TABS = ["projects", "collaborations", "clubs", "portfolio", "badges", "activity"] as const;
 type ProfileTab = (typeof TABS)[number];
+const MY_ACTIVITY_SUBTABS: { id: MyActivityTab; label: string }[] = [
+  { id: "saved", label: "Saved" },
+  { id: "liked", label: "Liked" },
+  { id: "comments", label: "Comments" },
+];
 const PORTFOLIO_SECTIONS = ["overview", "experience", "education", "certifications"] as const;
 type PortfolioSection = (typeof PORTFOLIO_SECTIONS)[number];
 
@@ -87,6 +93,8 @@ export function ProfilePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [rawProjects, setRawProjects] = useState<ApiProject[]>([]);
   const [activities, setActivities] = useState<FeedActivity[]>([]);
+  const [myActivityItems, setMyActivityItems] = useState<MyActivityItem[]>([]);
+  const [myActivityLoading, setMyActivityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
@@ -95,6 +103,7 @@ export function ProfilePage() {
   const activeTab: ProfileTab =
     requestedTab === "badges" && !isOwnProfile ? "projects" : requestedTab;
   const portfolioSection = (PORTFOLIO_SECTIONS.find((s) => s === params.get("section")) ?? "overview") as PortfolioSection;
+  const [myActivityTab, setMyActivityTab] = useState<MyActivityTab>("saved");
   const setActiveTab = (tab: ProfileTab, section?: PortfolioSection) => {
     const next = new URLSearchParams();
     const safeTab = tab === "badges" && !isOwnProfile ? "projects" : tab;
@@ -146,6 +155,25 @@ export function ProfilePage() {
     next.delete("tab");
     setParams(next, { replace: true });
   }, [isOwnProfile, params, setParams]);
+
+  useEffect(() => {
+    if (!isOwnProfile || activeTab !== "activity") return;
+    let cancelled = false;
+    setMyActivityLoading(true);
+    fetchMyActivity(myActivityTab)
+      .then((items) => {
+        if (!cancelled) setMyActivityItems(items);
+      })
+      .catch(() => {
+        if (!cancelled) setMyActivityItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMyActivityLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, activeTab, myActivityTab]);
 
   useEffect(() => {
     if (token && user == null) {
@@ -421,12 +449,13 @@ export function ProfilePage() {
                         </>
                       )}
                       {!recruiter && (
-                        <Link
-                          to={`/profile/${devProfile?.userId || devProfile?.id || user?.id}/activity`}
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("activity")}
                           className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-5 py-2.5 text-xs font-semibold text-stone-800 hover:bg-stone-50 transition"
                         >
-                          <Activity className="w-3.5 h-3.5 text-maroon-800" /> Activity log
-                        </Link>
+                          <Activity className="w-3.5 h-3.5 text-maroon-800" /> My Activity
+                        </button>
                       )}
                       <Link
                         to="/network/connections"
@@ -673,17 +702,31 @@ export function ProfilePage() {
               Badges
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setActiveTab("activity")}
-            className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
-              activeTab === "activity"
-                ? "border-maroon-700 text-maroon-800 font-medium"
-                : "border-transparent text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            Recent Activity ({activities.length})
-          </button>
+          {isOwnProfile ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("activity")}
+              className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+                activeTab === "activity"
+                  ? "border-maroon-700 text-maroon-800 font-medium"
+                  : "border-transparent text-stone-500 hover:text-stone-800"
+              }`}
+            >
+              My Activity
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveTab("activity")}
+              className={`pb-3 text-base sm:text-lg font-normal border-b-2 transition ${
+                activeTab === "activity"
+                  ? "border-maroon-700 text-maroon-800 font-medium"
+                  : "border-transparent text-stone-500 hover:text-stone-800"
+              }`}
+            >
+              Recent Activity ({activities.length})
+            </button>
+          )}
         </div>
 
         {/* Projects Tab */}
@@ -847,10 +890,65 @@ export function ProfilePage() {
           <BadgeGallery editable />
         )}
 
-        {/* Activity Tab */}
+        {/* Activity Tab — My Activity (private) for owner; public feed for visitors */}
         {activeTab === "activity" && (
           <section className="space-y-4">
-            {activities.length === 0 ? (
+            {isOwnProfile ? (
+              <>
+                <p className="text-sm text-stone-500">
+                  Private to you — saved bookmarks, likes, and comments.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {MY_ACTIVITY_SUBTABS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setMyActivityTab(t.id)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        myActivityTab === t.id
+                          ? "bg-maroon-800 text-[#fced96]"
+                          : "bg-white border border-stone-200 text-stone-600 hover:border-maroon-700/40"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                {myActivityLoading && (
+                  <div className="flex items-center gap-2 text-stone-500 text-sm py-8 justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+                  </div>
+                )}
+                {!myActivityLoading && myActivityItems.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-stone-200 bg-white/80 px-8 py-16 text-center text-stone-500 text-sm">
+                    {myActivityTab === "saved" ? (
+                      <>
+                        <Bookmark className="w-8 h-8 mx-auto mb-3 text-maroon-700/60" />
+                        Nothing saved yet. Bookmark posts or projects from Network.
+                      </>
+                    ) : (
+                      "Nothing in this list yet."
+                    )}
+                  </div>
+                )}
+                {!myActivityLoading &&
+                  myActivityItems.map((item) => (
+                    <Link
+                      key={`${item.kind}-${item.id}`}
+                      to={item.href}
+                      className="block p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm hover:border-maroon-700/40 transition"
+                    >
+                      <span className="text-[11px] font-semibold text-maroon-700 uppercase tracking-wider">
+                        {item.kind.replace(/_/g, " ")}
+                      </span>
+                      <h4 className="font-bold text-stone-900 text-sm mt-1">{item.title || "Item"}</h4>
+                      {item.preview && (
+                        <p className="text-xs text-stone-600 line-clamp-2 mt-1">{item.preview}</p>
+                      )}
+                    </Link>
+                  ))}
+              </>
+            ) : activities.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-stone-200 bg-white/80 px-8 py-16 text-center text-stone-500 text-sm">
                 No recent activity recorded for this developer.
               </div>

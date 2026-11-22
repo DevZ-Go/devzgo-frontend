@@ -8,6 +8,7 @@ import { getApiErrorMessage } from "../../utils/apiError";
 interface ManageMemberRoleModalProps {
   groupId: string;
   member: GroupMember;
+  clubName?: string;
   customRoles?: NetworkGroup["customRoles"];
   onClose: () => void;
   onSuccess: (updatedMember: GroupMember, club?: NetworkGroup) => void;
@@ -49,6 +50,7 @@ const ROLE_OPTIONS: { role: ClubMemberRole; label: string; hint: string; Icon: t
 export function ManageMemberRoleModal({
   groupId,
   member,
+  clubName = "",
   customRoles = [],
   onClose,
   onSuccess,
@@ -59,15 +61,27 @@ export function ManageMemberRoleModal({
   const [customTitle, setCustomTitle] = useState(member.customTitle || "");
   const [newCustomRole, setNewCustomRole] = useState("");
   const [roles, setRoles] = useState(customRoles || []);
+  const [confirmation, setConfirmation] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const transferring = role === "host" || role === "president";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (transferring && clubName && confirmation.trim().toLowerCase() !== clubName.trim().toLowerCase()) {
+      setError(`Type “${clubName}” to confirm presidency transfer.`);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const club = await updateMemberRole(groupId, member.userId, role, customTitle.trim());
+      const club = await updateMemberRole(
+        groupId,
+        member.userId,
+        role,
+        customTitle.trim(),
+        transferring ? confirmation.trim() : undefined
+      );
       const updated = club.members.find((m) => m.userId === member.userId) || {
         ...member,
         role: role === "president" ? "host" : role,
@@ -220,6 +234,28 @@ export function ManageMemberRoleModal({
               </button>
             </div>
           </div>
+
+          {transferring && (
+            <div className="rounded-xl border border-[#780D18]/30 bg-[#780D18]/05 p-3 space-y-2">
+              <p className="text-xs text-[#2D120D]">
+                Transferring presidency is permanent for this club. Type the club name to confirm
+                {clubName ? (
+                  <>
+                    : <strong>{clubName}</strong>
+                  </>
+                ) : (
+                  "."
+                )}
+              </p>
+              <input
+                type="text"
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                placeholder={clubName || "Club name"}
+                className="w-full rounded-lg border border-[#DECDBA] bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2.5 pt-3 border-t border-[#2D120D]/10">
             <button

@@ -1,31 +1,6 @@
 import { api } from "./client";
 import { demoFallback, assetUrlOrNull } from "./config";
 import type { FeedActivity, ActivityComment } from "../types/network";
-import { INITIAL_DEMO_ACTIVITIES } from "../data/networkDemoData";
-
-const STORAGE_KEY_FEED = "devzgo_network_feed_v1";
-
-function getLocalFeed(): FeedActivity[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_FEED);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_FEED, JSON.stringify(INITIAL_DEMO_ACTIVITIES));
-      return INITIAL_DEMO_ACTIVITIES;
-    }
-    return JSON.parse(raw) as FeedActivity[];
-  } catch {
-    return INITIAL_DEMO_ACTIVITIES;
-  }
-}
-
-function saveLocalFeed(feed: FeedActivity[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY_FEED, JSON.stringify(feed));
-    window.dispatchEvent(new CustomEvent("devzgo:feed-updated"));
-  } catch {
-    // Ignore storage quota
-  }
-}
 
 export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
   const proj = (a.project as Record<string, unknown>) || null;
@@ -49,6 +24,7 @@ export function mapFeedActivity(a: Record<string, unknown>): FeedActivity {
           ? a.likesCount
           : 0,
     isLiked: Boolean(a.is_liked ?? a.isLiked ?? false),
+    isSaved: Boolean(a.is_saved ?? a.isSaved ?? false),
     commentsCount:
       typeof a.comments_count === "number"
         ? a.comments_count
@@ -113,8 +89,8 @@ export async function fetchFeedPage(
     return { items: (data.items as Record<string, unknown>[]).map(mapFeedActivity), nextPage: data.next_page ?? null };
   } catch (err) {
     demoFallback(err);
+    throw err;
   }
-  return { items: await fetchFeed(filter, search), nextPage: null };
 }
 
 export const fetchActivity = async (id: string) => mapFeedActivity((await api.get(`/network/activities/${id}`)).data);
@@ -126,40 +102,8 @@ export async function fetchActivityComments(id: string, page: string | null): Pr
 }
 
 export async function fetchFeed(filter: string = "all", search?: string, userId?: string): Promise<FeedActivity[]> {
-  try {
-    const params = { filter, search: search?.trim() || undefined, user_id: userId };
-    const { data } = await api.get("/network/feed", { params });
-    return (data.items as Record<string, unknown>[]).map(mapFeedActivity);
-  } catch (err) {
-    demoFallback(err);
-  }
-
-  // Fallback to local store with filter & search
-  let feed = getLocalFeed();
-  if (filter === "projects") {
-    feed = feed.filter((a) => a.activityType === "project_added" || a.activityType === "project_analyzed" || a.activityType === "project_completed" || Boolean(a.project));
-  } else if (filter === "developers") {
-    feed = feed.filter((a) => a.activityType === "profile_updated" || a.activityType === "post");
-  } else if (filter === "collaboration") {
-    feed = feed.filter((a) => a.activityType === "collaboration" || Boolean(a.project));
-  } else if (filter === "following") {
-    // Show activities from Chan, Khushbu, Manasi
-    feed = feed.filter((a) => a.authorUsername === "chan" || a.authorUsername === "khushbu" || a.authorUsername === "manasi");
-  }
-
-  if (search && search.trim()) {
-    const q = search.trim().toLowerCase();
-    feed = feed.filter((a) =>
-      a.authorName.toLowerCase().includes(q) ||
-      a.authorUsername.toLowerCase().includes(q) ||
-      (a.title && a.title.toLowerCase().includes(q)) ||
-      (a.content && a.content.toLowerCase().includes(q)) ||
-      (a.project?.title && a.project.title.toLowerCase().includes(q)) ||
-      (a.project?.techStacks && a.project.techStacks.some((t) => t.toLowerCase().includes(q)))
-    );
-  }
-
-  return feed;
+  const page = await fetchFeedPage(filter, search || "", null, userId);
+  return page.items;
 }
 
 export async function createPost(payload: {
@@ -168,39 +112,8 @@ export async function createPost(payload: {
   activity_type?: string;
   project_id?: string;
 }): Promise<FeedActivity> {
-  try {
-    const res = await api.post("/network/posts", payload);
-    if (res.data) {
-      return mapFeedActivity(res.data);
-    }
-  } catch (err) {
-    demoFallback(err);
-  }
-
-  const feed = getLocalFeed();
-  const newActivity: FeedActivity = {
-    id: `act-${Date.now()}`,
-    userId: "usr-current",
-    authorName: "Janasi Rajput",
-    authorUsername: "janasi",
-    authorHeadline: "Backend & Network Lead | DevZ-Go",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-    activityType:
-      (payload.activity_type as FeedActivity["activityType"]) || "post",
-    title: payload.title || null,
-    content: payload.content,
-    mediaUrl: null,
-    isDemo: false,
-    createdAt: new Date().toISOString(),
-    likesCount: 0,
-    isLiked: false,
-    commentsCount: 0,
-    comments: [],
-  };
-
-  saveLocalFeed([newActivity, ...feed]);
-  return newActivity;
+  const res = await api.post("/network/posts", payload);
+  return mapFeedActivity(res.data);
 }
 
 export async function shareActivity(activityId: string): Promise<void> {
@@ -210,102 +123,78 @@ export async function shareActivity(activityId: string): Promise<void> {
 export async function toggleActivityLike(
   activityId: string
 ): Promise<{ likesCount: number; isLiked: boolean }> {
-  try {
-    const res = await api.post(`/network/activities/${activityId}/like`);
-    if (res.data) {
-      return {
-        likesCount: res.data.likes_count ?? res.data.likesCount ?? 0,
-        isLiked: Boolean(res.data.is_liked ?? res.data.isLiked),
-      };
-    }
-  } catch (err) {
-    demoFallback(err);
-  }
+  const res = await api.post(`/network/activities/${activityId}/like`);
+  return {
+    likesCount: res.data.likes_count ?? res.data.likesCount ?? 0,
+    isLiked: Boolean(res.data.is_liked ?? res.data.isLiked),
+  };
+}
 
-  const feed = getLocalFeed();
-  let updatedLikeState = { likesCount: 0, isLiked: false };
-
-  const updatedFeed = feed.map((act) => {
-    if (act.id === activityId) {
-      const willBeLiked = !act.isLiked;
-      const newCount = willBeLiked ? act.likesCount + 1 : Math.max(0, act.likesCount - 1);
-      updatedLikeState = { likesCount: newCount, isLiked: willBeLiked };
-      return {
-        ...act,
-        isLiked: willBeLiked,
-        likesCount: newCount,
-      };
-    }
-    return act;
-  });
-
-  saveLocalFeed(updatedFeed);
-  return updatedLikeState;
+export async function toggleActivitySave(
+  activityId: string
+): Promise<{ isSaved: boolean }> {
+  const res = await api.post(`/network/activities/${activityId}/save`);
+  return { isSaved: Boolean(res.data.is_saved ?? res.data.isSaved) };
 }
 
 export async function addActivityComment(
   activityId: string,
   commentText: string
 ): Promise<ActivityComment> {
-  try {
-    const res = await api.post(`/network/activities/${activityId}/comments`, {
-      comment_text: commentText,
-    });
-    if (res.data) {
-      return mapComment(res.data, activityId);
-    }
-  } catch (err) {
-    demoFallback(err);
-  }
-
-  const feed = getLocalFeed();
-  const newComment: ActivityComment = {
-    id: `c-${Date.now()}`,
-    activityId,
-    authorId: "usr-current",
-    authorName: "Janasi Rajput",
-    authorUsername: "janasi",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-    commentText,
-    createdAt: new Date().toISOString(),
-  };
-
-  const updatedFeed = feed.map((act) => {
-    if (act.id === activityId) {
-      return {
-        ...act,
-        commentsCount: act.commentsCount + 1,
-        comments: [...act.comments, newComment],
-      };
-    }
-    return act;
+  const res = await api.post(`/network/activities/${activityId}/comments`, {
+    comment_text: commentText,
   });
-
-  saveLocalFeed(updatedFeed);
-  return newComment;
+  return mapComment(res.data, activityId);
 }
 
 export async function deleteActivityComment(commentId: string): Promise<void> {
-  try {
-    await api.delete(`/network/comments/${commentId}`);
-    return;
-  } catch (err) {
-    demoFallback(err);
-  }
+  await api.delete(`/network/comments/${commentId}`);
+}
 
-  const feed = getLocalFeed();
-  const updatedFeed = feed.map((act) => {
-    const filteredComments = act.comments.filter((c) => c.id !== commentId);
-    if (filteredComments.length !== act.comments.length) {
-      return {
-        ...act,
-        commentsCount: filteredComments.length,
-        comments: filteredComments,
-      };
-    }
-    return act;
-  });
+export type MyActivityTab = "liked" | "comments" | "saved";
 
-  saveLocalFeed(updatedFeed);
+export type MyActivityItem = {
+  kind: string;
+  id: string;
+  createdAt: string;
+  title?: string | null;
+  preview?: string | null;
+  href: string;
+  meta?: Record<string, unknown>;
+};
+
+export async function fetchMyActivity(tab: MyActivityTab): Promise<MyActivityItem[]> {
+  const { data } = await api.get("/me/activity", { params: { tab } });
+  return (data.items || []).map((row: Record<string, unknown>) => ({
+    kind: String(row.kind || ""),
+    id: String(row.id),
+    createdAt: String(row.created_at || row.createdAt || ""),
+    title: (row.title as string) || null,
+    preview: (row.preview as string) || null,
+    href: String(row.href || "/"),
+    meta: (row.meta as Record<string, unknown>) || {},
+  }));
+}
+
+export type LinkPreview = {
+  url: string;
+  title?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  domain?: string | null;
+  kind?: "external" | "project" | "internal";
+  projectId?: string | null;
+};
+
+export async function fetchLinkPreview(url: string): Promise<LinkPreview> {
+  const { data } = await api.post("/network/link-preview", { url });
+  return {
+    url: String(data.url || url),
+    title: data.title ?? null,
+    description: data.description ?? null,
+    imageUrl: assetUrlOrNull(data.image_url || data.imageUrl),
+    domain: data.domain ?? null,
+    kind: data.kind || "external",
+    projectId: data.project_id || data.projectId || null,
+  };
 }

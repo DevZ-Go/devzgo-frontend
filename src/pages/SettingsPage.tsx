@@ -20,6 +20,7 @@ import { Navbar } from "../components/Navbar";
 import { PasswordField } from "../components/PasswordField";
 import { PasswordInput } from "../components/PasswordInput";
 import { PhotoCropper } from "../components/PhotoCropper";
+import { fetchClubEmailPreferences, patchClubEmailOptIn } from "../api/groups";
 import { GitHubEditing } from "../components/settings/GitHubEditing";
 import { SafetySettings } from "../components/settings/SafetySettings";
 import { openDeveloperTour, openRecruiterTour } from "../components/tour/events";
@@ -138,6 +139,7 @@ const SECTIONS = [
   ["notifications", "Notifications"],
   ["github", "GitHub"],
   ["appearance", "Appearance"],
+  ["activity", "My Activity"],
   ["help", "Help"],
 ] as const;
 type Section = (typeof SECTIONS)[number][0];
@@ -187,6 +189,64 @@ function SwitchRow({ label, hint, checked, onChange }: {
       </span>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 shrink-0 accent-maroon-800" />
     </label>
+  );
+}
+
+function ClubEmailPreferencesBlock() {
+  const [rows, setRows] = useState<
+    Array<{ clubId: string; clubName: string; clubSlug: string; emailBroadcastOptIn: boolean }>
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void fetchClubEmailPreferences()
+      .then((data) => {
+        if (active) setRows(data);
+      })
+      .catch(() => {
+        if (active) setRows([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-xs text-stone-500 pt-2">Loading club email preferences…</p>;
+  }
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="space-y-2 pt-4">
+      <h3 className="font-serif text-xl text-stone-900">Club broadcast emails</h3>
+      <p className="text-sm text-stone-500">
+        Clubs can email members who stay opted in. New joins start opted in; turn any club off here.
+      </p>
+      {rows.map((row) => (
+        <SwitchRow
+          key={row.clubId}
+          label={row.clubName}
+          hint={`@${row.clubSlug}`}
+          checked={row.emailBroadcastOptIn}
+          onChange={(value) => {
+            setRows((prev) =>
+              prev.map((r) => (r.clubId === row.clubId ? { ...r, emailBroadcastOptIn: value } : r))
+            );
+            void patchClubEmailOptIn(row.clubId, value).catch(() => {
+              setRows((prev) =>
+                prev.map((r) =>
+                  r.clubId === row.clubId ? { ...r, emailBroadcastOptIn: !value } : r
+                )
+              );
+            });
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -898,6 +958,7 @@ export function SettingsPage() {
         <SwitchRow label="Project activity" checked={emailNotifyProjectActivity} onChange={setEmailNotifyProjectActivity} />
         <SwitchRow label="Recruiter opportunities" checked={emailNotifyRecruiter} onChange={setEmailNotifyRecruiter} />
         <SwitchRow label="Weekly summary" checked={emailNotifyWeeklySummary} onChange={setEmailNotifyWeeklySummary} />
+        <ClubEmailPreferencesBlock />
         {!recruiter && (
           <p className="text-xs text-stone-500">
             Technical challenges have their own page: <button type="button" onClick={() => open("challenges")} className={ui.link}>choose whether you receive them</button>.
@@ -956,6 +1017,21 @@ export function SettingsPage() {
     panel = <SafetySettings />;
   } else if (section === "github") {
     panel = <GitHubEditing />;
+  } else if (section === "activity") {
+    panel = (
+      <div className="space-y-4">
+        <h2 className="font-serif text-2xl text-stone-900">My Activity</h2>
+        <p className="text-sm text-stone-500">
+          Likes, comments, and saves are private to you.
+        </p>
+        <a
+          href="/settings/activity"
+          className={`${ui.btn} ${ui.primary} inline-flex rounded-xl px-5 py-2.5 text-sm`}
+        >
+          Open My Activity
+        </a>
+      </div>
+    );
   } else if (section === "help") {
     panel = (
       <div className="space-y-4" data-tour="settings-tour">

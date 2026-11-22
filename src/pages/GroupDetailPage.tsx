@@ -12,11 +12,12 @@ import {
   ShieldCheck,
   Check,
   Pin,
-  Sparkles,
   Share2,
   Lock,
   Clock,
   X,
+  FolderKanban,
+  ImagePlus,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
@@ -27,44 +28,122 @@ import type {
   GroupMember,
   ProjectKind,
 } from "../types/groups";
-import { clubRoleLabel, isClubExecutiveRole } from "../types/groups";
+import { isClubExecutiveRole } from "../types/groups";
 import {
   fetchGroup,
   fetchGroupAnnouncements,
+  fetchGroupEvents,
   fetchGroupProjects,
+  fetchClubFunds,
+  fetchClubGallery,
+  uploadEventMedia,
+  addClubFundEntry,
+  fetchMyClubPermissions,
   joinGroup,
   leaveGroup,
   patchClub,
+  patchMembershipPrivacy,
+  approveClubAvatar,
   approveClubJoinRequest,
   declineClubJoinRequest,
   toggleLikeAnnouncement,
   addAnnouncementComment,
 } from "../api/groups";
+import { ClubBroadcastModal } from "../components/network/ClubBroadcastModal";
+import { EditClubModal } from "../components/network/EditClubModal";
 import { getApiErrorMessage } from "../utils/apiError";
 import { useAuth } from "../auth/AuthContext";
 import { DevpostProjectModal } from "../components/network/DevpostProjectModal";
 import { ShowcaseProjectModal } from "../components/network/ShowcaseProjectModal";
 import { CreateAnnouncementModal } from "../components/network/CreateAnnouncementModal";
+import { CreateEventModal } from "../components/network/CreateEventModal";
 import { ManageMemberRoleModal } from "../components/network/ManageMemberRoleModal";
+import { ClubPermissionsPanel } from "../components/network/ClubPermissionsPanel";
+import { ExecutiveBoard } from "../components/network/ExecutiveBoard";
+import { ClubMembersList } from "../components/network/ClubMembersList";
+import { GalleryLightbox } from "../components/network/GalleryLightbox";
+import { VerifiedClubBadge } from "../components/network/VerifiedClubBadge";
+import { assetUrlOrNull } from "../api/config";
 
 export function GroupDetailPage() {
-  const { groupId = "robotics-club" } = useParams<{ groupId: string }>();
+  const { groupId = "" } = useParams<{ groupId: string }>();
   const { user } = useAuth();
 
   const [group, setGroup] = useState<NetworkGroup | null>(null);
   const [announcements, setAnnouncements] = useState<GroupAnnouncement[]>([]);
   const [projects, setProjects] = useState<GroupProjectShowcase[]>([]);
+  const [events, setEvents] = useState<
+    Array<{
+      id: string;
+      title: string;
+      description: string;
+      startsAt?: string | null;
+      endsAt?: string | null;
+      modality?: string | null;
+      venueName?: string | null;
+      venueAddress?: string | null;
+      roomNumber?: string | null;
+      meetingUrl?: string | null;
+      meetingPlatform?: string | null;
+      posterUrl?: string | null;
+      posterFormat?: string | null;
+      posterOrientation?: string | null;
+      rsvpUrl?: string | null;
+      attractions?: string | null;
+      status: string;
+      academicTerm?: string | null;
+      academicYear?: string | null;
+      location?: string | null;
+    }>
+  >([]);
+  const [funds, setFunds] = useState<{
+    summary: { income: number; expense: number; balance: number };
+    entries: Array<{ id: string; amount: number; note: string; entryType: string; currency: string }>;
+  } | null>(null);
+  const [gallery, setGallery] = useState<
+    Array<{
+      id: string;
+      url: string;
+      eventId?: string;
+      mediaType?: string;
+      academicTerm?: string;
+      academicYear?: string;
+    }>
+  >([]);
   const [loading, setLoading] = useState(true);
+  const [myPerms, setMyPerms] = useState<Record<string, boolean | string>>({});
 
-  // Active tab: "projects" (showcase) | "announcements" | "members"
-  const [activeTab, setActiveTab] = useState<"projects" | "announcements" | "members">("projects");
+  // Active tab: "projects" | "announcements" | "events" | "members" | "funds" | "gallery"
+  const [activeTab, setActiveTab] = useState<
+    "projects" | "announcements" | "events" | "members" | "funds" | "gallery"
+  >("projects");
   const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | "all">("all");
+  const [eventWhen, setEventWhen] = useState<"upcoming" | "past" | "all">("upcoming");
+  const [galleryTerm, setGalleryTerm] = useState("");
+  const [galleryYear, setGalleryYear] = useState("");
+  const [galleryMediaType, setGalleryMediaType] = useState("");
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   // Modals state
   const [selectedShowcaseProject, setSelectedShowcaseProject] = useState<GroupProjectShowcase | null>(null);
   const [showcaseModalOpen, setShowcaseModalOpen] = useState(false);
   const [announcementModalOpen, setAnnouncementModalOpen] = useState(false);
+  const [announceSeed, setAnnounceSeed] = useState<{
+    eventId?: string;
+    title?: string;
+    content?: string;
+  } | null>(null);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<(typeof events)[number] | null>(null);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [editClubOpen, setEditClubOpen] = useState(false);
+  const [galleryEventId, setGalleryEventId] = useState<string>("");
   const [managingMember, setManagingMember] = useState<GroupMember | null>(null);
+  const [fundAmount, setFundAmount] = useState("");
+  const [fundNote, setFundNote] = useState("");
+  const [fundType, setFundType] = useState<"income" | "expense">("expense");
+  const [fundSaving, setFundSaving] = useState(false);
 
   // Quick announcement comment inputs state
   const [annCommentTexts, setAnnCommentTexts] = useState<Record<string, string>>({});
@@ -77,12 +156,23 @@ export function GroupDetailPage() {
       fetchGroup(groupId, user?.id ? String(user.id) : undefined),
       fetchGroupAnnouncements(groupId),
       fetchGroupProjects(groupId),
+      fetchGroupEvents(groupId, "upcoming").catch(() => []),
     ])
-      .then(([g, a, p]) => {
+      .then(([g, a, p, e]) => {
         if (!active) return;
         setGroup(g);
         setAnnouncements(a);
         setProjects(p);
+        setEvents(e);
+        if (g?.isMember) {
+          void fetchMyClubPermissions(g.id)
+            .then((perms) => {
+              if (active) setMyPerms(perms);
+            })
+            .catch(() => {
+              if (active) setMyPerms({});
+            });
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -95,11 +185,11 @@ export function GroupDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFDF0] text-[#2D120D] flex flex-col">
+      <div className="min-h-screen bg-[#F7F1E8] text-[#2D120D] flex flex-col">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center py-32 space-y-3">
-          <div className="w-8 h-8 border-3 border-[#6B0B0C] border-t-transparent rounded-full animate-spin" />
-          <p className="font-mono text-xs uppercase tracking-widest text-[#6B0B0C]">
+          <div className="w-8 h-8 border-3 border-[#780D18] border-t-transparent rounded-full animate-spin" />
+          <p className="font-mono text-xs uppercase tracking-widest text-[#780D18]">
             Opening Club Channel...
           </p>
         </div>
@@ -109,7 +199,7 @@ export function GroupDetailPage() {
 
   if (!group) {
     return (
-      <div className="min-h-screen bg-[#FFFDF0] text-[#2D120D] flex flex-col">
+      <div className="min-h-screen bg-[#F7F1E8] text-[#2D120D] flex flex-col">
         <Navbar />
         <div className="flex-1 max-w-xl mx-auto px-4 py-32 text-center space-y-4">
           <h1 className="font-serif text-3xl font-bold">Group Not Found</h1>
@@ -118,7 +208,7 @@ export function GroupDetailPage() {
           </p>
           <Link
             to="/network/groups"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6B0B0C] text-[#FFF8CA] text-xs font-semibold"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#780D18] text-[#F7F1E8] text-xs font-semibold"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Clubs &amp; Groups
           </Link>
@@ -137,13 +227,22 @@ export function GroupDetailPage() {
     Boolean(user?.id) &&
     !hasPresident &&
     group.members.some((m) => m.userId === user?.id && isClubExecutiveRole(m.role));
-  const canManageRoles = isHost || isFounderManager;
   const isExecutive = isHost || isFounderManager || isClubExecutiveRole(group.userRole);
   const isMember = group.isMember || isHost || isFounderManager;
   const isPrivate = group.visibility === "private";
   const isPending = Boolean(group.hasPendingRequest);
   const pendingRequests = group.pendingRequests ?? [];
   const lockedPrivate = isPrivate && !isMember;
+  const can = (key: string) => Boolean(isHost || myPerms[key] === true);
+  const canManageRoles = isHost || isFounderManager || can("manage_roles");
+  const canEditClub = isHost || can("settings");
+  const canAnnounce = can("announcements");
+  const canEvents = can("events");
+  const canGalleries = can("galleries");
+  const canBroadcast = can("broadcast_email");
+  const canSeeFunds =
+    Boolean(group.isMember) &&
+    (group.fundsVisibility !== "executives" || isExecutive || can("funds"));
 
   const handleJoinLeave = async () => {
     if (isMember) {
@@ -152,19 +251,24 @@ export function GroupDetailPage() {
         return;
       }
       try {
-        const updated = await leaveGroup(group.id, String(user?.id ?? "usr-me"));
-        setGroup(updated);
+      const updated = await leaveGroup(group.id, String(user?.id ?? "usr-me"));
+      setGroup(updated);
       } catch (err) {
         alert(getApiErrorMessage(err) || "Could not leave club");
       }
     } else if (!isPending) {
       try {
-        const updated = await joinGroup(group.id, {
-          id: String(user?.id ?? "usr-me"),
-          name: user?.username || "DevZ-Go Member",
-          username: user?.username || "developer",
-        });
-        setGroup(updated);
+      const updated = await joinGroup(group.id, {
+        id: String(user?.id ?? "usr-me"),
+        name: user?.username || "DevZ-Go Member",
+        username: user?.username || "developer",
+      });
+      setGroup(updated);
+        if (updated.isMember) {
+          window.alert(
+            "Welcome! Club email updates are enabled for you. You can turn them off anytime in Settings → Notifications."
+          );
+        }
       } catch (err) {
         alert(getApiErrorMessage(err) || "Could not send request");
       }
@@ -219,7 +323,7 @@ export function GroupDetailPage() {
   const generalMembers = group.members.filter((m) => !isClubExecutiveRole(m.role));
 
   return (
-    <div className="min-h-screen bg-[#FFFDF0] text-[#2D120D] font-sans antialiased selection:bg-[#6B0B0C] selection:text-[#FFF8CA]">
+    <div className="min-h-screen bg-[#F7F1E8] text-[#2D120D] font-sans antialiased selection:bg-[#780D18] selection:text-[#F7F1E8]">
       <Navbar />
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12 pt-28 pb-20">
@@ -229,14 +333,14 @@ export function GroupDetailPage() {
         <div className="mb-4">
           <Link
             to="/network/groups"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B0B0C] hover:text-[#2D120D] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#780D18] hover:text-[#2D120D] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to all clubs
           </Link>
         </div>
 
         {/* Group Hero Header Banner */}
-        <header className="relative rounded-3xl overflow-hidden bg-[#2D120D] text-[#FFF8CA] border-2 border-[#CDE3E8]/30 shadow-xl mb-8">
+        <header className="relative rounded-3xl overflow-hidden bg-[#2D120D] text-[#F7F1E8] border-2 border-[#CDE3E8]/30 shadow-xl mb-8">
           {/* Banner Graphic Background */}
           <div className="relative h-48 sm:h-64 w-full overflow-hidden">
             {group.bannerUrl && (
@@ -249,13 +353,13 @@ export function GroupDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-[#2D120D] via-[#2D120D]/60 to-transparent" />
 
             <div className="absolute top-4 left-4 sm:left-6 flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA] text-xs font-mono font-bold uppercase tracking-wider border border-[#FFF8CA]/30 shadow-xs">
-                {group.category === "robotics" ? <Cpu className="w-3.5 h-3.5 text-[#CDE3E8]" /> : <Users className="w-3.5 h-3.5" />}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#780D18] text-[#F7F1E8] text-xs font-mono font-bold uppercase tracking-wider border border-[#F7F1E8]/30 shadow-xs">
+                <Users className="w-3.5 h-3.5" />
                 {group.category.replace("_", " ")}
               </span>
 
               {isPrivate && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#2D120D]/90 text-[#FFF8CA] text-xs font-mono font-bold uppercase tracking-wider border border-[#FFF8CA]/30 shadow-xs">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#2D120D]/90 text-[#F7F1E8] text-xs font-mono font-bold uppercase tracking-wider border border-[#F7F1E8]/30 shadow-xs">
                   <Lock className="w-3 h-3 text-[#CDE3E8]" /> Private
                 </span>
               )}
@@ -274,7 +378,7 @@ export function GroupDetailPage() {
                   navigator.clipboard?.writeText(window.location.href);
                   alert("Club link copied to clipboard!");
                 }}
-                className="p-2 rounded-full bg-[#2D120D]/80 hover:bg-[#6B0B0C] text-[#FFF8CA] border border-[#FFF8CA]/30 transition cursor-pointer shadow-sm"
+                className="p-2 rounded-full bg-[#2D120D]/80 hover:bg-[#780D18] text-[#F7F1E8] border border-[#F7F1E8]/30 transition cursor-pointer shadow-sm"
                 title="Share club link"
               >
                 <Share2 className="w-4 h-4" />
@@ -285,26 +389,36 @@ export function GroupDetailPage() {
           {/* Group Info Strip */}
           <div className="p-6 sm:p-8 pt-0 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3 max-w-3xl">
-              <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-[#FFF8CA] leading-tight">
+              <div className="flex items-end gap-3 sm:gap-4">
+                {group.avatarUrl && (
+                  <img
+                    src={assetUrlOrNull(group.avatarUrl) || group.avatarUrl}
+                    alt=""
+                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover border-2 border-[#F7F1E8]/80 shadow-md shrink-0"
+                  />
+                )}
+                <h1 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-[#F7F1E8] leading-tight inline-flex items-center gap-2 flex-wrap">
                 {group.name}
+                  {group.verified && <VerifiedClubBadge className="text-[#DECDBA]" />}
               </h1>
+              </div>
 
-              <p className="font-sans text-sm sm:text-base text-[#FFF8CA]/90 leading-relaxed font-medium">
+              <p className="font-sans text-sm sm:text-base text-[#F7F1E8]/90 leading-relaxed font-medium">
                 {group.tagline}
               </p>
 
               {/* Host & Executives summary pill */}
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#FFF8CA]/80">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-[#FFF8CA]/20">
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-[#F7F1E8]/80">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/20 border border-[#F7F1E8]/20">
                   <span className="text-[#CDE3E8] font-bold">President:</span>
                   <Link
                     to={`/profile/${group.hostUsername || group.hostId}`}
-                    className="font-bold text-[#FFF8CA] hover:text-[#CDE3E8] underline decoration-[#FFF8CA]/40 underline-offset-2"
+                    className="font-bold text-[#F7F1E8] hover:text-[#CDE3E8] underline decoration-[#F7F1E8]/40 underline-offset-2"
                   >
                     {group.hostName}
                   </Link>
                   {group.hostTitle && (
-                    <span className="text-[#FFF8CA]/70 text-[11px] italic">
+                    <span className="text-[#F7F1E8]/70 text-[11px] italic">
                       ({group.hostTitle})
                     </span>
                   )}
@@ -327,12 +441,12 @@ export function GroupDetailPage() {
                 type="button"
                 disabled={isPending}
                 onClick={handleJoinLeave}
-                className={`px-6 py-2.5 rounded-full font-sans text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer disabled:cursor-default ${
+                className={`px-5 py-2.5 rounded-lg font-sans text-xs sm:text-sm font-bold tracking-wide transition shadow-sm disabled:cursor-default ${
                   isMember
-                    ? "bg-[#FFF8CA] hover:bg-white text-[#2D120D]"
+                    ? "bg-[#F7F1E8] hover:bg-white text-[#2D120D] border border-[#DECDBA]"
                     : isPending
-                    ? "bg-[#FFF8CA]/90 text-[#6B0B0C] border border-[#6B0B0C]/30"
-                    : "bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] border border-[#FFF8CA]/30"
+                    ? "bg-[#F7F1E8] text-[#780D18] border border-[#780D18]/30"
+                    : "bg-[#780D18] hover:bg-[#5C0A12] text-[#F7F1E8]"
                 }`}
               >
                 {isMember
@@ -346,23 +460,79 @@ export function GroupDetailPage() {
                   : "Join This Club"}
               </button>
 
-              {!lockedPrivate && (
+              {!lockedPrivate && isMember && (
+              <button
+                type="button"
+                onClick={() => setShowcaseModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-white hover:bg-[#F7F1E8] text-[#2D120D] border border-[#DECDBA] text-xs sm:text-sm font-bold tracking-wide transition"
+              >
+                  <Plus className="w-4 h-4 text-[#780D18]" />
+                <span>Showcase Project</span>
+              </button>
+              )}
+              {canEditClub && (
                 <button
                   type="button"
-                  onClick={() => setShowcaseModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#CDE3E8] hover:bg-white text-[#2D120D] text-xs sm:text-sm font-bold tracking-wide transition shadow-md cursor-pointer"
+                  onClick={() => setEditClubOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-[#F7F1E8] border border-white/30 text-xs sm:text-sm font-bold tracking-wide transition"
                 >
-                  <Plus className="w-4 h-4 text-[#6B0B0C]" />
-                  <span>Showcase Project</span>
+                  Edit club
+                </button>
+              )}
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("members");
+                    requestAnimationFrame(() =>
+                      document.getElementById("club-leadership-permissions")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      })
+                    );
+                  }}
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#F7F1E8] text-[#780D18] text-xs sm:text-sm font-bold tracking-wide transition"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Permissions
                 </button>
               )}
             </div>
           </div>
         </header>
 
+        {isExecutive && group.pendingAvatarUrl && (
+          <div className="mb-6 rounded-xl border border-[#780D18]/30 bg-white p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <img
+              src={assetUrlOrNull(group.pendingAvatarUrl) || group.pendingAvatarUrl}
+              alt=""
+              className="h-14 w-14 rounded-xl object-cover border border-[#DECDBA] shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#2D120D]">New club logo awaiting approval</p>
+              <p className="text-[11px] text-[#6E5952]">
+                {(group.pendingAvatarApprovals || []).length}/{group.pendingAvatarNeeded || 3} executives approved
+              </p>
+            </div>
+            {user?.id && !(group.pendingAvatarApprovals || []).includes(String(user.id)) && (
+              <button
+                type="button"
+                className="rounded-lg bg-[#780D18] px-4 py-2 text-xs font-bold text-white shrink-0"
+                onClick={() =>
+                  void approveClubAvatar(group.id)
+                    .then(setGroup)
+                    .catch((err) => alert(getApiErrorMessage(err) || "Approve failed"))
+                }
+              >
+                Approve logo
+              </button>
+            )}
+          </div>
+        )}
+
         {lockedPrivate ? (
-          <div className="rounded-3xl border-2 border-[#6B0B0C]/25 bg-white p-8 sm:p-12 text-center shadow-sm max-w-2xl mx-auto space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6B0B0C] text-[#FFF8CA] shadow-md">
+          <div className="rounded-3xl border-2 border-[#780D18]/25 bg-white p-8 sm:p-12 text-center shadow-sm max-w-2xl mx-auto space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#780D18] text-[#F7F1E8] shadow-md">
               <Lock className="w-7 h-7" />
             </div>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#2D120D]">
@@ -375,14 +545,14 @@ export function GroupDetailPage() {
             </p>
             <div className="pt-2">
               {isPending ? (
-                <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#FFF8CA] text-[#6B0B0C] border border-[#6B0B0C]/30 text-xs sm:text-sm font-bold">
+                <span className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F7F1E8] text-[#780D18] border border-[#780D18]/30 text-xs sm:text-sm font-bold">
                   <Clock className="w-4 h-4" /> Waiting for President / Executive Approval
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={handleJoinLeave}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs sm:text-sm font-bold shadow-md transition cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#780D18] hover:bg-[#2D120D] text-[#F7F1E8] text-xs sm:text-sm font-bold shadow-md transition cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4" /> Request to Enter Channel
                 </button>
@@ -394,66 +564,116 @@ export function GroupDetailPage() {
         {/* Tab Navigation */}
         <div className="flex items-center justify-between border-b-2 border-[#2D120D]/15 pb-2 mb-8">
           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none">
+            {(
+              [
+                ["projects", `Showcase (${projects.length})`, FolderKanban],
+                ["announcements", `Updates (${announcements.length})`, Megaphone],
+                ["events", `Events (${events.length})`, Clock],
+                ["members", `People (${group.members.length})`, Users],
+              ] as const
+            ).map(([id, text, Icon]) => (
             <button
+                key={id}
               type="button"
-              onClick={() => setActiveTab("projects")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition cursor-pointer ${
-                activeTab === "projects"
-                  ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
-                  : "bg-white text-[#2D120D] hover:bg-[#FFF8CA] border border-[#2D120D]/15"
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Project Showcase ({projects.length})</span>
+                onClick={() => {
+                  setActiveTab(id);
+                  if (id === "events") {
+                    void fetchGroupEvents(groupId, eventWhen).then(setEvents).catch(() => setEvents([]));
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition shrink-0 ${
+                  activeTab === id
+                    ? "bg-[#780D18] text-[#F7F1E8]"
+                    : "bg-white text-[#2D120D] border border-[#DECDBA]"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{text}</span>
             </button>
+            ))}
 
+            {canSeeFunds && (
             <button
               type="button"
-              onClick={() => setActiveTab("announcements")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition cursor-pointer ${
-                activeTab === "announcements"
-                  ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
-                  : "bg-white text-[#2D120D] hover:bg-[#FFF8CA] border border-[#2D120D]/15"
-              }`}
-            >
-              <Megaphone className="w-4 h-4" />
-              <span>Announcements ({announcements.length})</span>
+                onClick={() => {
+                  setActiveTab("funds");
+                  void fetchClubFunds(groupId).then(setFunds).catch(() => setFunds(null));
+                }}
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition shrink-0 ${
+                  activeTab === "funds"
+                    ? "bg-[#780D18] text-[#F7F1E8]"
+                    : "bg-white text-[#2D120D] border border-[#DECDBA]"
+                }`}
+              >
+                Funds
             </button>
-
+            )}
+            {group.isMember && (
             <button
               type="button"
-              onClick={() => setActiveTab("members")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition cursor-pointer ${
-                activeTab === "members"
-                  ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
-                  : "bg-white text-[#2D120D] hover:bg-[#FFF8CA] border border-[#2D120D]/15"
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Members &amp; Execs ({group.members.length})</span>
-              {isExecutive && pendingRequests.length > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-[#FFF8CA] text-[#6B0B0C] px-2 py-0.5 text-[10px] font-mono font-bold">
-                  {pendingRequests.length} pending
-                </span>
-              )}
+                onClick={() => {
+                  setActiveTab("gallery");
+                  void fetchClubGallery(groupId).then(setGallery).catch(() => setGallery([]));
+                  if (!galleryEventId && events[0]) setGalleryEventId(events[0].id);
+                }}
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition shrink-0 ${
+                  activeTab === "gallery"
+                    ? "bg-[#780D18] text-[#F7F1E8]"
+                    : "bg-white text-[#2D120D] border border-[#DECDBA]"
+                }`}
+              >
+                Gallery
             </button>
+            )}
           </div>
 
-          {/* Quick executive contextual actions */}
-          {isExecutive && (
-            <div className="hidden sm:flex items-center gap-2">
-              {activeTab === "announcements" && (
+          <div className="flex items-center gap-2 shrink-0">
+            {canBroadcast && (
                 <button
                   type="button"
-                  onClick={() => setAnnouncementModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] text-xs font-semibold tracking-wide transition shadow-xs cursor-pointer"
+                onClick={() => setBroadcastOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#DECDBA] bg-white text-[#2D120D] text-xs font-semibold"
                 >
-                  <Plus className="w-3.5 h-3.5 text-[#CDE3E8]" />
-                  <span>New Announcement</span>
+                Email club
                 </button>
               )}
-            </div>
-          )}
+            {activeTab === "announcements" && canAnnounce && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAnnounceSeed(null);
+                  setAnnouncementModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#780D18] text-[#F7F1E8] text-xs font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Announcement</span>
+              </button>
+            )}
+            {activeTab === "events" && canEvents && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingEvent(null);
+                  setEventModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#780D18] text-[#F7F1E8] text-xs font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Event</span>
+              </button>
+            )}
+            {activeTab === "projects" && group.isMember && (
+              <button
+                type="button"
+                onClick={() => setShowcaseModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#780D18] text-[#F7F1E8] text-xs font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Showcase</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ======================================================== */}
@@ -461,65 +681,61 @@ export function GroupDetailPage() {
         {/* ======================================================== */}
         {activeTab === "projects" && (
           <div className="space-y-6">
-            {/* Filter Sub-Bar: All vs Embedded vs Software */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[#FFF8CA]/80 border border-[#2D120D]/15">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold uppercase text-[#6B0B0C] mr-1 hidden sm:inline">
-                  Filter by Type:
-                </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl bg-white border border-[#DECDBA]">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setProjectKindFilter("all")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
                     projectKindFilter === "all"
-                      ? "bg-[#2D120D] text-[#FFF8CA]"
-                      : "bg-white text-[#2D120D] border border-[#2D120D]/20 hover:bg-[#CDE3E8]"
+                      ? "bg-[#780D18] text-[#F7F1E8]"
+                      : "bg-[#F7F1E8] text-[#2D120D] border border-[#DECDBA]"
                   }`}
                 >
-                  All Projects ({projects.length})
+                  All ({projects.length})
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setProjectKindFilter("embedded_hardware")}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-                    projectKindFilter === "embedded_hardware"
-                      ? "bg-[#6B0B0C] text-[#FFF8CA]"
-                      : "bg-white text-[#2D120D] border border-[#2D120D]/20 hover:bg-[#CDE3E8]"
-                  }`}
-                >
-                  <Cpu className="w-3.5 h-3.5" />
-                  <span>Embedded &amp; Robotics ({projects.filter((p) => p.kind === "embedded_hardware").length})</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={() => setProjectKindFilter("software")}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
                     projectKindFilter === "software"
-                      ? "bg-[#284E45] text-[#FFF8CA]"
-                      : "bg-white text-[#2D120D] border border-[#2D120D]/20 hover:bg-[#CDE3E8]"
+                      ? "bg-[#780D18] text-[#F7F1E8]"
+                      : "bg-[#F7F1E8] text-[#2D120D] border border-[#DECDBA]"
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Software ({projects.filter((p) => p.kind === "software").length})</span>
+                  Software ({projects.filter((p) => p.kind === "software").length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectKindFilter("embedded_hardware")}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                    projectKindFilter === "embedded_hardware"
+                      ? "bg-[#780D18] text-[#F7F1E8]"
+                      : "bg-[#F7F1E8] text-[#2D120D] border border-[#DECDBA]"
+                  }`}
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  Hardware ({projects.filter((p) => p.kind === "embedded_hardware").length})
                 </button>
               </div>
 
+              {group.isMember && (
               <button
                 type="button"
                 onClick={() => setShowcaseModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-bold tracking-wide transition shadow-xs cursor-pointer ml-auto"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#780D18] hover:bg-[#5C0A12] text-[#F7F1E8] text-xs font-bold transition shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Showcase Your Project</span>
+                  Showcase project
               </button>
+              )}
             </div>
 
             {/* Showcase Projects Grid (Devpost Style) */}
             {filteredProjects.length === 0 ? (
               <div className="text-center py-16 rounded-3xl bg-white border-2 border-dashed border-[#2D120D]/20 p-8 space-y-3">
-                <Sparkles className="w-10 h-10 mx-auto text-[#6B0B0C]/60" />
+                <FolderKanban className="w-10 h-10 mx-auto text-[#780D18]/60" />
                 <h3 className="font-serif text-xl font-bold">No Showcased Projects Yet</h3>
                 <p className="font-sans text-xs text-[#2D120D]/70 max-w-sm mx-auto">
                   Be the first member to showcase a project in the {group.name}!
@@ -527,7 +743,7 @@ export function GroupDetailPage() {
                 <button
                   type="button"
                   onClick={() => setShowcaseModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#6B0B0C] text-[#FFF8CA] text-xs font-bold transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#780D18] text-[#F7F1E8] text-xs font-bold transition shadow-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Showcase Project
                 </button>
@@ -540,7 +756,7 @@ export function GroupDetailPage() {
                     <div
                       key={p.id}
                       onClick={() => setSelectedShowcaseProject(p)}
-                      className="group flex flex-col justify-between rounded-3xl bg-white border-2 border-[#2D120D]/15 hover:border-[#6B0B0C] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                      className="group flex flex-col justify-between rounded-xl bg-white border border-[#DECDBA] hover:border-[#780D18]/55 overflow-hidden shadow-sm hover:shadow-[0_12px_32px_rgba(120,13,24,0.1)] transition-all duration-300 cursor-pointer"
                     >
                       {/* Thumbnail / Cover */}
                       <div className="relative h-44 w-full bg-stone-900 overflow-hidden">
@@ -557,18 +773,18 @@ export function GroupDetailPage() {
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm ${
                               isEmb
-                                ? "bg-[#6B0B0C] text-[#FFF8CA] border border-[#FFF8CA]/30"
+                                ? "bg-[#780D18] text-[#F7F1E8] border border-[#F7F1E8]/30"
                                 : "bg-[#CDE3E8] text-[#2D120D]"
                             }`}
                           >
                             {isEmb ? <Cpu className="w-3 h-3" /> : <Layers className="w-3 h-3" />}
-                            {isEmb ? "Embedded & Hardware" : "Software"}
+                            {isEmb ? "Hardware" : "Software"}
                           </span>
                         </div>
 
                         {p.subCategory && (
                           <div className="absolute bottom-3 left-3 right-3">
-                            <span className="text-[11px] font-mono text-[#FFF8CA] font-medium truncate block">
+                            <span className="text-[11px] font-mono text-[#F7F1E8] font-medium truncate block">
                               {p.subCategory}
                             </span>
                           </div>
@@ -578,7 +794,7 @@ export function GroupDetailPage() {
                       {/* Card Content */}
                       <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                         <div className="space-y-2">
-                          <h3 className="font-serif text-xl font-bold text-[#2D120D] group-hover:text-[#6B0B0C] transition-colors leading-tight">
+                          <h3 className="font-serif text-xl font-bold text-[#2D120D] group-hover:text-[#780D18] transition-colors leading-tight">
                             {p.title}
                           </h3>
                           <p className="font-sans text-xs text-[#2D120D]/75 line-clamp-2 leading-relaxed">
@@ -591,7 +807,7 @@ export function GroupDetailPage() {
                           {p.techStacks.slice(0, 4).map((tech, i) => (
                             <span
                               key={i}
-                              className="px-2.5 py-0.5 rounded-md bg-[#FFF8CA] text-[#2D120D] text-[10px] font-semibold border border-[#2D120D]/15"
+                              className="px-2.5 py-0.5 rounded-md bg-[#F7F1E8] text-[#2D120D] text-[10px] font-semibold border border-[#2D120D]/15"
                             >
                               {tech}
                             </span>
@@ -606,7 +822,7 @@ export function GroupDetailPage() {
                         {/* Hardware specific chip */}
                         {isEmb && p.embeddedSpecs?.microcontroller && (
                           <div className="p-2 rounded-xl bg-stone-50 border border-stone-200 text-[11px] text-stone-700 flex items-center gap-1.5">
-                            <Cpu className="w-3.5 h-3.5 text-[#6B0B0C]" />
+                            <Cpu className="w-3.5 h-3.5 text-[#780D18]" />
                             <span className="font-semibold">{p.embeddedSpecs.microcontroller}</span>
                           </div>
                         )}
@@ -614,7 +830,7 @@ export function GroupDetailPage() {
                         {/* Card Footer: Owner + Likes/Comments */}
                         <div className="flex items-center justify-between pt-3 border-t border-[#2D120D]/10 text-xs">
                           <div className="flex items-center gap-1.5 text-stone-600">
-                            <span className="w-5 h-5 rounded-full bg-[#2D120D] text-[#FFF8CA] inline-flex items-center justify-center text-[10px] font-bold">
+                            <span className="w-5 h-5 rounded-full bg-[#2D120D] text-[#F7F1E8] inline-flex items-center justify-center text-[10px] font-bold">
                               {p.ownerName[0]}
                             </span>
                             <span className="font-medium text-[11px] truncate max-w-[100px]">
@@ -624,7 +840,7 @@ export function GroupDetailPage() {
 
                           <div className="flex items-center gap-3 text-stone-500 font-mono text-[11px]">
                             <span className="inline-flex items-center gap-1">
-                              <Heart className="w-3.5 h-3.5 text-[#6B0B0C]" /> {p.likesCount}
+                              <Heart className="w-3.5 h-3.5 text-[#780D18]" /> {p.likesCount}
                             </span>
                             <span className="inline-flex items-center gap-1">
                               <MessageSquare className="w-3.5 h-3.5" /> {p.commentsCount}
@@ -647,9 +863,9 @@ export function GroupDetailPage() {
           <div className="space-y-6 max-w-4xl mx-auto">
             {/* Executive Announcement Composer Banner */}
             {isExecutive && (
-              <div className="flex items-center justify-between p-5 rounded-3xl bg-[#FFF8CA] border-2 border-[#2D120D]/20 shadow-sm">
+              <div className="flex items-center justify-between p-5 rounded-3xl bg-[#F7F1E8] border-2 border-[#2D120D]/20 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#6B0B0C] text-[#FFF8CA] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[#780D18] text-[#F7F1E8] flex items-center justify-center">
                     <Megaphone className="w-5 h-5" />
                   </div>
                   <div>
@@ -665,7 +881,7 @@ export function GroupDetailPage() {
                 <button
                   type="button"
                   onClick={() => setAnnouncementModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-bold tracking-wide transition shadow-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#780D18] hover:bg-[#2D120D] text-[#F7F1E8] text-xs font-bold tracking-wide transition shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Publish Update</span>
@@ -687,26 +903,28 @@ export function GroupDetailPage() {
                 {announcements.map((ann) => (
                   <article
                     key={ann.id}
-                    className={`rounded-3xl bg-white border-2 p-6 sm:p-8 space-y-4 shadow-sm transition-all ${
+                    className={`rounded-xl bg-white border p-5 sm:p-6 space-y-4 shadow-sm ${
                       ann.pinned
-                        ? "border-[#6B0B0C] ring-2 ring-[#6B0B0C]/10 bg-[#FFFDF0]"
-                        : "border-[#2D120D]/15"
+                        ? "border-[#780D18] bg-[#F7F1E8]"
+                        : "border-[#DECDBA]"
                     }`}
                   >
-                    {/* Header with Badge & Author */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA] text-[10px] font-mono font-bold uppercase tracking-wider">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#780D18] text-[#F7F1E8] text-[10px] font-mono font-bold uppercase tracking-wider">
                             <Megaphone className="w-3 h-3" />
                             {ann.badge}
                           </span>
-
                           {ann.pinned && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFF8CA] text-[#6B0B0C] border border-[#6B0B0C]/30 text-[10px] font-mono font-bold uppercase">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-[#780D18] border border-[#780D18]/30 text-[10px] font-mono font-bold uppercase">
                               <Pin className="w-3 h-3" /> Pinned
                             </span>
                           )}
+                          <span className="text-[11px] text-[#6E5952] inline-flex items-center gap-1">
+                            {group.name}
+                            {group.verified && <VerifiedClubBadge />}
+                          </span>
                         </div>
 
                         <h2 className="font-serif text-2xl font-bold text-[#2D120D] leading-tight pt-1">
@@ -714,13 +932,12 @@ export function GroupDetailPage() {
                         </h2>
                       </div>
 
-                      {/* Author Info */}
                       <div className="text-right">
                         <p className="font-bold text-xs text-[#2D120D]">{ann.authorName}</p>
-                        <p className="text-[11px] text-[#6B0B0C] font-semibold italic">
-                          {ann.authorTitle || (ann.authorRole === "host" ? "Host" : "Executive")}
+                        <p className="text-[11px] text-[#780D18] font-semibold">
+                          {ann.authorTitle || (ann.authorRole === "host" || ann.authorRole === "president" ? "President" : "Executive")}
                         </p>
-                        <p className="text-[10px] text-stone-400">
+                        <p className="text-[10px] text-[#6E5952]">
                           {new Date(ann.createdAt).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",
@@ -730,10 +947,30 @@ export function GroupDetailPage() {
                       </div>
                     </div>
 
-                    {/* Announcement Body */}
-                    <div className="font-sans text-sm text-[#2D120D]/85 leading-relaxed whitespace-pre-line pt-2">
+                    <div className="font-sans text-sm text-[#2D120D]/85 leading-relaxed whitespace-pre-line">
                       {ann.content}
                     </div>
+
+                    {Array.isArray(ann.mediaUrls) && ann.mediaUrls.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {ann.mediaUrls.map((item, idx) => {
+                          const url = typeof item === "string" ? item : (item as { url?: string }).url;
+                          const type =
+                            typeof item === "string"
+                              ? "image"
+                              : (item as { type?: string }).type || "image";
+                          if (!url) return null;
+                          const src = assetUrlOrNull(url) || url;
+                          return type === "video" ? (
+                            <a key={idx} href={src} target="_blank" rel="noreferrer" className="rounded-lg border border-[#DECDBA] bg-[#2D120D] text-[#F7F1E8] h-28 flex items-center justify-center text-xs font-semibold">
+                              Video
+                            </a>
+                          ) : (
+                            <img key={idx} src={src} alt="" className="h-28 w-full object-cover rounded-lg border border-[#DECDBA]" />
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Actions: Likes & Comment Count */}
                     <div className="flex items-center justify-between pt-4 border-t border-[#2D120D]/10 text-xs">
@@ -742,7 +979,7 @@ export function GroupDetailPage() {
                         onClick={() => handleToggleLikeAnnouncement(ann.id)}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition cursor-pointer ${
                           ann.isLiked
-                            ? "bg-[#6B0B0C] text-[#FFF8CA]"
+                            ? "bg-[#780D18] text-[#F7F1E8]"
                             : "bg-stone-100 hover:bg-stone-200 text-[#2D120D]"
                         }`}
                       >
@@ -762,9 +999,9 @@ export function GroupDetailPage() {
                           {ann.comments.map((c) => (
                             <div
                               key={c.id}
-                              className="p-3 rounded-2xl bg-[#FFF8CA]/50 border border-[#2D120D]/10 text-xs space-y-1"
+                              className="p-3 rounded-2xl bg-[#F7F1E8]/50 border border-[#2D120D]/10 text-xs space-y-1"
                             >
-                              <div className="flex items-center justify-between font-semibold text-[#6B0B0C]">
+                              <div className="flex items-center justify-between font-semibold text-[#780D18]">
                                 <span>{c.authorName}</span>
                                 <span className="text-[10px] text-stone-400 font-normal">
                                   {new Date(c.createdAt).toLocaleDateString()}
@@ -788,11 +1025,11 @@ export function GroupDetailPage() {
                             setAnnCommentTexts((prev) => ({ ...prev, [ann.id]: e.target.value }))
                           }
                           placeholder="Reply to this announcement..."
-                          className="flex-1 px-4 py-2 rounded-full border border-[#2D120D]/20 bg-white text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
+                          className="flex-1 px-4 py-2 rounded-full border border-[#2D120D]/20 bg-white text-xs text-[#2D120D] focus:border-[#780D18] focus:outline-none"
                         />
                         <button
                           type="submit"
-                          className="px-4 py-2 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] text-xs font-semibold transition cursor-pointer"
+                          className="px-4 py-2 rounded-full bg-[#2D120D] hover:bg-[#780D18] text-[#F7F1E8] text-xs font-semibold transition cursor-pointer"
                         >
                           Reply
                         </button>
@@ -805,24 +1042,507 @@ export function GroupDetailPage() {
           </div>
         )}
 
+        {activeTab === "events" && (
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="flex flex-wrap gap-2">
+              {(["upcoming", "past", "all"] as const).map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => {
+                    setEventWhen(w);
+                    void fetchGroupEvents(groupId, w).then(setEvents).catch(() => setEvents([]));
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                    eventWhen === w ? "bg-[#780D18] text-white" : "bg-white border border-[#DECDBA]"
+                  }`}
+                >
+                  {w}
+                </button>
+              ))}
+                </div>
+            {events.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[#DECDBA] bg-white px-5 py-10 text-center text-sm text-[#6E5952]">
+                No events yet.
+                {canEvents && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingEvent(null);
+                        setEventModalOpen(true);
+                      }}
+                      className="rounded-lg bg-[#780D18] px-4 py-2 text-xs font-bold text-white"
+                    >
+                      Create event
+                    </button>
+              </div>
+            )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {events.map((ev) => {
+                  const place =
+                    ev.modality === "virtual"
+                      ? ev.meetingPlatform || ev.meetingUrl || "Virtual"
+                      : [ev.venueName, ev.roomNumber ? `Room ${ev.roomNumber}` : null, ev.venueAddress || ev.location]
+                          .filter(Boolean)
+                          .join(" · ") || "TBA";
+                  const posterRatio =
+                    ev.posterFormat === "tabloid"
+                      ? ev.posterOrientation === "landscape"
+                        ? "17 / 11"
+                        : "11 / 17"
+                      : ev.posterOrientation === "landscape"
+                        ? "11 / 8.5"
+                        : "8.5 / 11";
+                  return (
+                    <article
+                      key={ev.id}
+                      className="rounded-xl border border-[#DECDBA] bg-white overflow-hidden flex flex-col sm:flex-row"
+                    >
+                      <div
+                        className="sm:w-44 bg-[#2D120D] shrink-0 overflow-hidden"
+                        style={{ aspectRatio: posterRatio }}
+                      >
+                        {ev.posterUrl ? (
+                          <img
+                            src={assetUrlOrNull(ev.posterUrl) || ev.posterUrl}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full min-h-[9rem] flex items-center justify-center text-[#F7F1E8]/70 text-xs font-mono uppercase tracking-wider">
+                            {ev.academicTerm || "Event"}
+                      </div>
+                        )}
+                      </div>
+                      <div className="p-4 flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-serif text-xl font-bold text-[#2D120D]">{ev.title}</h3>
+                          {group.verified && <VerifiedClubBadge />}
+                          <span className="text-[10px] font-bold uppercase tracking-wider rounded-md bg-[#F7F1E8] border border-[#DECDBA] px-2 py-0.5">
+                            {ev.status}
+                          </span>
+                        </div>
+                        {ev.attractions && (
+                          <p className="inline-flex items-center gap-1.5 rounded-lg bg-[#780D18] text-[#F7F1E8] px-2.5 py-1 text-[11px] font-bold">
+                            {ev.attractions}
+                          </p>
+                        )}
+                        <p className="text-xs text-[#6E5952]">
+                          {ev.startsAt?.slice(0, 16).replace("T", " ")}
+                          {ev.endsAt ? ` – ${ev.endsAt.slice(11, 16)}` : ""}
+                        </p>
+                        <p className="text-xs text-[#2D120D]">
+                          <span className="font-semibold capitalize">{(ev.modality || "in_person").replace("_", "-")}</span>
+                          {" · "}
+                          {place}
+                          {ev.academicTerm ? ` · ${ev.academicTerm} ${ev.academicYear || ""}` : ""}
+                        </p>
+                        {ev.description && (
+                          <p className="text-sm text-[#2D120D]/80 line-clamp-3">{ev.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {canEvents && (
+                            <button
+                              type="button"
+                              className="text-[11px] font-semibold text-[#780D18]"
+                              onClick={() => {
+                                setEditingEvent(ev);
+                                setEventModalOpen(true);
+                              }}
+                            >
+                              Edit event
+                            </button>
+                          )}
+                          {canAnnounce && (
+                            <button
+                              type="button"
+                              className="text-[11px] font-semibold text-[#780D18]"
+                              onClick={() => {
+                                setAnnounceSeed({
+                                  eventId: ev.id,
+                                  title: `Event: ${ev.title}`,
+                                  content: `${ev.description || ""}\n\nWhen: ${ev.startsAt?.slice(0, 16).replace("T", " ") || "TBA"}\nWhere: ${place}${ev.attractions ? `\nHighlights: ${ev.attractions}` : ""}`.trim(),
+                                });
+                                setAnnouncementModalOpen(true);
+                                setActiveTab("announcements");
+                              }}
+                            >
+                              Share to announcements
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="text-[11px] font-semibold text-[#780D18]"
+                            onClick={() => {
+                              setGalleryEventId(ev.id);
+                              setActiveTab("gallery");
+                              void fetchClubGallery(groupId, { eventId: ev.id }).then(setGallery).catch(() => setGallery([]));
+                            }}
+                          >
+                            Add / view photos →
+                          </button>
+                          {ev.rsvpUrl && (
+                            <a href={ev.rsvpUrl} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-[#780D18]">
+                              RSVP →
+                            </a>
+                          )}
+                        </div>
+                    </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "funds" && canSeeFunds && (
+          <div className="space-y-4 max-w-3xl mx-auto">
+            {can("funds") && (
+              <form
+                className="rounded-xl border border-[#DECDBA] bg-white p-4 space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const amount = Number(fundAmount);
+                  if (!amount || amount <= 0) return;
+                  setFundSaving(true);
+                  void addClubFundEntry(group.id, {
+                    amount,
+                    note: fundNote.trim() || undefined,
+                    entryType: fundType,
+                  })
+                    .then(() => fetchClubFunds(groupId))
+                    .then(setFunds)
+                    .then(() => {
+                      setFundAmount("");
+                      setFundNote("");
+                    })
+                    .catch((err) => alert(getApiErrorMessage(err) || "Could not add entry"))
+                    .finally(() => setFundSaving(false));
+                }}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#780D18]">Add ledger entry</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    value={fundAmount}
+                    onChange={(e) => setFundAmount(e.target.value)}
+                    placeholder="Amount"
+                    className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#780D18]"
+                  />
+                  <select
+                    value={fundType}
+                    onChange={(e) => setFundType(e.target.value as "income" | "expense")}
+                    className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#780D18]"
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                  <input
+                    value={fundNote}
+                    onChange={(e) => setFundNote(e.target.value)}
+                    placeholder="Note"
+                    className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#780D18]"
+                  />
+                </div>
+                        <button
+                  type="submit"
+                  disabled={fundSaving}
+                  className="rounded-lg bg-[#780D18] px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                >
+                  {fundSaving ? "Saving…" : "Add entry"}
+                        </button>
+              </form>
+            )}
+            {!funds ? (
+              <p className="text-sm text-[#6E5952]">Loading funds…</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {(
+                    [
+                      ["Income", funds.summary.income],
+                      ["Expense", funds.summary.expense],
+                      ["Balance", funds.summary.balance],
+                    ] as const
+                  ).map(([label, val]) => (
+                    <div key={label} className="rounded-xl border border-[#DECDBA] bg-white p-3 sm:p-4 text-center">
+                      <p className="text-[10px] font-bold uppercase text-[#780D18]">{label}</p>
+                      <p className="font-serif text-lg sm:text-xl font-bold mt-1">${Number(val).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  {funds.entries.length === 0 && (
+                    <p className="text-sm text-[#6E5952]">
+                      No ledger entries yet.
+                      {group.fundsVisibility === "executives" ? " Visible to executives only." : " Visible to all members."}
+                    </p>
+                  )}
+                  {funds.entries.map((e) => (
+                    <div key={e.id} className="flex justify-between gap-3 rounded-lg border border-[#DECDBA] bg-white px-4 py-3 text-sm">
+                      <span className="truncate">{e.note || e.entryType}</span>
+                      <span className={e.entryType === "income" ? "text-emerald-700 shrink-0" : "text-[#780D18] shrink-0"}>
+                        {e.entryType === "income" ? "+" : "-"}${e.amount.toFixed(2)} {e.currency}
+                      </span>
+                  </div>
+                ))}
+              </div>
+              </>
+            )}
+              </div>
+        )}
+
+        {activeTab === "gallery" && (
+          <div className="space-y-4 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <select
+                value={galleryEventId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setGalleryEventId(id);
+                  void fetchClubGallery(groupId, {
+                    eventId: id || undefined,
+                    term: galleryTerm || undefined,
+                    year: galleryYear || undefined,
+                    mediaType: galleryMediaType || undefined,
+                  }).then(setGallery).catch(() => setGallery([]));
+                }}
+                className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="">All events</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
+                ))}
+              </select>
+              <select
+                value={galleryTerm}
+                onChange={(e) => {
+                  setGalleryTerm(e.target.value);
+                  void fetchClubGallery(groupId, {
+                    eventId: galleryEventId || undefined,
+                    term: e.target.value || undefined,
+                    year: galleryYear || undefined,
+                    mediaType: galleryMediaType || undefined,
+                  }).then(setGallery).catch(() => setGallery([]));
+                }}
+                className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="">All terms</option>
+                <option value="Fall">Fall</option>
+                <option value="Winter">Winter</option>
+                <option value="Spring/Summer">Spring/Summer</option>
+              </select>
+              <input
+                value={galleryYear}
+                onChange={(e) => {
+                  setGalleryYear(e.target.value);
+                  void fetchClubGallery(groupId, {
+                    eventId: galleryEventId || undefined,
+                    term: galleryTerm || undefined,
+                    year: e.target.value || undefined,
+                    mediaType: galleryMediaType || undefined,
+                  }).then(setGallery).catch(() => setGallery([]));
+                }}
+                placeholder="Year e.g. 2026"
+                className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm"
+              />
+              <select
+                value={galleryMediaType}
+                onChange={(e) => {
+                  setGalleryMediaType(e.target.value);
+                  void fetchClubGallery(groupId, {
+                    eventId: galleryEventId || undefined,
+                    term: galleryTerm || undefined,
+                    year: galleryYear || undefined,
+                    mediaType: e.target.value || undefined,
+                  }).then(setGallery).catch(() => setGallery([]));
+                }}
+                className="rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="">All media</option>
+                <option value="image">Images</option>
+                <option value="video">Videos</option>
+              </select>
+                        </div>
+            {canGalleries && galleryEventId && (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-2 rounded-lg bg-[#780D18] px-4 py-2.5 text-xs font-bold text-white cursor-pointer">
+                  <ImagePlus className="w-3.5 h-3.5" />
+                  {galleryUploading ? "Uploading…" : "Add photos"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={galleryUploading}
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      e.target.value = "";
+                      if (!files.length || !galleryEventId) return;
+                      setGalleryUploading(true);
+                      void (async () => {
+                        const uploaded: typeof gallery = [];
+                        for (const f of files) {
+                          try {
+                            const row = await uploadEventMedia(group.id, galleryEventId, f, {
+                              academicTerm: galleryTerm || undefined,
+                              academicYear: galleryYear || undefined,
+                            });
+                            uploaded.push({
+                              id: row.id,
+                              url: row.url,
+                              eventId: row.eventId,
+                              mediaType: row.mediaType,
+                              academicTerm: row.academicTerm,
+                              academicYear: row.academicYear,
+                            });
+                          } catch (err) {
+                            alert(getApiErrorMessage(err) || `Failed: ${f.name}`);
+                          }
+                        }
+                        if (uploaded.length) setGallery((prev) => [...uploaded, ...prev]);
+                        setGalleryUploading(false);
+                      })();
+                    }}
+                  />
+                </label>
+                <label className="inline-flex items-center gap-2 rounded-lg border border-[#DECDBA] bg-white px-4 py-2.5 text-xs font-bold cursor-pointer">
+                  Add video
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!f || !galleryEventId) return;
+                      void uploadEventMedia(group.id, galleryEventId, f, {
+                        academicTerm: galleryTerm || undefined,
+                        academicYear: galleryYear || undefined,
+                      })
+                        .then((row) =>
+                          setGallery((prev) => [
+                            {
+                              id: row.id,
+                              url: row.url,
+                              eventId: row.eventId,
+                              mediaType: row.mediaType,
+                              academicTerm: row.academicTerm,
+                              academicYear: row.academicYear,
+                            },
+                            ...prev,
+                          ])
+                        )
+                        .catch((err) => alert(getApiErrorMessage(err) || "Upload failed"));
+                    }}
+                  />
+                </label>
+                <span className="text-[11px] text-[#6E5952]">Any size · originals kept up to 20 MB</span>
+              </div>
+            )}
+            {gallery.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[#DECDBA] bg-white px-5 py-10 text-center text-sm text-[#6E5952]">
+                {galleryEventId
+                  ? "No media for this event yet. Select an event and upload photos."
+                  : "Pick an event to upload photos, or browse the collective gallery."}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                {gallery.map((g, idx) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className="rounded-xl overflow-hidden border border-[#DECDBA] bg-white text-left aspect-square"
+                    onClick={() => setLightboxIndex(idx)}
+                  >
+                    {g.mediaType === "video" ? (
+                      <div className="h-full w-full bg-[#2D120D] text-[#F7F1E8] flex items-center justify-center text-xs font-semibold">
+                        Video
+                      </div>
+                    ) : (
+                      <img
+                        src={assetUrlOrNull(g.url) || g.url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ======================================================== */}
         {/* TAB 3: MEMBERS & EXECUTIVE BOARD */}
         {/* ======================================================== */}
         {activeTab === "members" && (
           <div className="space-y-10 max-w-5xl mx-auto">
-            {/* Host Controls Guide Note */}
-            {canManageRoles && (
-              <div className="p-4 rounded-2xl bg-[#FFF8CA] border-2 border-[#6B0B0C]/30 text-xs text-[#2D120D] flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#6B0B0C] shrink-0" />
-                  <span>
-                    <strong>{isHost ? "President" : "Founder"} access:</strong> Assign President,
-                    Vice President, Treasurer, Executive, or Member. A person may only be president
-                    of one club. Add custom executive titles for your club&apos;s policy.
-                  </span>
+            {group.isMember && (
+              <div className="rounded-2xl border border-[#DECDBA] bg-white p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Show this club on my profile</p>
+                  <p className="text-xs text-[#6E5952]">Default is hidden (private-friendly).</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentlyVisible = group.hideOnProfile === false;
+                    void patchMembershipPrivacy(group.id, currentlyVisible).then((res) => {
+                      setGroup((g) => (g ? { ...g, hideOnProfile: res.hideOnProfile } : g));
+                    });
+                  }}
+                  className={`rounded-full px-4 py-2 text-xs font-bold ${
+                    group.hideOnProfile === false
+                      ? "bg-[#780D18] text-white"
+                      : "bg-[#FAF7F2] border border-[#DECDBA]"
+                  }`}
+                >
+                  {group.hideOnProfile === false ? "Visible" : "Hidden"}
+                </button>
               </div>
             )}
+            <div id="club-leadership-permissions" className="scroll-mt-28 space-y-4">
+              {(isHost || canManageRoles) && (
+                <div className="p-4 rounded-xl bg-[#780D18] text-[#F7F1E8] text-sm space-y-1">
+                  <p className="font-serif text-lg font-bold flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5" /> Leadership &amp; permissions
+                  </p>
+                  <p className="text-xs text-[#F7F1E8]/85">
+                    {isHost
+                      ? "As president, set what each executive role can do below, then use Manage on a member card to assign that role."
+                      : "You can assign roles on member cards. Only the president can edit the permission matrix."}
+                  </p>
+                </div>
+              )}
+
+              {isHost ? (
+                <ClubPermissionsPanel
+                  groupId={group.id}
+                  isPresident
+                  fundsVisibility={group.fundsVisibility}
+                  onFundsVisibilityChange={(v) =>
+                    setGroup((g) => (g ? { ...g, fundsVisibility: v } : g))
+                  }
+                />
+              ) : canManageRoles ? (
+                <div className="rounded-xl border border-[#DECDBA] bg-white p-4 text-xs text-[#6E5952]">
+                  Role assignment is available on each member card (Manage). Ask the president to grant
+                  events, announcements, galleries, funds, or email permissions to executive roles.
+                </div>
+              ) : null}
+            </div>
 
             {(group.policies || isExecutive) && (
               <section className="rounded-3xl border border-[#2D120D]/15 bg-white p-5 space-y-3">
@@ -836,25 +1556,25 @@ export function GroupDetailPage() {
                 ) : (
                   <p className="text-sm text-[#2D120D]/80 whitespace-pre-wrap">
                     {group.policies || "No club policies published yet."}
-                  </p>
-                )}
+                            </p>
+                          )}
               </section>
             )}
 
             {/* Pending Join Requests (Visible to President & Executives) */}
             {isExecutive && pendingRequests.length > 0 && (
-              <section className="rounded-3xl border-2 border-[#6B0B0C]/30 bg-[#FFF8CA]/50 p-5 space-y-4">
-                <div className="flex items-center justify-between gap-2 border-b border-[#6B0B0C]/15 pb-2.5">
+              <section className="rounded-3xl border-2 border-[#780D18]/30 bg-[#F7F1E8]/50 p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-[#780D18]/15 pb-2.5">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[#6B0B0C]" />
+                    <Clock className="w-5 h-5 text-[#780D18]" />
                     <h2 className="font-serif text-xl font-bold text-[#2D120D]">
                       Pending Join Requests ({pendingRequests.length})
                     </h2>
-                  </div>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#6B0B0C] font-semibold">
+                        </div>
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#780D18] font-semibold">
                     Private Club Approval
                   </span>
-                </div>
+                      </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {pendingRequests.map((req) => (
@@ -863,28 +1583,28 @@ export function GroupDetailPage() {
                       className="flex items-center justify-between gap-3 rounded-2xl bg-white border border-[#2D120D]/15 p-3.5 shadow-2xs"
                     >
                       <div className="min-w-0 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#6B0B0C] text-[#FFF8CA] font-serif font-bold text-sm flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-[#780D18] text-[#F7F1E8] font-serif font-bold text-sm flex items-center justify-center shrink-0">
                           {(req.name || "?")[0]}
                         </div>
                         <div className="min-w-0">
-                          <Link
+                        <Link
                             to={`/profile/${req.username || req.userId}`}
-                            className="font-bold text-sm text-[#2D120D] hover:text-[#6B0B0C] truncate block"
-                          >
+                            className="font-bold text-sm text-[#2D120D] hover:text-[#780D18] truncate block"
+                        >
                             {req.name}
-                          </Link>
+                        </Link>
                           <p className="text-[11px] text-[#2D120D]/60 truncate">@{req.username}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
+                          <button
+                            type="button"
                           onClick={() => handleApproveRequest(req.userId)}
-                          className="inline-flex items-center gap-1 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] px-3 py-1.5 text-[11px] font-bold text-[#FFF8CA] transition cursor-pointer"
-                        >
+                          className="inline-flex items-center gap-1 rounded-full bg-[#780D18] hover:bg-[#2D120D] px-3 py-1.5 text-[11px] font-bold text-[#F7F1E8] transition cursor-pointer"
+                          >
                           <Check className="w-3.5 h-3.5" /> Approve
-                        </button>
+                          </button>
                         <button
                           type="button"
                           onClick={() => handleDeclineRequest(req.userId)}
@@ -897,153 +1617,20 @@ export function GroupDetailPage() {
                     </div>
                   ))}
                 </div>
-              </section>
+            </section>
             )}
 
-            {/* Executive Board Section */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 border-b border-[#2D120D]/15 pb-2">
-                <ShieldCheck className="w-5 h-5 text-[#6B0B0C]" />
-                <h2 className="font-serif text-2xl font-bold text-[#2D120D]">
-                  Executive Board &amp; Club Leadership ({executives.length})
-                </h2>
-              </div>
+            <ExecutiveBoard
+              executives={executives}
+              canManageRoles={canManageRoles}
+              onManage={setManagingMember}
+            />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {executives.map((member) => (
-                  <div
-                    key={member.userId}
-                    className="p-5 rounded-3xl bg-white border-2 border-[#2D120D]/15 hover:border-[#6B0B0C] shadow-sm flex flex-col justify-between space-y-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6B0B0C] to-[#2D120D] text-[#FFF8CA] font-serif font-bold text-lg flex items-center justify-center shrink-0 border border-[#CDE3E8]/40 shadow-xs">
-                        {member.name[0]}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link
-                            to={`/profile/${member.username || member.userId}`}
-                            className="font-bold text-sm text-[#2D120D] hover:text-[#6B0B0C] underline decoration-stone-300 underline-offset-2 truncate"
-                          >
-                            {member.name}
-                          </Link>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
-                              member.role === "host" || member.role === "president"
-                                ? "bg-[#2D120D] text-[#FFF8CA]"
-                                : "bg-[#6B0B0C] text-[#FFF8CA]"
-                            }`}
-                          >
-                            {clubRoleLabel(member.role)}
-                          </span>
-                        </div>
-
-                        {member.customTitle && (
-                          <p className="font-semibold text-xs text-[#6B0B0C] mt-0.5 leading-snug">
-                            {member.customTitle}
-                          </p>
-                        )}
-
-                        {member.headline && (
-                          <p className="text-[11px] text-stone-500 line-clamp-1 mt-1">
-                            {member.headline}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#2D120D]/10 flex items-center justify-between text-xs">
-                      <Link
-                        to={`/profile/${member.username || member.userId}`}
-                        className="text-[#6B0B0C] hover:text-[#2D120D] font-semibold text-[11px]"
-                      >
-                        View Profile →
-                      </Link>
-
-                      {canManageRoles && (
-                        <button
-                          type="button"
-                          onClick={() => setManagingMember(member)}
-                          className="px-3 py-1 rounded-full bg-[#FFF8CA] hover:bg-[#2D120D] hover:text-[#FFF8CA] border border-[#2D120D]/20 text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Manage Role
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* General Members Section */}
-            <section className="space-y-4 pt-4">
-              <div className="flex items-center gap-2 border-b border-[#2D120D]/15 pb-2">
-                <Users className="w-5 h-5 text-[#284E45]" />
-                <h2 className="font-serif text-2xl font-bold text-[#2D120D]">
-                  Club Members ({generalMembers.length})
-                </h2>
-              </div>
-
-              {generalMembers.length === 0 ? (
-                <p className="text-xs text-stone-500 italic py-4">
-                  No additional general members yet. New joiners will appear here!
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {generalMembers.map((member) => (
-                    <div
-                      key={member.userId}
-                      className="p-5 rounded-3xl bg-white border border-[#2D120D]/15 hover:border-[#6B0B0C] shadow-2xs flex flex-col justify-between space-y-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-stone-200 text-[#2D120D] font-bold text-sm flex items-center justify-center shrink-0">
-                          {member.name[0]}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            to={`/profile/${member.username || member.userId}`}
-                            className="font-bold text-xs text-[#2D120D] hover:text-[#6B0B0C] truncate block"
-                          >
-                            {member.name}
-                          </Link>
-
-                          {member.customTitle && (
-                            <p className="text-[11px] text-[#6B0B0C] font-medium leading-snug">
-                              {member.customTitle}
-                            </p>
-                          )}
-
-                          {member.headline && (
-                            <p className="text-[10px] text-stone-500 line-clamp-1 mt-0.5">
-                              {member.headline}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-[#2D120D]/10 flex items-center justify-between text-xs">
-                        <Link
-                          to={`/profile/${member.username || member.userId}`}
-                          className="text-[#6B0B0C] hover:text-[#2D120D] font-semibold text-[11px]"
-                        >
-                          View Profile →
-                        </Link>
-
-                        {canManageRoles && (
-                          <button
-                            type="button"
-                            onClick={() => setManagingMember(member)}
-                            className="px-3 py-1 rounded-full bg-stone-100 hover:bg-[#2D120D] hover:text-[#FFF8CA] text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
-                          >
-                            Assign Role
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
+            <ClubMembersList
+              members={generalMembers}
+              canManageRoles={canManageRoles}
+              onManage={setManagingMember}
+            />
           </div>
         )}
         </>
@@ -1074,10 +1661,14 @@ export function GroupDetailPage() {
         />
       )}
 
-      {/* Create Announcement Modal */}
-      {announcementModalOpen && isExecutive && (
+      {announcementModalOpen && canAnnounce && (
         <CreateAnnouncementModal
           groupId={group.id}
+          clubName={group.name}
+          initialEventId={announceSeed?.eventId}
+          initialTitle={announceSeed?.title}
+          initialContent={announceSeed?.content}
+          events={events.map((e) => ({ id: e.id, title: e.title }))}
           userRole={
             isHost
               ? "host"
@@ -1088,10 +1679,64 @@ export function GroupDetailPage() {
                 : "executive"
           }
           userCustomTitle={group.userCustomTitle}
-          onClose={() => setAnnouncementModalOpen(false)}
+          onClose={() => {
+            setAnnouncementModalOpen(false);
+            setAnnounceSeed(null);
+          }}
           onSuccess={(newAnn) => {
             setAnnouncements((prev) => [newAnn, ...prev]);
           }}
+        />
+      )}
+
+      {eventModalOpen && canEvents && (
+        <CreateEventModal
+          groupId={group.id}
+          initialEvent={editingEvent}
+          onClose={() => {
+            setEventModalOpen(false);
+            setEditingEvent(null);
+          }}
+          onSuccess={(ev) => {
+            const row = ev as (typeof events)[number];
+            setEvents((prev) => {
+              const idx = prev.findIndex((e) => e.id === row.id);
+              if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = { ...prev[idx], ...row };
+                return next;
+              }
+              return [row, ...prev];
+            });
+            setEditingEvent(null);
+            setActiveTab("events");
+          }}
+        />
+      )}
+
+      {broadcastOpen && canBroadcast && (
+        <ClubBroadcastModal
+          groupId={group.id}
+          clubName={group.name}
+          onClose={() => setBroadcastOpen(false)}
+        />
+      )}
+
+      {editClubOpen && canEditClub && (
+        <EditClubModal
+          group={group}
+          userId={user?.id ? String(user.id) : undefined}
+          onClose={() => setEditClubOpen(false)}
+          onSuccess={(club) => setGroup(club)}
+        />
+      )}
+
+      {lightboxIndex != null && gallery[lightboxIndex] && (
+        <GalleryLightbox
+          items={gallery}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
         />
       )}
 
@@ -1100,6 +1745,7 @@ export function GroupDetailPage() {
         <ManageMemberRoleModal
           groupId={group.id}
           member={managingMember}
+          clubName={group.name}
           customRoles={group.customRoles}
           onClose={() => setManagingMember(null)}
           onSuccess={(updated, club) => {
@@ -1145,7 +1791,7 @@ function ClubPoliciesEditor({
         onChange={(e) => setValue(e.target.value)}
         rows={5}
         placeholder="Describe how your club runs elections, exec roles, meeting rules…"
-        className="w-full rounded-2xl border border-[#2D120D]/20 bg-[#FFFDF0] px-3 py-2 text-sm text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
+        className="w-full rounded-2xl border border-[#2D120D]/20 bg-[#F7F1E8] px-3 py-2 text-sm text-[#2D120D] focus:border-[#780D18] focus:outline-none"
       />
       {error && <p className="text-xs text-red-700">{error}</p>}
       <button
@@ -1163,7 +1809,7 @@ function ClubPoliciesEditor({
             setSaving(false);
           }
         }}
-        className="rounded-full bg-[#6B0B0C] px-4 py-2 text-xs font-bold text-[#FFF8CA] disabled:opacity-50"
+        className="rounded-full bg-[#780D18] px-4 py-2 text-xs font-bold text-[#F7F1E8] disabled:opacity-50"
       >
         {saving ? "Saving…" : "Save policies"}
       </button>

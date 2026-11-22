@@ -39,7 +39,7 @@ export function AccessPage() {
     setBusy(true);
     try {
       const result = await perform({ action, target_id: target, payload });
-      if (result?.status === "pending") setMessage(`Waiting for ${result.required_approvals} approvals. Nothing has changed yet.`);
+      if (result?.status === "pending") setMessage(`Queued (${result.required_approvals} approvals).`);
       else if (result?.summary) setMessage(result.summary);
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -49,44 +49,55 @@ export function AccessPage() {
   }
 
   if (access.isLoading) return <Loading />;
-  if (!access.data) return <p className={ui.error}>Admin access could not be loaded.</p>;
+  if (!access.data) return <p className={ui.error}>Access unavailable.</p>;
   const data = access.data;
 
   return (
     <div className="space-y-4">
       {message && <Banner tone="ok">{message}</Banner>}
       {error && <Banner tone="bad">{error}</Banner>}
-      <section className={panel}>
-        <h2 className={ui.heading}>Who can open this area</h2>
-        <p className="mt-2 text-sm leading-relaxed text-stone-700">
-          {data.owner_email} is the owner and cannot be removed. The project teammates were invited once:
-          {" "}{data.team_emails.join(", ")}. After that, only an admin can give or take away access. Giving access is confirmed twice.
-          Taking it away waits for other admins, because that person could no longer stop a dangerous change.
-        </p>
-      </section>
 
-      <form onSubmit={grant} className={`${panel} space-y-3`}>
-        <h2 className={ui.heading}>Give someone access</h2>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
-          Email
-          <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required className={`${ui.input} mt-1 font-normal normal-case tracking-normal`} placeholder="name@example.com" />
+      <form onSubmit={grant} className={`${panel} !p-4 flex flex-col gap-2 sm:flex-row sm:items-end`}>
+        <label className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+          Grant access
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            required
+            className={`${ui.input} mt-1 font-normal normal-case tracking-normal`}
+            placeholder="name@example.com"
+          />
         </label>
-        <button type="submit" disabled={busy} className={`${ui.btn} ${ui.primary} px-4 py-2 text-sm`}>Grant admin access</button>
+        <button type="submit" disabled={busy} className={`${ui.btn} ${ui.primary} px-4 py-2 text-sm`}>
+          Grant
+        </button>
       </form>
 
-      <section className="grid gap-3">
+      <p className="text-[11px] text-stone-400">Owner {data.owner_email} cannot be removed</p>
+
+      <section className="grid gap-2">
         {data.admins.map((admin) => (
-          <article key={admin.user_id} className={panel}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold text-[#2D120D]">{admin.email}</p>
-                <p className="text-sm text-stone-600">@{admin.username} · {admin.role} · since {when(admin.created_at)}</p>
+          <article key={admin.user_id} className={`${panel} !p-3`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[#2D120D]">{admin.email}</p>
+                <p className="text-xs text-stone-500">
+                  @{admin.username} · {admin.role} · {when(admin.created_at)}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <Link to={`/admin/people/${admin.user_id}`} className={`${ui.btn} ${ui.neutral} px-3 py-2 text-sm`}>Open</Link>
+              <div className="flex gap-1.5">
+                <Link to={`/admin/people/${admin.user_id}`} className={`${ui.btn} ${ui.neutral} px-3 py-1.5`}>
+                  Open
+                </Link>
                 {admin.role !== "owner" && admin.email !== data.you && (
-                  <button type="button" disabled={busy} className={`${ui.btn} ${ui.danger} px-3 py-2 text-sm`} onClick={() => void remove("admin.revoke", {}, admin.user_id)}>
-                    Remove access
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={`${ui.btn} ${ui.danger} px-3 py-1.5`}
+                    onClick={() => void remove("admin.revoke", {}, admin.user_id)}
+                  >
+                    Remove
                   </button>
                 )}
               </div>
@@ -95,27 +106,26 @@ export function AccessPage() {
         ))}
       </section>
 
-      <section className={panel}>
-        <h2 className={ui.heading}>Waiting to sign up</h2>
-        {data.invites.length === 0 && <p className="mt-2 text-sm text-stone-600">No unused invites.</p>}
-        <ul className="mt-3 space-y-2">
+      {data.invites.length > 0 && (
+        <section className={`${panel} !p-3 space-y-2`}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Pending invites</p>
           {data.invites.map((invite) => (
-            <li key={invite.email} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2">
-              <span className="text-sm font-medium">{invite.email} · {invite.role}</span>
+            <div key={invite.email} className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm">{invite.email}</span>
               {invite.role !== "owner" && (
                 <button
                   type="button"
                   disabled={busy}
-                  className={`${ui.btn} ${ui.neutral} px-3 py-2 text-sm`}
+                  className={`${ui.btn} ${ui.neutral} px-3 py-1.5`}
                   onClick={() => void remove("admin.revoke_invite", { email: invite.email })}
                 >
-                  Remove invite
+                  Revoke
                 </button>
               )}
-            </li>
+            </div>
           ))}
-        </ul>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

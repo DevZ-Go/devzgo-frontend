@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 import {
   approvePiDraft,
   discardPiDraft,
   fetchPiDrafts,
+  fetchPiProjectPref,
   fetchPiQuota,
   fetchPiStatus,
   generateWithAi,
@@ -36,10 +37,16 @@ export function GenerateWithAiPanel({
   const [selected, setSelected] = useState<AiDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [approvedDone, setApprovedDone] = useState(false);
+  const [wantNewRun, setWantNewRun] = useState(false);
   const [publishSimple, setPublishSimple] = useState(true);
   const [adoptShort, setAdoptShort] = useState(false);
   const [adoptDetailed, setAdoptDetailed] = useState(false);
 
+  const pref = useQuery({
+    queryKey: ["pi-project-pref", projectId],
+    queryFn: () => fetchPiProjectPref(projectId),
+    retry: false,
+  });
   const drafts = useQuery({
     queryKey: ["pi-drafts", projectId],
     queryFn: () => fetchPiDrafts(projectId),
@@ -60,16 +67,35 @@ export function GenerateWithAiPanel({
     retry: false,
   });
 
+  const consentAlreadyGranted = Boolean(pref.data?.external_ai_allowed);
   const savedDraft = useMemo(
     () => (drafts.data || []).find((d) => d.status === "approved" || d.status === "draft") || null,
     [drafts.data],
   );
+  const approvedDraft = useMemo(
+    () => (drafts.data || []).find((d) => d.status === "approved") || null,
+    [drafts.data],
+  );
+  const alreadyHasAi = Boolean(quota.data?.project_has_ai || approvedDraft);
+
+  // One-time consent for this project — don't ask again after it's granted.
+  useEffect(() => {
+    if (consentAlreadyGranted) setConsent(true);
+  }, [consentAlreadyGranted]);
+
+  // After a successful package exists, land on the calm "done" view instead of the generate form.
+  useEffect(() => {
+    if (alreadyHasAi && !selected && !wantNewRun) {
+      setApprovedDone(true);
+    }
+  }, [alreadyHasAi, selected, wantNewRun]);
 
   const generate = useMutation({
     mutationFn: async (asRegen: boolean) => {
       setError(null);
       setApprovedDone(false);
-      if (consent) {
+      const allow = consent || consentAlreadyGranted;
+      if (allow && !consentAlreadyGranted) {
         try {
           await grantPiConsent(projectId);
         } catch {
@@ -77,7 +103,7 @@ export function GenerateWithAiPanel({
         }
       }
       return generateWithAi(projectId, {
-        grant_consent: consent,
+        grant_consent: allow,
         regenerate: asRegen,
         include_detailed: Boolean(quota.data?.premium && includeDetailed),
         idempotency_key: `ui:${projectId}:${includeDetailed ? "d" : "s"}:${asRegen ? "r" : "i"}:${Date.now()}`,
@@ -87,8 +113,10 @@ export function GenerateWithAiPanel({
       await qc.invalidateQueries({ queryKey: ["pi-drafts", projectId] });
       await qc.invalidateQueries({ queryKey: ["pi-status", projectId] });
       await qc.invalidateQueries({ queryKey: ["pi-quota", projectId] });
+      await qc.invalidateQueries({ queryKey: ["pi-project-pref", projectId] });
       const list = await fetchPiDrafts(projectId);
       setSelected(list.find((d) => d.status === "draft") || list[0] || null);
+      setWantNewRun(false);
     },
     onError: (err) => setError(getApiErrorMessage(err)),
   });
@@ -113,10 +141,12 @@ export function GenerateWithAiPanel({
         });
       }
       setApprovedDone(true);
+      setWantNewRun(false);
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["pi-drafts", projectId] });
       qc.invalidateQueries({ queryKey: ["pi-insights", projectId] });
       qc.invalidateQueries({ queryKey: ["pi-publication", projectId] });
+      qc.invalidateQueries({ queryKey: ["pi-quota", projectId] });
     },
     onError: (err) => setError(getApiErrorMessage(err)),
   });
@@ -128,18 +158,28 @@ export function GenerateWithAiPanel({
   const q = quota.data;
   const canGenerate = q?.can_generate !== false && q?.ai_generate_enabled !== false;
   const canRegen = Boolean(q?.can_regenerate);
+  const consentOk = consent || consentAlreadyGranted;
 
-  if (approvedDone) {
+  if (approvedDone && !selected && !wantNewRun) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-5" role="status">
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-700" />
           <div className="space-y-3">
             <div>
-              <h3 className="text-base font-semibold text-emerald-950">Done</h3>
+              <h3 className="text-base font-semibold text-emerald-950">
+                {alreadyHasAi ? "AI brief ready" : "Done"}
+              </h3>
               <p className="mt-1 text-sm text-emerald-900/80">
-                Your AI package is saved. Your original writing was kept unless you chose to replace it.
+                {alreadyHasAi
+                  ? "This project already has an AI package. You only need to generate once — no need to approve consent again."
+                  : "Your AI package is saved. Your original writing was kept unless you chose to replace it."}
               </p>
+              {approvedDraft?.short_description && (
+                <p className="mt-2 line-clamp-2 text-sm text-emerald-950/70">
+                  {approvedDraft.short_description}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               {onApprovedContinue ? (
@@ -152,13 +192,30 @@ export function GenerateWithAiPanel({
                   <ChevronRight className="h-4 w-4" />
                 </button>
               ) : null}
-              <button
-                type="button"
-                onClick={() => setApprovedDone(false)}
-                className="rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-medium text-emerald-950"
-              >
-                Generate again later
-              </button>
+              {savedDraft && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected(savedDraft);
+                    setApprovedDone(false);
+                  }}
+                  className="rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-medium text-emerald-950"
+                >
+                  Review draft
+                </button>
+              )}
+              {canRegen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWantNewRun(true);
+                    setApprovedDone(false);
+                  }}
+                  className="rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-medium text-emerald-950"
+                >
+                  Regenerate…
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -169,7 +226,9 @@ export function GenerateWithAiPanel({
   return (
     <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
       <div>
-        <h3 className="text-base font-semibold text-stone-900">Generate with AI</h3>
+        <h3 className="text-base font-semibold text-stone-900">
+          {wantNewRun || alreadyHasAi ? "Regenerate with AI" : "Generate with AI"}
+        </h3>
         <p className="mt-1 text-sm text-stone-600">
           Creates a short description, a simple explanation anyone can understand, and key feature
           highlights from your uploaded code evidence. Nothing is published until you approve.
@@ -221,36 +280,56 @@ export function GenerateWithAiPanel({
         </label>
       )}
 
-      <label className="flex items-start gap-3 rounded-xl border border-stone-200 px-4 py-3 text-sm text-stone-700">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 rounded border-stone-300"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-        />
-        <span>
-          I allow project evidence summaries for this project to be processed by the configured AI
-          provider.
-        </span>
-      </label>
+      {consentAlreadyGranted ? (
+        <p className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
+          AI provider consent is already on for this project — you won&apos;t be asked again.
+        </p>
+      ) : (
+        <label className="flex items-start gap-3 rounded-xl border border-stone-200 px-4 py-3 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 rounded border-stone-300"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+          />
+          <span>
+            I allow project evidence summaries for this project to be processed by the configured AI
+            provider. (Asked once per project.)
+          </span>
+        </label>
+      )}
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy || !consent || !canGenerate}
-          onClick={() => generate.mutate(false)}
-          className="rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50"
-        >
-          {busy ? "Working…" : "Generate with AI"}
-        </button>
-        {q?.project_has_ai && (
+        {!alreadyHasAi || wantNewRun ? (
           <button
             type="button"
-            disabled={busy || !consent || !canRegen}
+            disabled={busy || !consentOk || (alreadyHasAi ? !canRegen : !canGenerate)}
+            onClick={() => generate.mutate(Boolean(alreadyHasAi))}
+            className="rounded-xl bg-maroon-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50"
+          >
+            {busy ? "Working…" : alreadyHasAi ? "Regenerate with AI" : "Generate with AI"}
+          </button>
+        ) : null}
+        {alreadyHasAi && !wantNewRun && canRegen && (
+          <button
+            type="button"
+            disabled={busy || !consentOk || !canRegen}
             onClick={() => generate.mutate(true)}
             className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 disabled:opacity-50"
           >
-            Regenerate ({q.regenerations_used}/{q.regenerations_limit})
+            Regenerate ({q?.regenerations_used}/{q?.regenerations_limit})
+          </button>
+        )}
+        {wantNewRun && (
+          <button
+            type="button"
+            className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700"
+            onClick={() => {
+              setWantNewRun(false);
+              if (alreadyHasAi) setApprovedDone(true);
+            }}
+          >
+            Cancel
           </button>
         )}
       </div>

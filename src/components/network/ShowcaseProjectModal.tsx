@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from "react";
-import {
-  X,
-  Cpu,
-  Layers,
-  Sparkles,
-  Github,
-  Globe,
-  Wrench,
-  Check,
-} from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { X, Cpu, Layers, Github, FolderKanban, ImagePlus } from "lucide-react";
 import type { GroupProjectShowcase, ProjectKind } from "../../types/groups";
 import { fetchMyProjects } from "../../api/projects";
 import type { ApiProject } from "../../types/project";
 import { useAuth } from "../../auth/AuthContext";
-import { showcaseProjectInGroup } from "../../api/groups";
+import { showcaseProjectInGroup, uploadShowcaseCover } from "../../api/groups";
+import { PhotoCropper } from "../PhotoCropper";
+import { assetUrlOrNull } from "../../api/config";
 
 interface ShowcaseProjectModalProps {
   groupId: string;
@@ -21,37 +14,38 @@ interface ShowcaseProjectModalProps {
   onSuccess: (newProject: GroupProjectShowcase) => void;
 }
 
-export function ShowcaseProjectModal({
-  groupId,
-  onClose,
-  onSuccess,
-}: ShowcaseProjectModalProps) {
+type SourceMode = "devzgo" | "github" | "manual";
+
+const field =
+  "w-full rounded-lg border border-[#DECDBA] bg-white px-3 py-2.5 text-sm text-[#2D120D] placeholder:text-[#6E5952]/65 focus:outline-none focus:ring-2 focus:ring-[#780D18]/25 focus:border-[#780D18]";
+const label = "block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#780D18] mb-1.5";
+
+export function ShowcaseProjectModal({ groupId, onClose, onSuccess }: ShowcaseProjectModalProps) {
   const { user } = useAuth();
-  const [mode, setMode] = useState<"existing" | "new">("existing");
+  const coverRef = useRef<HTMLInputElement>(null);
+  const [source, setSource] = useState<SourceMode>("devzgo");
   const [myProjects, setMyProjects] = useState<ApiProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-
-  // Form fields
-  const [kind, setKind] = useState<ProjectKind>("embedded_hardware");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [kind, setKind] = useState<ProjectKind>("software");
   const [title, setTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
   const [howWeBuiltIt, setHowWeBuiltIt] = useState("");
   const [challenges, setChallenges] = useState("");
-  const [subCategory, setSubCategory] = useState("Robotics & Embedded");
+  const [subCategory, setSubCategory] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [techStacksInput, setTechStacksInput] = useState("C++, ROS 2, ESP32, Python");
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [techStacksInput, setTechStacksInput] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [liveUrl, setLiveUrl] = useState("");
   const [hardwareCadUrl, setHardwareCadUrl] = useState("");
-
-  // Hardware specs
-  const [microcontroller, setMicrocontroller] = useState("ESP32-S3");
-  const [sensors, setSensors] = useState("LiDAR, IMU MPU6050");
-  const [powerSupply, setPowerSupply] = useState("3S 11.1V LiPo");
-  const [cadTool, setCadTool] = useState("Onshape / 3D Printing");
-
+  const [microcontroller, setMicrocontroller] = useState("");
+  const [sensors, setSensors] = useState("");
+  const [powerSupply, setPowerSupply] = useState("");
+  const [cadTool, setCadTool] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,83 +56,84 @@ export function ShowcaseProjectModal({
       .then((projs) => {
         if (!active) return;
         setMyProjects(projs || []);
-        if (projs && projs.length > 0) {
-          const first = projs[0];
-          setSelectedProjectId(String(first.id));
-          setTitle(first.title);
-          setTagline(first.short_description || first.title);
-          setDescription(first.full_description || first.short_description || "");
-          if (first.cover_image_url) setCoverImageUrl(first.cover_image_url);
-          if (first.github_url) setGithubUrl(first.github_url);
-          if (first.live_url) setLiveUrl(first.live_url);
-          if (first.tech_stacks && first.tech_stacks.length > 0) {
-            setTechStacksInput(first.tech_stacks.join(", "));
-          }
+        if (projs?.length) {
+          applyProject(projs[0]);
+          setSelectedProjectId(String(projs[0].id));
+          setSource("devzgo");
         } else {
-          setMode("new");
+          setSource("manual");
         }
       })
       .catch(() => {
-        if (active) setMode("new");
+        if (active) setSource("manual");
       })
       .finally(() => {
         if (active) setLoadingProjects(false);
       });
-
     return () => {
       active = false;
     };
   }, []);
 
-  const handleSelectProject = (projId: string) => {
-    setSelectedProjectId(projId);
-    const proj = myProjects.find((p) => String(p.id) === projId);
-    if (proj) {
-      setTitle(proj.title);
-      setTagline(proj.short_description || proj.title);
-      setDescription(proj.full_description || proj.short_description || "");
-      if (proj.cover_image_url) setCoverImageUrl(proj.cover_image_url);
-      if (proj.github_url) setGithubUrl(proj.github_url);
-      if (proj.live_url) setLiveUrl(proj.live_url);
-      if (proj.tech_stacks && proj.tech_stacks.length > 0) {
-        setTechStacksInput(proj.tech_stacks.join(", "));
-      }
-    }
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
+
+  const applyProject = (proj: ApiProject) => {
+    setTitle(proj.title);
+    setTagline(proj.short_description || proj.title);
+    setDescription(proj.full_description || proj.short_description || "");
+    setCoverImageUrl(proj.cover_image_url || "");
+    setCoverPreview(null);
+    setCoverFile(null);
+    setGithubUrl(proj.github_url || "");
+    setLiveUrl(proj.live_url || "");
+    setTechStacksInput((proj.tech_stacks || []).join(", "));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       setError("Please provide a project title");
       return;
     }
+    if (source === "github" && !githubUrl.trim()) {
+      setError("Add a GitHub repository URL to import from.");
+      return;
+    }
     setError(null);
     setSaving(true);
-
     try {
       const techStacks = techStacksInput
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-
       const sensorsList = sensors
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
+      let cover = coverImageUrl.trim() || null;
+      if (coverFile) {
+        cover = await uploadShowcaseCover(groupId, coverFile);
+      }
 
       const newProject = await showcaseProjectInGroup(groupId, {
-        projectId: mode === "existing" ? selectedProjectId : null,
+        projectId: source === "devzgo" && selectedProjectId ? selectedProjectId : null,
         title: title.trim(),
         tagline: tagline.trim() || title.trim(),
-        description: description.trim() || "A showcased project by the community.",
+        description: description.trim() || "A showcased club project.",
         howWeBuiltIt: howWeBuiltIt.trim() || undefined,
         challengesAccomplishments: challenges.trim() || undefined,
         kind,
-        subCategory: subCategory.trim() || (kind === "embedded_hardware" ? "Embedded & Hardware" : "Software Application"),
-        coverImageUrl: coverImageUrl.trim() || (kind === "embedded_hardware" ? "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80" : "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"),
-        techStacks: techStacks.length > 0 ? techStacks : ["Python", "C++"],
+        subCategory:
+          subCategory.trim() ||
+          (kind === "embedded_hardware" ? "Hardware" : "Software"),
+        coverImageUrl: cover,
+        techStacks: techStacks.length ? techStacks : ["Project"],
         ownerId: String(user?.id || "usr-me"),
-        ownerName: user?.username || "DevZ-Go Builder",
+        ownerName: user?.username || "Builder",
         ownerUsername: user?.username || "developer",
         githubUrl: githubUrl.trim() || null,
         liveUrl: liveUrl.trim() || null,
@@ -146,14 +141,13 @@ export function ShowcaseProjectModal({
         embeddedSpecs:
           kind === "embedded_hardware"
             ? {
-                microcontroller: microcontroller.trim() || "ESP32",
+                microcontroller: microcontroller.trim() || undefined,
                 sensorsActuators: sensorsList,
                 powerSupply: powerSupply.trim() || undefined,
                 cadTool: cadTool.trim() || undefined,
               }
             : undefined,
       });
-
       onSuccess(newProject);
       onClose();
     } catch (err: unknown) {
@@ -164,375 +158,268 @@ export function ShowcaseProjectModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <>
       <div
-        className="relative flex flex-col w-full max-w-2xl max-h-[90vh] rounded-3xl bg-[#FFFDF0] border-2 border-[#2D120D]/25 shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#2D120D]/50"
+        onClick={onClose}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#2D120D] text-[#FFF8CA] border-b border-[#CDE3E8]/20 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="p-1 rounded-full bg-[#6B0B0C] text-[#FFF8CA]">
-              <Sparkles className="w-4 h-4" />
-            </span>
-            <h2 className="font-serif text-lg sm:text-xl font-bold tracking-tight">
-              Showcase Project in Club
-            </h2>
+        <div
+          className="relative flex flex-col w-full sm:max-w-2xl max-h-[92vh] rounded-t-2xl sm:rounded-2xl bg-[#F7F1E8] border border-[#DECDBA] shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-5 py-4 bg-[#780D18] text-[#F7F1E8] shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <FolderKanban className="w-4 h-4 shrink-0" />
+              <h2 className="font-serif text-lg font-bold truncate">Showcase a project</h2>
+            </div>
+            <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Close">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-full text-[#FFF8CA]/80 hover:text-[#FFF8CA] hover:bg-white/10 transition cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-6 text-[#2D120D]">
-          {error && (
-            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
-              {error}
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-5 text-[#2D120D]">
+            {error && (
+              <div className="p-3 rounded-lg bg-[#780D18]/10 border border-[#780D18]/20 text-xs text-[#780D18]">{error}</div>
+            )}
 
-          {loadingProjects && (
-            <p className="text-xs text-[#2D120D]/60 animate-pulse">
-              Loading your DevZ-Go projects...
-            </p>
-          )}
-
-          {/* Mode switch: pick existing DevZ-Go project or create new */}
-          {myProjects.length > 0 && (
-            <div className="flex rounded-2xl p-1 bg-[#2D120D]/10 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setMode("existing")}
-                className={`flex-1 py-2 rounded-xl transition cursor-pointer ${
-                  mode === "existing"
-                    ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
-                    : "text-[#2D120D] hover:bg-white/50"
-                }`}
-              >
-                Choose from My DevZ-Go Projects ({myProjects.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("new")}
-                className={`flex-1 py-2 rounded-xl transition cursor-pointer ${
-                  mode === "new"
-                    ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
-                    : "text-[#2D120D] hover:bg-white/50"
-                }`}
-              >
-                Enter New Showcase Project
-              </button>
-            </div>
-          )}
-
-          {mode === "existing" && myProjects.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-                Select Existing DevZ-Go Project to Showcase
-              </label>
-              <select
-                value={selectedProjectId}
-                onChange={(e) => handleSelectProject(e.target.value)}
-                className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs font-semibold text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-              >
-                {myProjects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title} {p.category ? `(${p.category})` : ""}
-                  </option>
+            <div>
+              <label className={label}>Source</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["devzgo", "DevZ-Go"],
+                    ["github", "GitHub"],
+                    ["manual", "Manual"],
+                  ] as const
+                ).map(([id, text]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setSource(id)}
+                    className={`rounded-lg border px-2 py-2 text-xs font-semibold ${
+                      source === id ? "border-[#780D18] bg-[#780D18] text-white" : "border-[#DECDBA] bg-white"
+                    }`}
+                  >
+                    {text}
+                  </button>
                 ))}
-              </select>
-            </div>
-          )}
-
-          {/* Hardware vs Software selection */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Project Type / Category
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setKind("embedded_hardware")}
-                className={`flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border-2 text-xs font-bold transition cursor-pointer ${
-                  kind === "embedded_hardware"
-                    ? "border-[#6B0B0C] bg-[#FFF8CA] text-[#2D120D] shadow-xs"
-                    : "border-[#2D120D]/15 bg-white text-stone-600 hover:border-[#2D120D]/40"
-                }`}
-              >
-                <Cpu className="w-4 h-4 text-[#6B0B0C]" />
-                <div className="text-left">
-                  <span className="block">Embedded &amp; Hardware</span>
-                  <span className="block text-[10px] font-normal text-stone-500">Robotics, IoT, CAD &amp; Microcontrollers</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setKind("software")}
-                className={`flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border-2 text-xs font-bold transition cursor-pointer ${
-                  kind === "software"
-                    ? "border-[#6B0B0C] bg-[#FFF8CA] text-[#2D120D] shadow-xs"
-                    : "border-[#2D120D]/15 bg-white text-stone-600 hover:border-[#2D120D]/40"
-                }`}
-              >
-                <Layers className="w-4 h-4 text-[#284E45]" />
-                <div className="text-left">
-                  <span className="block">Software Application</span>
-                  <span className="block text-[10px] font-normal text-stone-500">Code, Web, AI, Mobile &amp; Algorithms</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Project Title & Tagline */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-                Project Title *
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Hexapod Rover v2"
-                className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-                Sub-Category / Domain
-              </label>
-              <input
-                type="text"
-                value={subCategory}
-                onChange={(e) => setSubCategory(e.target.value)}
-                placeholder="e.g. Autonomous Robotics, Computer Vision"
-                className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Short Tagline
-            </label>
-            <input
-              type="text"
-              value={tagline}
-              onChange={(e) => setTagline(e.target.value)}
-              placeholder="e.g. 18-DOF hexapod powered by ESP32-S3 and ROS 2"
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              What It Does (Description)
-            </label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the project goals, functionality, and how it works..."
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none resize-none"
-            />
-          </div>
-
-          {/* How We Built It */}
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              How We Built It
-            </label>
-            <textarea
-              rows={2}
-              value={howWeBuiltIt}
-              onChange={(e) => setHowWeBuiltIt(e.target.value)}
-              placeholder="Hardware components, manufacturing, algorithms, libraries..."
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none resize-none"
-            />
-          </div>
-
-          {/* Challenges & Accomplishments */}
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Challenges &amp; Accomplishments
-            </label>
-            <textarea
-              rows={2}
-              value={challenges}
-              onChange={(e) => setChallenges(e.target.value)}
-              placeholder="Key technical hurdles overcome, design trade-offs, calibration insights..."
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none resize-none"
-            />
-          </div>
-
-          {/* Hardware Specs Section if Embedded */}
-          {kind === "embedded_hardware" && (
-            <div className="p-4 rounded-2xl bg-[#FFF8CA]/80 border-2 border-[#2D120D]/20 space-y-3">
-              <span className="block font-mono text-[11px] font-bold uppercase text-[#6B0B0C] flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5" /> Hardware &amp; Embedded Component Specs
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-[#2D120D] mb-0.5">
-                    Microcontroller / Compute Board
-                  </label>
-                  <input
-                    type="text"
-                    value={microcontroller}
-                    onChange={(e) => setMicrocontroller(e.target.value)}
-                    placeholder="e.g. ESP32-S3, STM32F4, Raspberry Pi"
-                    className="w-full rounded-xl border border-[#2D120D]/20 bg-white px-3 py-1.5 text-xs text-[#2D120D]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-[#2D120D] mb-0.5">
-                    Power Supply
-                  </label>
-                  <input
-                    type="text"
-                    value={powerSupply}
-                    onChange={(e) => setPowerSupply(e.target.value)}
-                    placeholder="e.g. 3S 11.1V 2200mAh LiPo"
-                    className="w-full rounded-xl border border-[#2D120D]/20 bg-white px-3 py-1.5 text-xs text-[#2D120D]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-[#2D120D] mb-0.5">
-                    Sensors &amp; Actuators (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={sensors}
-                    onChange={(e) => setSensors(e.target.value)}
-                    placeholder="e.g. RPLIDAR A1, MPU6050, 18x Servos"
-                    className="w-full rounded-xl border border-[#2D120D]/20 bg-white px-3 py-1.5 text-xs text-[#2D120D]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase text-[#2D120D] mb-0.5">
-                    CAD Tool / Manufacturing
-                  </label>
-                  <input
-                    type="text"
-                    value={cadTool}
-                    onChange={(e) => setCadTool(e.target.value)}
-                    placeholder="e.g. Onshape, Fusion 360, PETG 3D Printed"
-                    className="w-full rounded-xl border border-[#2D120D]/20 bg-white px-3 py-1.5 text-xs text-[#2D120D]"
-                  />
-                </div>
               </div>
             </div>
-          )}
 
-          {/* Tech Stacks & Links */}
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Technologies Used (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={techStacksInput}
-              onChange={(e) => setTechStacksInput(e.target.value)}
-              placeholder="e.g. C++, ROS 2, ESP32, Python, React"
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C] flex items-center gap-1">
-                <Github className="w-3.5 h-3.5" /> GitHub Repository URL
-              </label>
-              <input
-                type="url"
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                placeholder="https://github.com/..."
-                className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-              />
-            </div>
-
-            {kind === "embedded_hardware" ? (
-              <div className="space-y-1">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C] flex items-center gap-1">
-                  <Wrench className="w-3.5 h-3.5" /> CAD / Schematics URL
-                </label>
-                <input
-                  type="url"
-                  value={hardwareCadUrl}
-                  onChange={(e) => setHardwareCadUrl(e.target.value)}
-                  placeholder="https://onshape.com/... or grabcad"
-                  className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-                />
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C] flex items-center gap-1">
-                  <Globe className="w-3.5 h-3.5" /> Live Project Demo URL
-                </label>
-                <input
-                  type="url"
-                  value={liveUrl}
-                  onChange={(e) => setLiveUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-                />
+            {source === "devzgo" && (
+              <div>
+                <label className={label}>Your DevZ-Go project</label>
+                {loadingProjects ? (
+                  <p className="text-xs text-[#6E5952]">Loading projects…</p>
+                ) : myProjects.length === 0 ? (
+                  <p className="text-xs text-[#6E5952]">No projects yet — switch to GitHub or Manual.</p>
+                ) : (
+                  <select
+                    className={field}
+                    value={selectedProjectId}
+                    onChange={(e) => {
+                      setSelectedProjectId(e.target.value);
+                      const proj = myProjects.find((p) => String(p.id) === e.target.value);
+                      if (proj) applyProject(proj);
+                    }}
+                  >
+                    {myProjects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
-          </div>
 
-          <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#6B0B0C]">
-              Cover Image URL (Optional)
-            </label>
-            <input
-              type="url"
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full rounded-xl border border-[#2D120D]/25 bg-white px-3 py-2 text-xs text-[#2D120D] focus:border-[#6B0B0C] focus:outline-none"
-            />
-          </div>
+            {source === "github" && (
+              <div>
+                <label className={label}>GitHub repository URL *</label>
+                <div className="relative">
+                  <Github className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6E5952]" />
+                  <input
+                    className={`${field} pl-9`}
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/org/repo"
+                  />
+                </div>
+                <p className="text-[11px] text-[#6E5952] mt-1">We’ll use this link on the showcase card. Fill title &amp; details below.</p>
+              </div>
+            )}
 
-          {/* Submit buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2D120D]/15">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-full border border-[#2D120D]/20 text-[#2D120D] text-xs font-semibold hover:bg-stone-100 transition cursor-pointer"
-            >
-              Cancel
-            </button>
+            <div>
+              <label className={label}>Project type</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setKind("software")}
+                  className={`flex items-start gap-2 rounded-lg border p-3 text-left ${
+                    kind === "software" ? "border-[#780D18] bg-[#780D18]/08" : "border-[#DECDBA] bg-white"
+                  }`}
+                >
+                  <Layers className="w-4 h-4 mt-0.5 text-[#780D18]" />
+                  <div>
+                    <p className="text-xs font-bold">Software</p>
+                    <p className="text-[11px] text-[#6E5952]">Apps, web, AI, tools</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setKind("embedded_hardware")}
+                  className={`flex items-start gap-2 rounded-lg border p-3 text-left ${
+                    kind === "embedded_hardware" ? "border-[#780D18] bg-[#780D18]/08" : "border-[#DECDBA] bg-white"
+                  }`}
+                >
+                  <Cpu className="w-4 h-4 mt-0.5 text-[#780D18]" />
+                  <div>
+                    <p className="text-xs font-bold">Hardware</p>
+                    <p className="text-[11px] text-[#6E5952]">Embedded, IoT, CAD</p>
+                  </div>
+                </button>
+              </div>
+            </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] text-xs font-bold tracking-wide transition shadow-md disabled:opacity-50 cursor-pointer"
-            >
-              <Check className="w-4 h-4" />
-              <span>{saving ? "Showcasing..." : "Showcase Project"}</span>
-            </button>
-          </div>
-        </form>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={label}>Title *</label>
+                <input className={field} required value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div>
+                <label className={label}>Sub-category</label>
+                <input className={field} value={subCategory} onChange={(e) => setSubCategory(e.target.value)} placeholder="e.g. Web app" />
+              </div>
+            </div>
+
+            <div>
+              <label className={label}>Tagline</label>
+              <input className={field} value={tagline} onChange={(e) => setTagline(e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>Description</label>
+              <textarea className={field} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>How we built it</label>
+              <textarea className={field} rows={2} value={howWeBuiltIt} onChange={(e) => setHowWeBuiltIt(e.target.value)} />
+            </div>
+            <div>
+              <label className={label}>Challenges &amp; wins</label>
+              <textarea className={field} rows={2} value={challenges} onChange={(e) => setChallenges(e.target.value)} />
+            </div>
+
+            <div>
+              <label className={label}>Cover image</label>
+              <button
+                type="button"
+                onClick={() => coverRef.current?.click()}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#780D18]/40 bg-white px-3 py-5 text-xs font-semibold text-[#780D18]"
+              >
+                <ImagePlus className="w-4 h-4" />
+                Upload &amp; crop cover
+              </button>
+              <input
+                ref={coverRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) setCropFile(f);
+                }}
+              />
+              {(coverPreview || coverImageUrl) && (
+                <img
+                  src={coverPreview || assetUrlOrNull(coverImageUrl) || coverImageUrl}
+                  alt=""
+                  className="mt-2 h-32 w-full rounded-lg object-cover border border-[#DECDBA]"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className={label}>Tech stack (comma-separated)</label>
+              <input className={field} value={techStacksInput} onChange={(e) => setTechStacksInput(e.target.value)} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {source !== "github" && (
+                <div>
+                  <label className={label}>GitHub URL</label>
+                  <input className={field} value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} />
+                </div>
+              )}
+              <div>
+                <label className={label}>Live URL</label>
+                <input className={field} value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} />
+              </div>
+            </div>
+
+            {kind === "embedded_hardware" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-[#DECDBA] bg-white p-3">
+                <div>
+                  <label className={label}>Microcontroller</label>
+                  <input className={field} value={microcontroller} onChange={(e) => setMicrocontroller(e.target.value)} />
+                </div>
+                <div>
+                  <label className={label}>Sensors / actuators</label>
+                  <input className={field} value={sensors} onChange={(e) => setSensors(e.target.value)} />
+                </div>
+                <div>
+                  <label className={label}>Power</label>
+                  <input className={field} value={powerSupply} onChange={(e) => setPowerSupply(e.target.value)} />
+                </div>
+                <div>
+                  <label className={label}>CAD tool</label>
+                  <input className={field} value={cadTool} onChange={(e) => setCadTool(e.target.value)} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={label}>CAD / hardware files URL</label>
+                  <input className={field} value={hardwareCadUrl} onChange={(e) => setHardwareCadUrl(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#DECDBA] sticky bottom-0 bg-[#F7F1E8]">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold text-[#6E5952]">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="rounded-lg bg-[#780D18] px-5 py-2.5 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {saving ? "Publishing…" : "Add to showcase"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {cropFile && (
+        <PhotoCropper
+          file={cropFile}
+          title="Crop project cover"
+          aspect={16 / 9}
+          cropShape="rect"
+          outputWidth={1280}
+          outputHeight={720}
+          maxBytes={8 * 1024 * 1024}
+          hint="16:9 cover · keep under 8 MB"
+          confirmLabel="Use cover"
+          onCancel={() => setCropFile(null)}
+          onDone={(cropped) => {
+            if (coverPreview) URL.revokeObjectURL(coverPreview);
+            setCoverFile(cropped);
+            setCoverPreview(URL.createObjectURL(cropped));
+            setCropFile(null);
+          }}
+        />
+      )}
+    </>
   );
 }

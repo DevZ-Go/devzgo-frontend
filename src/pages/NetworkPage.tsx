@@ -18,22 +18,15 @@ import {
   Flag,
   UserPlus,
   Send,
-  Heart,
-  MessageSquare,
-  Repeat,
-  Bookmark,
-  MoreHorizontal,
-  ExternalLink,
-  Megaphone,
   StickyNote,
   Check,
   Loader2,
-  Cpu,
-  Globe,
   CheckCircle2,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { MemberAvatar } from "../components/MemberAvatar";
 import { createPost, fetchFeedPage } from "../api/network";
+import { fetchGroups } from "../api/groups";
 import { fetchMyProfile } from "../api/profiles";
 import {
   fetchConnections,
@@ -171,68 +164,6 @@ function DriedBotanicalsSticker({ className = "" }: { className?: string }) {
   );
 }
 
-/** TaskFlow v2 Mini Dashboard UI Mockup */
-function TaskFlowMockup() {
-  return (
-    <div className="w-full sm:w-44 h-28 rounded-xl bg-gradient-to-br from-[#FFFDF9] to-[#F5ECE1] border border-[#DECDBA] p-2 flex flex-col justify-between shrink-0 shadow-inner overflow-hidden">
-      <div className="flex items-center justify-between pb-1.5 border-b border-[#DECDBA]/60">
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E27A7A]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E8C56A]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#82C785]" />
-        </div>
-        <span className="text-[8px] font-mono font-semibold text-[#8C7B70]">taskflow.app</span>
-      </div>
-      <div className="flex gap-2 flex-1 pt-1.5">
-        <div className="flex-1 bg-white/90 rounded-lg p-1.5 border border-[#DECDBA]/50 flex flex-col gap-1">
-          <div className="h-1.5 w-8 bg-[#8C7B70]/40 rounded-full" />
-          <div className="h-4 bg-[#FFF8CA] rounded border border-[#E5D7C6] p-0.5">
-            <div className="h-1 w-10 bg-[#780D18]/50 rounded-full" />
-          </div>
-          <div className="h-4 bg-white rounded border border-[#DECDBA] p-0.5">
-            <div className="h-1 w-7 bg-[#8C7B70]/30 rounded-full" />
-          </div>
-        </div>
-        <div className="flex-1 bg-white/90 rounded-lg p-1.5 border border-[#DECDBA]/50 flex flex-col gap-1">
-          <div className="h-1.5 w-10 bg-[#284E45]/40 rounded-full" />
-          <div className="h-5 bg-[#E2F0CB] rounded border border-[#CDE3E8] p-0.5">
-            <div className="h-1 w-8 bg-[#284E45]/60 rounded-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Stack of Isometric Books Mockup */
-function RagBooksMockup() {
-  return (
-    <div className="w-full sm:w-44 h-28 rounded-xl bg-gradient-to-br from-[#FFFDF9] to-[#F5ECE1] border border-[#DECDBA] flex items-center justify-center shrink-0 shadow-inner overflow-hidden p-2">
-      <svg viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-28 h-20 drop-shadow-sm">
-        {/* Bottom Book (Coffee/Burgundy) */}
-        <g>
-          <path d="M22 68 L78 78 L104 62 L48 52 Z" fill="#FBF5E8" stroke="#D4C3B3" strokeWidth="0.8" />
-          <path d="M20 62 L76 72 L76 77 L20 67 Z" fill="#5C1820" />
-          <path d="M20 62 L46 48 L102 58 L76 72 Z" fill="#780D18" />
-        </g>
-        {/* Middle Book (Sage/Olive Green) */}
-        <g>
-          <path d="M26 50 L80 60 L102 46 L48 36 Z" fill="#FAF5E6" stroke="#D4C3B3" strokeWidth="0.8" />
-          <path d="M24 45 L78 55 L78 59 L24 49 Z" fill="#1C3831" />
-          <path d="M24 45 L46 32 L100 42 L78 55 Z" fill="#284E45" />
-        </g>
-        {/* Top Book (Ochre/Gold) */}
-        <g>
-          <path d="M30 34 L82 43 L98 31 L46 22 Z" fill="#FFFDF5" stroke="#DECDBA" strokeWidth="0.8" />
-          <path d="M28 29 L80 38 L80 42 L28 33 Z" fill="#8C5C1B" />
-          <path d="M28 29 L44 18 L96 27 L80 38 Z" fill="#C98B28" />
-        </g>
-        <path d="M80 38 Q86 48 88 56 L91 52 L94 56 Q88 44 82 39" fill="#780D18" />
-      </svg>
-    </div>
-  );
-}
-
 export function NetworkPage() {
   const { user } = useAuth();
   const me = useQuery({
@@ -287,17 +218,8 @@ export function NetworkPage() {
   const [suggested, setSuggested] = useState<ConnectionUserSummary[]>([]);
   const [requestedUsers, setRequestedUsers] = useState<Record<string, boolean>>({});
 
-  // Interactive like / bookmark states for demo showcase posts
-  const [arjunLiked, setArjunLiked] = useState(false);
-  const [arjunLikesCount, setArjunLikesCount] = useState(128);
-  const [arjunBookmarked, setArjunBookmarked] = useState(false);
-
-  const [miraLiked, setMiraLiked] = useState(false);
-  const [miraLikesCount, setMiraLikesCount] = useState(86);
-  const [miraBookmarked, setMiraBookmarked] = useState(false);
-
-  // Carousel scroll index for "01. People you can reach"
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [sidebarClubs, setSidebarClubs] = useState<{ id: string; name: string; memberCount: number; slug?: string }[]>([]);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -309,15 +231,26 @@ export function NetworkPage() {
 
   const loadSidebar = useCallback(async () => {
     try {
-      const [connData, suggData] = await Promise.all([
+      const [connData, suggData, clubs] = await Promise.all([
         fetchConnections(),
         fetchSuggestedDevelopers(),
+        fetchGroups().catch(() => []),
       ]);
       if (connData && Array.isArray(connData.accepted)) {
         setConnections(connData);
       }
       if (Array.isArray(suggData)) {
         setSuggested(suggData);
+      }
+      if (Array.isArray(clubs)) {
+        setSidebarClubs(
+          clubs.slice(0, 6).map((c: { id: string; name: string; memberCount?: number; slug?: string }) => ({
+            id: c.id,
+            name: c.name,
+            memberCount: c.memberCount ?? 0,
+            slug: c.slug,
+          })),
+        );
       }
     } catch {
       // Ignore
@@ -370,82 +303,51 @@ export function NetworkPage() {
     }
   }
 
-  // People you can reach items
   const peopleYouCanReach = [
-    {
-      id: "demo-p1",
-      name: "Manasi Sharma",
-      username: "manasi",
-      role: "Analytics Engineer",
-      mutuals: "4 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p2",
-      name: "Bhupesh Verma",
-      username: "bhupesh",
-      role: "Backend Developer",
-      mutuals: "2 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p3",
-      name: "Riya Anand",
-      username: "riya",
-      role: "DevOps Engineer",
-      mutuals: "5 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p4",
-      name: "Chan S.",
-      username: "chan",
-      role: "Security Architect",
-      mutuals: "3 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces",
-    },
+    ...connections.accepted.map((c) => ({
+      id: c.partner.id,
+      name: c.partner.fullName || c.partner.username,
+      username: c.partner.username,
+      role: c.partner.headline || "Developer",
+      mutuals: "",
+      avatarUrl: c.partner.avatarUrl || undefined,
+    })),
+    ...suggested
+      .filter((s) => !connections.accepted.some((c) => c.partner.id === s.id))
+      .map((s) => ({
+        id: s.id,
+        name: s.fullName || s.username,
+        username: s.username,
+        role: s.headline || "Developer",
+        mutuals: "",
+        avatarUrl: s.avatarUrl || undefined,
+      })),
   ];
 
-  // Suggested Creators items
-  const suggestedCreators = [
-    {
-      id: "demo-c1",
-      name: "Karan Malhotra",
-      username: "karan",
-      headline: "AI/ML Engineer · Building with LLMs",
-      avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-c2",
-      name: "Aditi Desai",
-      username: "aditi",
-      headline: "Product Engineer · React · Design Systems",
-      avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-c3",
-      name: "Neel Iyer",
-      username: "neel",
-      headline: "SRE · Cloud · Observability",
-      avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces",
-    },
-  ];
+  const suggestedCreators = suggested.slice(0, 8).map((s) => ({
+    id: s.id,
+    name: s.fullName || s.username,
+    username: s.username,
+    headline: s.headline || "Developer on DevZ-Go",
+    avatarUrl: s.avatarUrl || undefined,
+  }));
+
 
   // Current logged in user info (or default to Janasi Rajput as shown in the design)
   const userDisplayName: string =
     me.data?.fullName ||
     (typeof user?.fullName === "string" ? user.fullName : "") ||
     (typeof user?.full_name === "string" ? user.full_name : "") ||
-    "Janasi Rajput";
-  const userDisplayUsername: string = user?.username ? `@${user.username}` : "@janasi";
+    "You";
+  const userDisplayUsername: string = user?.username ? `@${user.username}` : "@you";
   const userDisplayRole: string =
     me.data?.headline ||
     (typeof user?.headline === "string" ? user.headline : "") ||
-    "Frontend Developer";
-  const userAvatarUrl: string =
+    "Developer";
+  const userAvatarUrl: string | null =
     me.data?.avatarUrl ||
-    (typeof user?.avatar_url === "string" ? user.avatar_url : "") ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces";
+    (typeof user?.avatar_url === "string" ? user.avatar_url : null) ||
+    null;
 
   return (
     <div className="min-h-screen bg-[#FBF8F2] text-[#2D120D] font-sans antialiased">
@@ -612,10 +514,11 @@ export function NetworkPage() {
 
               <div className="relative z-10 flex items-center gap-3.5 pt-2">
                 <Link to="/profile" className="shrink-0 group">
-                  <img
+                  <MemberAvatar
+                    name={userDisplayName}
                     src={userAvatarUrl}
-                    alt={userDisplayName}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-xs group-hover:scale-105 transition-transform"
+                    size="lg"
+                    className="border-2 border-white shadow-xs group-hover:scale-105 transition-transform !h-14 !w-14 !text-sm"
                   />
                 </Link>
                 <div className="min-w-0 flex-1">
@@ -715,41 +618,23 @@ export function NetworkPage() {
               </p>
 
               <div className="space-y-2.5 mb-4">
-                <Link
-                  to="/network/groups/robotics-club"
-                  className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#FAF7F2] border border-transparent hover:border-[#DECDBA] transition group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#F7DDD4] text-[#9E3922] flex items-center justify-center shrink-0">
-                      <Cpu className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-xs text-[#2D120D] group-hover:text-[#780D18]">
-                        Robotics Club
-                      </p>
-                      <p className="text-[11px] text-[#6E5952]">432 members</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#DECDBA] group-hover:text-[#780D18]" />
-                </Link>
-
-                <Link
-                  to="/network/groups"
-                  className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#FAF7F2] border border-transparent hover:border-[#DECDBA] transition group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#FFF5C0] text-[#8C6D1F] flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-xs text-[#2D120D] group-hover:text-[#780D18]">
-                        Web Dev Collective
-                      </p>
-                      <p className="text-[11px] text-[#6E5952]">1.2k members</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#DECDBA] group-hover:text-[#780D18]" />
-                </Link>
+                {sidebarClubs.length === 0 ? (
+                  <p className="text-xs text-[#6E5952] py-2">No clubs yet. Create or join one to see them here.</p>
+                ) : (
+                  sidebarClubs.slice(0, 4).map((club) => (
+                    <Link
+                      key={club.id}
+                      to={`/network/groups/${club.slug || club.id}`}
+                      className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#FAF7F2] border border-transparent hover:border-[#DECDBA] transition group"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-[#2D120D] group-hover:text-[#780D18] truncate">{club.name}</p>
+                        <p className="text-[11px] text-[#6E5952]">{club.memberCount} members</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#DECDBA] group-hover:text-[#780D18] shrink-0" />
+                    </Link>
+                  ))
+                )}
               </div>
 
               <Link
@@ -768,10 +653,11 @@ export function NetworkPage() {
             {/* Post Composer Card */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-4 sm:p-5 shadow-xs">
               <div className="flex items-center gap-3 mb-3">
-                <img
+                <MemberAvatar
+                  name={userDisplayName}
                   src={userAvatarUrl}
-                  alt={userDisplayName}
-                  className="w-10 h-10 rounded-full object-cover border border-[#DECDBA] shrink-0"
+                  size="md"
+                  className="border border-[#DECDBA]"
                 />
                 <input
                   type="text"
@@ -908,179 +794,8 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Post 1: Arjun Mehra (TaskFlow v2) */}
-            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces"
-                    alt="Arjun Mehra"
-                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-bold text-sm text-[#2D120D]">Arjun Mehra</span>
-                      <span className="text-xs text-[#6E5952]">@arjun</span>
-                    </div>
-                    <p className="text-xs text-[#6E5952]">Full Stack Developer · 4h ago</p>
-                  </div>
-                </div>
-                <button type="button" className="text-[#6E5952] hover:text-[#2D120D] p-1">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Real community feed */}
 
-              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3.5">
-                Just shipped v2 of my task manager! 🎉 Added team workspaces and real-time sync. Would love your feedback on the new flow.
-              </p>
-
-              {/* Embedded Project Card */}
-              <div className="rounded-2xl border border-[#DECDBA] bg-[#FAF7F2] p-3 sm:p-3.5 flex flex-col sm:flex-row gap-4 items-center mb-4">
-                <TaskFlowMockup />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="font-bold text-sm text-[#2D120D]">TaskFlow v2</h4>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#6E5952]" />
-                  </div>
-                  <p className="text-xs text-[#6E5952] leading-relaxed mb-2.5">
-                    A simple, collaborative task manager for small teams.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      React
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Node.js
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Socket.IO
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
-                <div className="flex items-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setArjunLiked(!arjunLiked);
-                      setArjunLikesCount((c) => (arjunLiked ? c - 1 : c + 1));
-                    }}
-                    className={`inline-flex items-center gap-1.5 transition ${
-                      arjunLiked ? "text-[#780D18] font-semibold" : "hover:text-[#780D18]"
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${arjunLiked ? "fill-[#780D18]" : ""}`} />
-                    <span>{arjunLikesCount}</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>24</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <Repeat className="w-4 h-4" />
-                    <span>12</span>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setArjunBookmarked(!arjunBookmarked)}
-                  className={`p-1 transition ${arjunBookmarked ? "text-[#780D18]" : "hover:text-[#2D120D]"}`}
-                >
-                  <Bookmark className={`w-4 h-4 ${arjunBookmarked ? "fill-[#780D18]" : ""}`} />
-                </button>
-              </div>
-            </article>
-
-            {/* Post 2: Mira Joshi (Building a Local RAG Pipeline) */}
-            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces"
-                    alt="Mira Joshi"
-                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-bold text-sm text-[#2D120D]">Mira Joshi</span>
-                      <span className="text-xs text-[#6E5952]">@mira</span>
-                    </div>
-                    <p className="text-xs text-[#6E5952]">ML Engineer · 1d ago</p>
-                  </div>
-                </div>
-                <button type="button" className="text-[#6E5952] hover:text-[#2D120D] p-1">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3.5">
-                Wrote a beginner-friendly guide on setting up a local RAG pipeline. Hope it helps anyone exploring LLMs! 📚
-              </p>
-
-              {/* Embedded Resource Card */}
-              <div className="rounded-2xl border border-[#DECDBA] bg-[#FAF7F2] p-3 sm:p-3.5 flex flex-col sm:flex-row gap-4 items-center mb-4">
-                <RagBooksMockup />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="font-bold text-sm text-[#2D120D]">Building a Local RAG Pipeline</h4>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#6E5952]" />
-                  </div>
-                  <p className="text-xs text-[#6E5952] leading-relaxed mb-2.5">
-                    A step-by-step guide with code and resources.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Python
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      LLM
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      RAG
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
-                <div className="flex items-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMiraLiked(!miraLiked);
-                      setMiraLikesCount((c) => (miraLiked ? c - 1 : c + 1));
-                    }}
-                    className={`inline-flex items-center gap-1.5 transition ${
-                      miraLiked ? "text-[#780D18] font-semibold" : "hover:text-[#780D18]"
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${miraLiked ? "fill-[#780D18]" : ""}`} />
-                    <span>{miraLikesCount}</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>18</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <Repeat className="w-4 h-4" />
-                    <span>9</span>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMiraBookmarked(!miraBookmarked)}
-                  className={`p-1 transition ${miraBookmarked ? "text-[#780D18]" : "hover:text-[#2D120D]"}`}
-                >
-                  <Bookmark className={`w-4 h-4 ${miraBookmarked ? "fill-[#780D18]" : ""}`} />
-                </button>
-              </div>
-            </article>
-
-            {/* Dynamic Community Feed from API */}
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-dashed border-[#DECDBA]">
                 <Loader2 className="w-6 h-6 text-[#780D18] animate-spin" />
@@ -1103,7 +818,14 @@ export function NetworkPage() {
                   </button>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <div className="py-14 flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-dashed border-[#DECDBA] text-center px-6">
+                <p className="font-semibold text-sm text-[#2D120D]">No posts yet</p>
+                <p className="text-xs text-[#6E5952] max-w-sm">
+                  Be the first to share a note, milestone, or project update with the community.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ─────────────────────────────────────────────────────────────────────── */}
@@ -1129,7 +851,7 @@ export function NetworkPage() {
                 {/* Arrow Left */}
                 <button
                   type="button"
-                  onClick={() => setCarouselIndex((i) => (i > 0 ? i - 1 : peopleYouCanReach.length - 3))}
+                  onClick={() => setCarouselIndex((i) => (peopleYouCanReach.length ? (i > 0 ? i - 1 : Math.max(0, peopleYouCanReach.length - 3)) : 0))}
                   className="absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white border border-[#DECDBA] shadow-xs flex items-center justify-center text-[#2D120D] hover:bg-[#FAF7F2] transition cursor-pointer"
                   title="Previous creators"
                 >
@@ -1147,6 +869,9 @@ export function NetworkPage() {
                 </button>
 
                 {/* Carousel Cards Track */}
+                {peopleYouCanReach.length === 0 ? (
+                  <p className="text-xs text-[#6E5952] px-1 py-6 text-center">Connect with developers to see people here.</p>
+                ) : (
                 <div className="grid grid-cols-3 gap-2 px-3">
                   {peopleYouCanReach.slice(carouselIndex, carouselIndex + 3).map((person) => {
                     const isRequested = requestedUsers[person.id];
@@ -1155,17 +880,18 @@ export function NetworkPage() {
                         key={person.id}
                         className="flex flex-col items-center text-center p-2 rounded-2xl bg-[#FAF7F2] border border-[#DECDBA]/60"
                       >
-                        <img
+                        <MemberAvatar
+                          name={person.name}
                           src={person.avatarUrl}
-                          alt={person.name}
-                          className="w-11 h-11 rounded-full object-cover border border-white shadow-2xs mb-1.5"
+                          size="md"
+                          className="border border-white shadow-2xs mb-1.5"
                         />
-                        <p className="font-bold text-xs text-[#2D120D] truncate w-full">
+                        <Link to={`/profile/${person.username || person.id}`} className="font-bold text-xs text-[#2D120D] truncate w-full hover:text-[#780D18]">
                           {person.name}
-                        </p>
-                        <p className="text-[10px] text-[#6E5952] truncate w-full">
+                        </Link>
+                        <Link to={`/profile/${person.username || person.id}`} className="text-[10px] text-[#6E5952] truncate w-full hover:underline">
                           @{person.username}
-                        </p>
+                        </Link>
                         <p className="text-[10px] text-[#6E5952] truncate w-full mt-0.5 font-medium">
                           {person.role}
                         </p>
@@ -1199,6 +925,7 @@ export function NetworkPage() {
                     );
                   })}
                 </div>
+                )}
               </div>
             </div>
 
@@ -1217,15 +944,18 @@ export function NetworkPage() {
               </div>
 
               <div className="space-y-3.5">
-                {suggestedCreators.map((creator) => {
+                {suggestedCreators.length === 0 ? (
+                  <p className="text-xs text-[#6E5952]">No suggestions right now.</p>
+                ) : suggestedCreators.map((creator) => {
                   const isRequested = requestedUsers[creator.id];
                   return (
                     <div key={creator.id} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <img
+                        <MemberAvatar
+                          name={creator.name}
                           src={creator.avatarUrl}
-                          alt={creator.name}
-                          className="w-10 h-10 rounded-full object-cover border border-[#DECDBA] shrink-0"
+                          size="md"
+                          className="border border-[#DECDBA]"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline gap-1 truncate">
@@ -1273,29 +1003,27 @@ export function NetworkPage() {
               </div>
 
               <div className="space-y-3.5">
-                <div className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-[#FAF7F2] transition">
-                  <div className="w-9 h-9 rounded-xl bg-[#F7DDD4] text-[#9E3922] flex items-center justify-center shrink-0 mt-0.5">
-                    <Megaphone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-[#2D120D] leading-snug">
-                      New: Spring Boot Showcase this weekend!
-                    </h4>
-                    <p className="text-[11px] text-[#6E5952] mt-0.5">DevZGo Events · 2d ago</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-[#FAF7F2] transition">
-                  <div className="w-9 h-9 rounded-xl bg-[#FFF5C0] text-[#8C6D1F] flex items-center justify-center shrink-0 mt-0.5">
-                    <StickyNote className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-[#2D120D] leading-snug">
-                      Looking for collaborators on an open-source tool
-                    </h4>
-                    <p className="text-[11px] text-[#6E5952] mt-0.5">Community · 3d ago</p>
-                  </div>
-                </div>
+                {feed.slice(0, 4).length === 0 ? (
+                  <p className="text-xs text-[#6E5952]">Recent posts will appear here.</p>
+                ) : (
+                  feed.slice(0, 4).map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/network/post/${item.id}`}
+                      className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-[#FAF7F2] transition"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-[#FFF5C0] text-[#8C6D1F] flex items-center justify-center shrink-0 mt-0.5">
+                        <StickyNote className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-xs sm:text-sm text-[#2D120D] leading-snug line-clamp-2">
+                          {item.title || item.content || "Community update"}
+                        </h4>
+                        <p className="text-[11px] text-[#6E5952] mt-0.5 truncate">@{item.authorUsername}</p>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </aside>

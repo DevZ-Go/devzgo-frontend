@@ -83,10 +83,15 @@ export function ApprovalsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {["pending", "executed", "rejected", "cancelled", "all"].map((item) => (
-          <button key={item} type="button" className={`${ui.btn} px-3 py-2 text-sm ${status === item ? ui.primary : ui.neutral}`} onClick={() => setStatus(item)}>
+          <button
+            key={item}
+            type="button"
+            className={`${ui.btn} px-3 py-1.5 capitalize ${status === item ? ui.primary : ui.neutral}`}
+            onClick={() => setStatus(item)}
+          >
             {item}
           </button>
         ))}
@@ -94,36 +99,42 @@ export function ApprovalsPage() {
       {message && <Banner tone="ok">{message}</Banner>}
       {error && <Banner tone="bad">{error}</Banner>}
       {proposals.isLoading && <Loading />}
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {proposals.data?.map((proposal) => (
-          <article key={proposal.id} className={panel}>
+          <article key={proposal.id} className={`${panel} !p-3`}>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-serif text-xl font-bold">{proposal.summary}</h2>
-              <span className="rounded-full bg-[#6B0B0C] px-2 py-0.5 text-xs font-semibold uppercase text-[#FFF8CA]">{proposal.status}</span>
+              <h2 className="font-serif text-base font-bold">{proposal.summary}</h2>
+              <span className="rounded-full bg-[#6B0B0C] px-2 py-0.5 text-[10px] font-semibold uppercase text-[#FFF8CA]">
+                {proposal.status}
+              </span>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-[#7F1D1D]">{proposal.warning}</p>
-            <p className="mt-2 text-sm text-stone-700">Reason from {proposal.proposer_email}: {proposal.reason}</p>
-            <p className="mt-1 text-xs uppercase tracking-wider text-stone-500">
-              {proposal.approvals} of {proposal.required_approvals} approvals · {when(proposal.created_at)}
-              {proposal.approvers.length > 0 ? ` · ${proposal.approvers.join(", ")}` : ""}
+            <p className="mt-1 text-xs text-stone-500">
+              {proposal.approvals}/{proposal.required_approvals} · {proposal.proposer_email} · {when(proposal.created_at)}
             </p>
-            {proposal.result && <p className="mt-2 text-sm font-medium text-[#14532D]">{proposal.result}</p>}
+            {proposal.reason && <p className="mt-1 text-sm text-stone-700">{proposal.reason}</p>}
+            {proposal.result && <p className="mt-1 text-sm font-medium text-[#14532D]">{proposal.result}</p>}
             {proposal.status === "pending" && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {!proposal.my_vote && (
                   <>
-                    <button type="button" disabled={busy} className={`${ui.btn} ${ui.primary} px-3 py-2 text-sm`} onClick={() => void vote(proposal, "approve")}>Approve</button>
-                    <button type="button" disabled={busy} className={`${ui.btn} ${ui.danger} px-3 py-2 text-sm`} onClick={() => void vote(proposal, "reject")}>Stop it</button>
+                    <button type="button" disabled={busy} className={`${ui.btn} ${ui.primary} px-3 py-1.5`} onClick={() => void vote(proposal, "approve")}>
+                      Approve
+                    </button>
+                    <button type="button" disabled={busy} className={`${ui.btn} ${ui.danger} px-3 py-1.5`} onClick={() => void vote(proposal, "reject")}>
+                      Stop
+                    </button>
                   </>
                 )}
                 {proposal.my_vote === "approve" && proposal.proposer_email === session.data?.email && (
-                  <button type="button" disabled={busy} className={`${ui.btn} ${ui.neutral} px-3 py-2 text-sm`} onClick={() => void cancel(proposal)}>Cancel my request</button>
+                  <button type="button" disabled={busy} className={`${ui.btn} ${ui.neutral} px-3 py-1.5`} onClick={() => void cancel(proposal)}>
+                    Cancel
+                  </button>
                 )}
               </div>
             )}
           </article>
         ))}
-        {proposals.data && proposals.data.length === 0 && <p className={ui.empty}>Nothing in this list.</p>}
+        {proposals.data && proposals.data.length === 0 && <p className={ui.empty}>Empty.</p>}
       </div>
     </div>
   );
