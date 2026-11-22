@@ -18,6 +18,7 @@ import {
 } from "../../api/groups";
 import { PhotoCropper } from "../PhotoCropper";
 import { assetUrlOrNull } from "../../api/config";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 type Modality = "in_person" | "virtual" | "hybrid";
 type PosterFormat = "letter" | "tabloid";
@@ -190,7 +191,11 @@ export function CreateEventModal({ groupId, initialEvent = null, onClose, onSucc
       onSuccess(saved);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : isEdit ? "Failed to update event" : "Failed to create event");
+      setError(
+        getApiErrorMessage(err) ||
+          (err instanceof Error ? err.message : null) ||
+          (isEdit ? "Failed to update event" : "Failed to create event")
+      );
     } finally {
       setSaving(false);
     }

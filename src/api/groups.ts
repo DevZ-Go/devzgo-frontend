@@ -24,6 +24,23 @@ function mapClub(g: NetworkGroup): NetworkGroup {
   };
 }
 
+/** Multipart POST — browser must set Content-Type with boundary (do not force JSON/multipart). */
+async function postMultipart<T>(url: string, body: FormData, params?: Record<string, string | undefined>) {
+  return api.post<T>(url, body, {
+    params,
+    transformRequest: [
+      (data, headers) => {
+        if (data instanceof FormData && headers && typeof headers === "object") {
+          const h = headers as { delete?: (key: string) => void } & Record<string, unknown>;
+          if (typeof h.delete === "function") h.delete("Content-Type");
+          else delete h["Content-Type"];
+        }
+        return data;
+      },
+    ],
+  });
+}
+
 export type GroupDiscoveryFilters = {
   query?: string;
   category?: string;
@@ -271,8 +288,12 @@ export async function patchGroupEvent(groupId: string, eventId: string, data: Cl
 export async function uploadEventPoster(groupId: string, eventId: string, file: File) {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post(`/groups/${groupId}/events/${eventId}/poster`, body);
-  return res.data;
+  try {
+    const res = await postMultipart(`/groups/${groupId}/events/${eventId}/poster`, body);
+    return res.data;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload poster");
+  }
 }
 
 export async function uploadEventMedia(
@@ -283,27 +304,40 @@ export async function uploadEventMedia(
 ) {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post(`/groups/${groupId}/events/${eventId}/media`, body, {
-    params: {
+  try {
+    const res = await postMultipart(`/groups/${groupId}/events/${eventId}/media`, body, {
       academicTerm: opts?.academicTerm,
       academicYear: opts?.academicYear,
-    },
-  });
-  return res.data as {
-    id: string;
-    eventId: string;
-    url: string;
-    mediaType: string;
-    academicTerm?: string;
-    academicYear?: string;
-  };
+    });
+    const data = res.data as {
+      id: string;
+      eventId: string;
+      url: string;
+      mediaType: string;
+      academicTerm?: string;
+      academicYear?: string;
+    };
+    return { ...data, url: assetUrlOrNull(data.url) || data.url };
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload gallery media");
+  }
 }
 
 export async function uploadAnnouncementMedia(groupId: string, file: File) {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post(`/groups/${groupId}/announcements/media`, body);
-  return res.data as { url: string; type: string; source: string };
+  try {
+    const res = await postMultipart<{ url: string; type: string; source: string }>(
+      `/groups/${groupId}/announcements/media`,
+      body
+    );
+    return {
+      ...res.data,
+      url: assetUrlOrNull(res.data.url) || res.data.url,
+    };
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload media");
+  }
 }
 
 export async function fetchMyClubPermissions(groupId: string) {
@@ -433,8 +467,12 @@ export async function fetchGroupProjects(
 export async function uploadShowcaseCover(groupId: string, file: File): Promise<string> {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post<{ url: string }>(`/groups/${groupId}/projects/cover`, body);
-  return res.data.url;
+  try {
+    const res = await postMultipart<{ url: string }>(`/groups/${groupId}/projects/cover`, body);
+    return assetUrlOrNull(res.data.url) || res.data.url;
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload cover");
+  }
 }
 
 export async function showcaseProjectInGroup(
@@ -482,8 +520,15 @@ export async function addAnnouncementComment(
 export async function uploadClubBanner(groupId: string, file: File): Promise<NetworkGroup> {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post<NetworkGroup>(`/groups/${encodeURIComponent(groupId)}/banner`, body);
-  return mapClub(res.data);
+  try {
+    const res = await postMultipart<NetworkGroup>(
+      `/groups/${encodeURIComponent(groupId)}/banner`,
+      body
+    );
+    return mapClub(res.data);
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload banner");
+  }
 }
 
 export async function approveClubAvatar(groupId: string): Promise<NetworkGroup> {
@@ -499,8 +544,15 @@ export async function cancelPendingClubAvatar(groupId: string): Promise<NetworkG
 export async function uploadClubAvatar(groupId: string, file: File): Promise<NetworkGroup> {
   const body = new FormData();
   body.append("file", file);
-  const res = await api.post<NetworkGroup>(`/groups/${encodeURIComponent(groupId)}/avatar`, body);
-  return mapClub(res.data);
+  try {
+    const res = await postMultipart<NetworkGroup>(
+      `/groups/${encodeURIComponent(groupId)}/avatar`,
+      body
+    );
+    return mapClub(res.data);
+  } catch (err) {
+    throw new Error(getApiErrorMessage(err) || "Failed to upload logo");
+  }
 }
 
 export async function approveClubJoinRequest(

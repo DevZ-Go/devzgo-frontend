@@ -23,7 +23,14 @@ if (import.meta.env.PROD && USE_MOCK) {
 /** Turn a relative API path (e.g. `/storage/covers/x.png`) into a full URL for `<img src>`. */
 export function resolveApiAssetUrl(pathOrUrl: string | null | undefined): string {
   if (!pathOrUrl) return "";
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+  // Absolute / in-browser object URLs must stay untouched (blob: was being prefixed and broke
+  // club logo/banner/poster previews with net::ERR_FAILED).
+  if (
+    pathOrUrl.startsWith("http://") ||
+    pathOrUrl.startsWith("https://") ||
+    pathOrUrl.startsWith("blob:") ||
+    pathOrUrl.startsWith("data:")
+  ) {
     return pathOrUrl;
   }
   const base = API_BASE_URL.replace(/\/$/, "");
