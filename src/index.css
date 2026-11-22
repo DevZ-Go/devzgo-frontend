@@ -233,19 +233,26 @@ code {
   box-shadow: 0 0 0 1000px rgba(45, 18, 13, 0.35) inset;
 }
 
-/* Whimsical cursive & Cake Social display font utilities */
-.font-cursive {
-  font-family: 'Lobster Two', 'Dancing Script', cursive;
+/* Site-wide Editorial Serif Scheme (Instrument Serif + Pinyon Script flourish) */
+/* Instrument Serif is weight 400 — keeping font-weight: 400 prevents fallback to bold Georgia/Garamond */
+.font-serif,
+.font-editorial,
+.font-cursive,
+.font-gift,
+.font-cake {
+  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 .font-hand {
-  font-family: 'Dancing Script', 'Caveat', cursive;
+  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.015em;
 }
-.font-gift {
-  font-family: 'League Spartan', 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.02em;
-}
-.font-cake {
-  font-family: 'Antonio', 'League Spartan', sans-serif;
+.font-flourish {
+  font-family: 'Pinyon Script', cursive;
+  font-weight: 400;
 }
 
 /* Authentic hand-drawn wobbly doodle borders */

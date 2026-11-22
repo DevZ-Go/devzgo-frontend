@@ -47,126 +47,78 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { FeedItem } from "../features/network/FeedItem";
 import { ConstellationGraph } from "../components/network/ConstellationGraph";
 
-/* ── Vector Illustrations matching the Reference Artwork ── */
+/* ── Vintage Editorial Ornaments for the Network Banner ── */
 
-/** Cute die-cut retro laptop sticker with </> on the screen and keys */
-function RetroLaptopSticker({ className = "" }: { className?: string }) {
+/** Hand-drawn vintage corner vine swirl & stars (inspired by heritage invitation prints) */
+function VintageCornerSwirl({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <g filter="drop-shadow(0 4px 8px rgba(45, 18, 13, 0.16))">
-        {/* Die-cut white border */}
-        <path
-          d="M26 16 C26 12 30 8 35 8 L125 8 C130 8 134 12 134 16 L134 82 C134 86 130 90 125 90 L146 112 C150 116 148 124 142 124 L18 124 C12 124 10 116 14 112 L35 90 C30 90 26 86 26 82 Z"
-          fill="white"
-        />
-        {/* Laptop Lid Screen Frame */}
-        <rect x="30" y="12" width="100" height="74" rx="8" fill="#E8DCCB" stroke="#7A604D" strokeWidth="2.5" />
-        {/* Inner Screen Display */}
-        <rect x="36" y="18" width="88" height="62" rx="4" fill="#2D120D" />
-        {/* Code glyphs */}
-        <text
-          x="80"
-          y="56"
-          fill="#FFF8CA"
-          fontSize="22"
-          fontWeight="bold"
-          fontFamily="ui-monospace, monospace"
-          textAnchor="middle"
-        >
-          &lt;/&gt;
-        </text>
-        {/* Base / Keyboard Perspective */}
-        <path
-          d="M34 90 L126 90 L142 118 C144 121 142 122 138 122 L22 122 C18 122 16 121 18 118 Z"
-          fill="#DFCFB9"
-          stroke="#7A604D"
-          strokeWidth="2.5"
-        />
-        {/* Key Row Lines */}
-        <line x1="42" y1="97" x2="118" y2="97" stroke="#7A604D" strokeWidth="1.5" strokeDasharray="4 3" />
-        <line x1="38" y1="104" x2="122" y2="104" stroke="#7A604D" strokeWidth="1.5" strokeDasharray="4 3" />
-        <line x1="34" y1="111" x2="126" y2="111" stroke="#7A604D" strokeWidth="1.5" strokeDasharray="5 3" />
-        {/* Trackpad */}
-        <rect x="68" y="114" width="24" height="5" rx="1.5" fill="#C4B3A2" stroke="#7A604D" strokeWidth="1" />
-      </g>
+    <svg viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
+      <path
+        d="M8 70 C10 42, 26 22, 54 14 C72 9, 88 12, 96 22 C102 29, 96 38, 88 36 C81 34, 80 25, 86 22"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M28 38 C22 28, 28 16, 38 18 C46 20, 44 30, 37 30"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M52 16 C56 7, 68 6, 72 14"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16 52 C8 50, 6 40, 14 36"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Hand-drawn tiny stars */}
+      <path
+        d="M18 14 L20.5 19.5 L26 20 L21.5 23.5 L23 29 L18 25.8 L13 29 L14.5 23.5 L10 20 L15.5 19.5 Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <circle cx="72" cy="30" r="1.8" fill="currentColor" />
+      <circle cx="24" cy="60" r="1.5" fill="currentColor" />
     </svg>
   );
 }
 
-/** Pressed dried botanical flowers illustration sticker */
-function DriedBotanicalsSticker({ className = "" }: { className?: string }) {
+/** Delicate hand-drawn 8-pointed vintage starburst + spiral sparkle cluster */
+function VintageSparkleCluster({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 140 160" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <g filter="drop-shadow(0 4px 8px rgba(45, 18, 13, 0.14))">
-        {/* Stems */}
-        <path d="M70 145 C68 110 55 75 42 42" stroke="#7A6038" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M70 145 C75 115 95 80 105 50" stroke="#7A6038" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M70 145 C70 95 72 60 74 30" stroke="#7A6038" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M60 95 C50 85 40 82 32 80" stroke="#7A6038" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M75 105 C85 96 98 94 108 92" stroke="#7A6038" strokeWidth="1.8" strokeLinecap="round" />
-
-        {/* Leaves */}
-        <path d="M32 80 C36 74 44 75 48 82 C44 86 36 86 32 80 Z" fill="#8C9A73" />
-        <path d="M108 92 C104 86 96 87 92 94 C96 98 104 98 108 92 Z" fill="#8C9A73" />
-        <path d="M52 65 C55 58 63 60 66 67 C61 70 54 69 52 65 Z" fill="#8C9A73" />
-        <path d="M88 75 C85 68 77 70 74 77 C79 80 86 79 88 75 Z" fill="#8C9A73" />
-
-        {/* Left Daisy */}
-        <g transform="translate(42, 42)">
-          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
-            <ellipse
-              key={deg}
-              cx="0"
-              cy="-14"
-              rx="3.5"
-              ry="9"
-              fill="#E8B84B"
-              stroke="#B3862A"
-              strokeWidth="0.8"
-              transform={`rotate(${deg})`}
-            />
-          ))}
-          <circle cx="0" cy="0" r="8" fill="#6B4E26" stroke="#4A3416" strokeWidth="1" />
-          <circle cx="0" cy="0" r="5" fill="#8A6533" />
-        </g>
-
-        {/* Center Top Flower */}
-        <g transform="translate(74, 30) scale(0.9)">
-          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
-            <ellipse
-              key={deg}
-              cx="0"
-              cy="-14"
-              rx="3.5"
-              ry="9"
-              fill="#DCA33C"
-              stroke="#A87A24"
-              strokeWidth="0.8"
-              transform={`rotate(${deg})`}
-            />
-          ))}
-          <circle cx="0" cy="0" r="8" fill="#5E421E" />
-          <circle cx="0" cy="0" r="5" fill="#7D5A2B" />
-        </g>
-
-        {/* Right Flower */}
-        <g transform="translate(105, 50) scale(0.8)">
-          {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((deg) => (
-            <ellipse
-              key={deg}
-              cx="0"
-              cy="-14"
-              rx="4"
-              ry="8.5"
-              fill="#E8B84B"
-              stroke="#B3862A"
-              strokeWidth="0.8"
-              transform={`rotate(${deg})`}
-            />
-          ))}
-          <circle cx="0" cy="0" r="7.5" fill="#6B4E26" />
-        </g>
-      </g>
+    <svg viewBox="0 0 72 88" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
+      {/* 4-pointed drawn star */}
+      <path
+        d="M36 12 Q37 26 48 28 Q37 30 36 44 Q35 30 24 28 Q35 26 36 12 Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {/* Tiny spiral doodle */}
+      <path
+        d="M19 60 C19 56, 25 55, 26 60 C27 65, 19 68, 15 63 C12 58, 17 51, 24 52"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      {/* Small 8-point starburst */}
+      <path
+        d="M52 58 L52 74 M44 66 L60 66 M46.5 60.5 L57.5 71.5 M57.5 60.5 L46.5 71.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      {/* Tiny crosses & open dots */}
+      <path d="M54 16 L58 20 M58 16 L54 20" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="16" cy="34" r="2" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="48" cy="44" r="1.6" fill="currentColor" />
     </svg>
   );
 }
@@ -461,53 +413,67 @@ export function NetworkPage() {
 
       <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         {/* ========================================================================= */}
-        {/* 1. TOP BANNER: compact maroon / warm beige scrapbook (Manasi theme)        */}
+        {/* 1. TOP BANNER: Vintage Heritage Striped Medallion                         */}
         {/* ========================================================================= */}
-        <div
-          className="w-full h-3.5 mb-3.5 rounded-t-[1.5rem] shadow-2xs overflow-hidden"
+        <section
+          className="relative rounded-[2rem] border border-[#2D120D]/30 shadow-[0_12px_30px_rgba(45,18,13,0.16)] overflow-hidden mb-6 py-5 sm:py-6 px-4 sm:px-8"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 16px, #EAD5C5 16px, #EAD5C5 32px, #FFF8CA 32px, #FFF8CA 48px)",
+              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 16px, #520809 16px, #520809 32px)",
           }}
-          aria-hidden
-        />
-        <section className="relative rounded-[2rem] pattern-maroon-gingham border-2 border-[#6B0B0C]/25 p-4 sm:p-5 shadow-[0_10px_28px_rgba(45,18,13,0.12)] overflow-hidden mb-6">
-          <div className="absolute inset-0 pattern-maroon-stars opacity-40 pointer-events-none" aria-hidden />
+        >
+          {/* Soft dark-espresso edge vignette */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, transparent 45%, rgba(45, 18, 13, 0.32) 100%)",
+            }}
+            aria-hidden
+          />
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Left: Cute Retro Laptop Sticker */}
-            <div className="hidden sm:flex items-center justify-center shrink-0 -rotate-3 hover:rotate-0 transition-transform duration-300">
-              <RetroLaptopSticker className="w-20 h-16 sm:w-24 sm:h-20" />
-            </div>
+          {/* Vintage corner vine swirls & stars on striped backdrop */}
+          <VintageCornerSwirl className="hidden sm:block absolute top-2.5 left-3 w-24 h-18 text-[#FFF8CA]/80 pointer-events-none" />
+          <VintageCornerSwirl className="hidden sm:block absolute top-2.5 right-3 w-24 h-18 text-[#FFF8CA]/80 -scale-x-100 pointer-events-none" />
+          <VintageCornerSwirl className="hidden md:block absolute bottom-2.5 left-3 w-20 h-14 text-[#FFF8CA]/55 -scale-y-100 pointer-events-none" />
+          <VintageCornerSwirl className="hidden md:block absolute bottom-2.5 right-3 w-20 h-14 text-[#FFF8CA]/55 -scale-x-100 -scale-y-100 pointer-events-none" />
 
-            {/* Center: Washi Tape + Serif Italic "Dev Social" Title */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1 min-w-0">
-              <div className="inline-block px-3 py-0.5 -rotate-2 select-none shadow-xs text-[9px] sm:text-[10px] font-mono font-bold tracking-[0.2em] uppercase border border-[#6B0B0C]/30 rounded-full bg-[#FFF8CA] text-[#6B0B0C]">
-                Community Space
-              </div>
-              <h1 className="font-serif italic font-bold text-3xl sm:text-5xl text-[#6B0B0C] tracking-tight leading-none mt-1.5">
-                Dev Social
+          {/* Centered Warm Cream Vintage Medallion */}
+          <div className="relative z-10 max-w-2xl mx-auto rounded-[2.75rem] bg-[#FAF3E3] border border-[#6B0B0C]/30 shadow-[0_6px_22px_rgba(45,18,13,0.22)] px-6 py-4 sm:px-12 sm:py-5 text-center overflow-hidden">
+            {/* Inner delicate vintage frame */}
+            <div
+              className="absolute inset-2 rounded-[2.25rem] border border-[#6B0B0C]/20 pointer-events-none"
+              aria-hidden
+            />
+
+            {/* Hand-drawn sparkle & spiral doodles inside medallion */}
+            <VintageSparkleCluster className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 w-14 h-18 text-[#6B0B0C]/75 pointer-events-none" />
+            <VintageSparkleCluster className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 w-14 h-18 text-[#6B0B0C]/75 -scale-x-100 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col items-center">
+              <span className="font-editorial italic text-sm sm:text-base text-[#6B0B0C]/80 tracking-wide">
+                ( 01 &middot; community )
+              </span>
+
+              <h1 className="m-0 mt-0.5 font-editorial font-normal text-3xl sm:text-[2.65rem] text-[#2D120D] tracking-[-0.015em] leading-[0.95]">
+                <span className="font-flourish text-4xl sm:text-[3.3rem] text-[#6B0B0C] leading-none -mr-1 align-baseline">
+                  C
+                </span>
+                ommunity{" "}
+                <span className="uppercase tracking-[0.06em] text-[#6B0B0C]">NETWORK</span>
               </h1>
-              <p className="mt-1.5 font-sans text-xs sm:text-sm text-[#2D120D]/80 font-medium max-w-lg">
-                A cozy space to share project updates, discover fellow builders, and connect across the community.
+
+              <p className="mt-1.5 font-sans text-xs sm:text-sm text-[#2D120D]/80 max-w-md">
+                Share project updates, discover fellow builders, and grow together.
               </p>
-            </div>
 
-            {/* Middle-Right: Creators ✦ Builds ✦ Connections Pill */}
-            <div className="shrink-0">
-              <div className="inline-flex items-center gap-2.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/90 border border-[#6B0B0C]/25 backdrop-blur-xs text-xs sm:text-sm font-semibold text-[#2D120D] shadow-xs">
-                <span>Creators</span>
-                <span className="text-[#6B0B0C] text-xs">✦</span>
-                <span>Builds</span>
-                <span className="text-[#6B0B0C] text-xs">✦</span>
-                <span>Connections</span>
+              <div className="mt-2.5 inline-flex items-center gap-2.5 sm:gap-3 font-editorial italic text-xs sm:text-sm text-[#6B0B0C]/85">
+                <span>( creators )</span>
+                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>✦</span>
+                <span>( builds )</span>
+                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>✦</span>
+                <span>( connections )</span>
               </div>
-            </div>
-
-            {/* Right: Pressed Botanicals with maroon gingham patch */}
-            <div className="hidden md:flex items-center justify-center shrink-0 rotate-3 hover:rotate-0 transition-transform duration-300 relative">
-              <div className="absolute inset-0 rounded-2xl border border-[#6B0B0C]/20 pattern-maroon-gingham opacity-50 -rotate-6" />
-              <DriedBotanicalsSticker className="w-20 h-24 relative z-10" />
             </div>
           </div>
         </section>
@@ -593,7 +559,7 @@ export function NetworkPage() {
           {/* ─────────────────────────────────────────────────────────────────────── */}
           {/* COLUMN 1 (LEFT): User Card, YOUR NETWORK, COMMUNITIES & CLUBS           */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
-          <aside className="space-y-6">
+          <aside className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto scrollbar-none">
             {/* Card 1: User Profile Mini Card */}
             <div className="relative rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs overflow-hidden">
               {/* Top Card Gingham Checkered Accent */}

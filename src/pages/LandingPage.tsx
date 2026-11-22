@@ -39,8 +39,8 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF8CA] text-[#2D120D] selection:bg-[#CDE3E8] overflow-x-hidden">
-      {/* ── Top Editorial Navigation ── */}
-      <Navbar variant="editorial" />
+      {/* ── Top Navigation (Unified across all pages) ── */}
+      <Navbar />
 
       {/* ── SECTION 1: HERO ── */}
       <section className="relative w-full h-dvh flex items-center justify-center overflow-hidden bg-[#2D120D]">
@@ -59,24 +59,24 @@ export function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/50 pointer-events-none" />
         </div>
 
-        {/* Center Content: Headline & "EXPLORE" Pill Button */}
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
-          <motion.span
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="font-cursive text-2xl sm:text-3xl text-[#fced96] drop-shadow-md mb-2"
-          >
-            Where coders code. Like, really.
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 25 }}
+        {/* Center Content: Editorial Stacked Headline + Flourish Accent & CTA */}
+        <div className="relative z-10 px-6 max-w-4xl mx-auto flex flex-col items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="font-serif text-5xl sm:text-7xl md:text-8xl font-normal text-[#f5eedc] drop-shadow-[0_2px_15px_rgba(0,0,0,0.7)] tracking-tight leading-[1.08]"
+            className="text-center select-none"
           >
-            dream <span className="font-cursive italic font-bold text-[#fced96]">BIG</span>
-          </motion.h1>
+            <h1 className="m-0 text-left font-editorial text-5xl sm:text-7xl md:text-8xl font-normal text-[#fced96] tracking-[-0.02em] leading-[0.9] drop-shadow-[0_3px_18px_rgba(0,0,0,0.75)]">
+              <span className="font-flourish text-7xl sm:text-8xl md:text-[7.5rem] leading-none -mr-1 sm:-mr-2 align-baseline">
+                D
+              </span>
+              ream BIG
+            </h1>
+            <p className="mt-1 sm:mt-2 font-editorial uppercase text-4xl sm:text-6xl md:text-7xl font-normal text-[#f5eedc] tracking-[-0.025em] leading-[0.88] drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
+              Let Your Ideas Bloom
+            </p>
+          </motion.div>
 
           <motion.div
             data-tour="home-cta"
@@ -142,10 +142,11 @@ export function LandingPage() {
           {/* Section Header: Left Title/Subtitle + Right View All Projects (Clean Center) */}
           <div className="mb-10 sm:mb-12 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div className="text-left">
-              <span className="font-cursive text-2xl sm:text-3xl text-[#CDE3E8] block mb-0.5">
-                Find your new fav build
+              <span className="font-editorial text-2xl sm:text-3xl text-[#CDE3E8] block leading-none mb-0.5">
+                <span className="font-flourish text-4xl sm:text-5xl leading-none -mr-0.5 align-baseline">F</span>
+                ind your new fav build
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#FFF8CA] font-semibold tracking-tight">
+              <h2 className="font-editorial uppercase text-3xl sm:text-4xl md:text-5xl text-[#FFF8CA] font-normal tracking-[-0.02em] leading-[0.95]">
                 Featured Projects
               </h2>
               <p className="text-xs sm:text-sm text-[#FFF8CA]/80 font-sans mt-2 tracking-wide">

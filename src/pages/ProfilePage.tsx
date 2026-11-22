@@ -112,7 +112,8 @@ export function ProfilePage() {
 
   // Edit profile modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editFullName, setEditFullName] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editHeadline, setEditHeadline] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editCompany, setEditCompany] = useState("");
@@ -198,7 +199,10 @@ export function ProfilePage() {
 
   function handleOpenEdit() {
     if (!devProfile) return;
-    setEditFullName(devProfile.fullName || "");
+    const rawName = (devProfile.fullName && devProfile.fullName !== devProfile.username ? devProfile.fullName : "").trim();
+    const parts = rawName ? rawName.split(/\s+/) : [];
+    setEditFirstName(parts[0] || "");
+    setEditLastName(parts.slice(1).join(" ") || "");
     setEditHeadline(devProfile.headline || "");
     setEditRole(devProfile.role || "");
     setEditCompany(devProfile.company || "");
@@ -215,8 +219,9 @@ export function ProfilePage() {
     e.preventDefault();
     setSavingProfile(true);
     try {
+      const combinedName = [editFirstName.trim(), editLastName.trim()].filter(Boolean).join(" ");
       const updated = await updateMyProfile({
-        fullName: editFullName,
+        fullName: combinedName,
         headline: editHeadline,
         role: recruiter ? undefined : editRole,
         company: recruiter ? editCompany : undefined,
@@ -228,6 +233,7 @@ export function ProfilePage() {
         linkedinUrl: editLinkedin,
       });
       setDevProfile(updated);
+      void refreshUser().catch(() => undefined);
       setEditModalOpen(false);
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -330,15 +336,15 @@ export function ProfilePage() {
               )}
 
               <div className="min-w-0 flex-1">
-                <div className="mb-2">
+                <h1 className="mb-0.5 break-words font-serif text-3xl font-normal tracking-tight text-stone-900 sm:text-4xl">
+                  {displayName}
+                </h1>
+
+                <div className="mb-2.5">
                   <span className="break-all font-mono text-sm text-stone-500">
                     @{devProfile?.username || "user"}
                   </span>
                 </div>
-
-                <h1 className="mb-1 break-words font-serif text-3xl font-normal tracking-tight text-stone-900 sm:text-4xl">
-                  {displayName}
-                </h1>
 
                 {devProfile?.role === "Recruiter" ? (
                   <p className="mb-2 inline-flex items-center rounded-full bg-[#fced96] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-stone-900">
@@ -910,16 +916,35 @@ export function ProfilePage() {
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={editFullName}
-                  onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={60}
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    placeholder="First name"
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={60}
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    placeholder="Last name"
+                    className="w-full rounded-xl border border-stone-200 px-3.5 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  />
+                </div>
               </div>
 
               {!recruiter && (
