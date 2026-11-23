@@ -47,7 +47,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/network", label: "Network", icon: Users },
   { to: "/explore", label: "Explore", icon: Compass },
   { to: "/messages", label: "Messages", icon: MessageSquare },
-  { to: "/home", label: "About Us", icon: Home },
+  { to: "/home", label: "Overview", icon: Home },
 ];
 
 /** Recruiters review work: no project building, imports, or wraps. */
@@ -680,7 +680,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           }`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[10px]">Home</span>
+          <span className="text-[10px]">Overview</span>
         </Link>
         <Link
           to="/explore"

@@ -360,36 +360,39 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  padding: 6px 14px;
+  gap: 8px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: rgba(250, 246, 236, 0.96);
   border: 2px solid #284E45;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   font-family: var(--tvw-font);
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #6B0B0C;
   pointer-events: none;
   transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  white-space: nowrap;
 }
 .tv-label b {
-  max-width: 240px;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 800;
+  font-weight: 700;
   color: #6B0B0C;
 }
 .tv-label small {
   font-family: var(--tvw-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
   background: #6B0B0C;
   color: #FAF6EC;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .tv:hover .tv-label,
 .tv--focused .tv-label {

@@ -186,6 +186,15 @@ code {
 }
 
 /* Floating liquid-glass toolbar for Explore (Cinematic / Directory) */
+.reels-container {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.reels-container::-webkit-scrollbar {
+  display: none;
+}
+
 .explore-glass-toolbar {
   background:
     linear-gradient(145deg, rgba(255, 248, 202, 0.18) 0%, rgba(255, 255, 255, 0.08) 48%, rgba(205, 227, 232, 0.1) 100%);

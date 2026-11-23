@@ -10,9 +10,9 @@ import {
   Mail,
   UserCheck,
   UsersRound,
-  Sparkles,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   FileText,
   CodeXml,
   Flag,
@@ -86,39 +86,6 @@ function VintageCornerSwirl({ className = "" }: { className?: string }) {
       />
       <circle cx="72" cy="30" r="1.8" fill="currentColor" />
       <circle cx="24" cy="60" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-/** Delicate hand-drawn 8-pointed vintage starburst + spiral sparkle cluster */
-function VintageSparkleCluster({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 72 88" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
-      {/* 4-pointed drawn star */}
-      <path
-        d="M36 12 Q37 26 48 28 Q37 30 36 44 Q35 30 24 28 Q35 26 36 12 Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      {/* Tiny spiral doodle */}
-      <path
-        d="M19 60 C19 56, 25 55, 26 60 C27 65, 19 68, 15 63 C12 58, 17 51, 24 52"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      {/* Small 8-point starburst */}
-      <path
-        d="M52 58 L52 74 M44 66 L60 66 M46.5 60.5 L57.5 71.5 M57.5 60.5 L46.5 71.5"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      {/* Tiny crosses & open dots */}
-      <path d="M54 16 L58 20 M58 16 L54 20" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      <circle cx="16" cy="34" r="2" stroke="currentColor" strokeWidth="1.3" />
-      <circle cx="48" cy="44" r="1.6" fill="currentColor" />
     </svg>
   );
 }
@@ -197,6 +164,30 @@ export function NetworkPage() {
   const filter = params.get("filter") ?? "all";
   const [feedFilterTab, setFeedFilterTab] = useState<"for-you" | "following" | "latest" | "projects">("for-you");
   const [activeNavTab, setActiveNavTab] = useState<"feed" | "network" | "clubs" | "creators">("feed");
+  const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
+  const networkMenuRef = useRef<HTMLDivElement>(null);
+  const [feedFilterOpen, setFeedFilterOpen] = useState(false);
+  const feedFilterRef = useRef<HTMLDivElement>(null);
+
+  const feedFilterLabels: Record<"for-you" | "following" | "latest" | "projects", string> = {
+    "for-you": "For You",
+    following: "Following",
+    latest: "Latest",
+    projects: "Projects",
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (networkMenuRef.current && !networkMenuRef.current.contains(event.target as Node)) {
+        setNetworkMenuOpen(false);
+      }
+      if (feedFilterRef.current && !feedFilterRef.current.contains(event.target as Node)) {
+        setFeedFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const debouncedSearch = params.get("q") ?? "";
 
   const client = useQueryClient();
@@ -248,7 +239,7 @@ export function NetworkPage() {
   const [miraLikesCount, setMiraLikesCount] = useState(86);
   const [miraBookmarked, setMiraBookmarked] = useState(false);
 
-  // Carousel scroll index for "01. People you can reach"
+  // Carousel scroll index for "People you can reach"
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Toast state
@@ -446,13 +437,9 @@ export function NetworkPage() {
               aria-hidden
             />
 
-            {/* Hand-drawn sparkle & spiral doodles inside medallion */}
-            <VintageSparkleCluster className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 w-14 h-18 text-[#6B0B0C]/75 pointer-events-none" />
-            <VintageSparkleCluster className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 w-14 h-18 text-[#6B0B0C]/75 -scale-x-100 pointer-events-none" />
-
             <div className="relative z-10 flex flex-col items-center">
               <span className="font-editorial italic text-sm sm:text-base text-[#6B0B0C]/80 tracking-wide">
-                ( 01 &middot; community )
+                ( community )
               </span>
 
               <h1 className="m-0 mt-0.5 font-editorial font-normal text-3xl sm:text-[2.65rem] text-[#2D120D] tracking-[-0.015em] leading-[0.95]">
@@ -469,9 +456,9 @@ export function NetworkPage() {
 
               <div className="mt-2.5 inline-flex items-center gap-2.5 sm:gap-3 font-editorial italic text-xs sm:text-sm text-[#6B0B0C]/85">
                 <span>( creators )</span>
-                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>✦</span>
+                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>&middot;</span>
                 <span>( builds )</span>
-                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>✦</span>
+                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>&middot;</span>
                 <span>( connections )</span>
               </div>
             </div>
@@ -479,9 +466,9 @@ export function NetworkPage() {
         </section>
 
         {/* ========================================================================= */}
-        {/* 2. SEGMENTED NAVIGATION BAR (Pills below banner)                           */}
+        {/* 2. SEGMENTED NAVIGATION BAR (Main Name + Dropdown for secondary views)     */}
         {/* ========================================================================= */}
-        <nav aria-label="Network Sections" className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 mb-8">
+        <nav aria-label="Network Sections" className="flex items-center justify-center gap-2.5 sm:gap-3.5 mb-8">
           <button
             type="button"
             onClick={() => setActiveNavTab("feed")}
@@ -495,34 +482,65 @@ export function NetworkPage() {
             <span>Feed</span>
           </button>
 
-          <Link
-            to="/network/connections"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white transition shadow-xs"
-          >
-            <Users className="w-4 h-4" />
-            <span>My Network</span>
-          </Link>
+          {/* Secondary Views Dropdown */}
+          <div className="relative" ref={networkMenuRef}>
+            <button
+              type="button"
+              onClick={() => setNetworkMenuOpen((prev) => !prev)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer ${
+                activeNavTab === "creators" || networkMenuOpen
+                  ? "bg-white text-[#780D18] border-2 border-[#780D18]"
+                  : "bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white"
+              }`}
+              aria-expanded={networkMenuOpen}
+            >
+              <span>{activeNavTab === "creators" ? "Discover Creators" : "More"}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${networkMenuOpen ? "rotate-180" : ""}`} />
+            </button>
 
-          <Link
-            to="/network/groups"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white transition shadow-xs"
-          >
-            <Boxes className="w-4 h-4" />
-            <span>Clubs &amp; Showcases</span>
-          </Link>
+            {networkMenuOpen && (
+              <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 rounded-2xl bg-white border border-[#DECDBA] shadow-lg py-2 z-30 font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveNavTab((curr) => (curr === "creators" ? "feed" : "creators"));
+                    setNetworkMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left cursor-pointer"
+                >
+                  <Compass className="w-4 h-4 text-[#780D18]" />
+                  <div>
+                    <div className="font-semibold">{activeNavTab === "creators" ? "Hide Creator Mesh" : "Discover Creators"}</div>
+                    <div className="text-[11px] text-[#6E5952]">Interactive constellation</div>
+                  </div>
+                </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveNavTab(activeNavTab === "creators" ? "feed" : "creators")}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer ${
-              activeNavTab === "creators"
-                ? "bg-[#780D18] text-white"
-                : "bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white"
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            <span>Discover Creators</span>
-          </button>
+                <Link
+                  to="/network/connections"
+                  onClick={() => setNetworkMenuOpen(false)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left"
+                >
+                  <Users className="w-4 h-4 text-[#780D18]" />
+                  <div>
+                    <div className="font-semibold">My Network</div>
+                    <div className="text-[11px] text-[#6E5952]">Connections &amp; requests</div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/network/groups"
+                  onClick={() => setNetworkMenuOpen(false)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left"
+                >
+                  <Boxes className="w-4 h-4 text-[#780D18]" />
+                  <div>
+                    <div className="font-semibold">Clubs &amp; Showcases</div>
+                    <div className="text-[11px] text-[#6E5952]">Developer communities</div>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Constellation View Mode (when toggled via Discover Creators) */}
@@ -571,10 +589,6 @@ export function NetworkPage() {
                   backgroundColor: "#FAF3E8",
                 }}
               />
-              {/* Sparkles doodle on top-right */}
-              <div className="absolute top-3.5 right-4 z-10 text-[#C98B28]">
-                <Sparkles className="w-4 h-4 fill-[#C98B28]/20" />
-              </div>
 
               <div className="relative z-10 flex items-center gap-3.5 pt-2">
                 <Link to="/profile" className="shrink-0 group">
@@ -670,7 +684,6 @@ export function NetworkPage() {
                 <span className="text-[10px] font-bold tracking-wider uppercase text-[#780D18]">
                   COMMUNITIES &amp; CLUBS
                 </span>
-                <Sparkles className="w-3.5 h-3.5 text-[#C98B28]" />
               </div>
 
               <h3 className="font-bold text-lg text-[#2D120D] mb-1">
@@ -822,55 +835,43 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Community Feed Header & Filter Pills */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            {/* Community Feed Header & Filter Dropdown */}
+            <div className="flex items-center justify-between gap-3 pt-2">
               <h2 className="font-bold text-xl sm:text-2xl text-[#2D120D]">Community Feed</h2>
 
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="relative" ref={feedFilterRef}>
                 <button
                   type="button"
-                  onClick={() => setFeedFilterTab("for-you")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    feedFilterTab === "for-you"
-                      ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#2D120D] shadow-2xs"
-                      : "text-[#6E5952] hover:bg-white"
-                  }`}
+                  onClick={() => setFeedFilterOpen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FAF3E8] border border-[#DECDBA] text-[#2D120D] hover:bg-white transition shadow-2xs cursor-pointer"
+                  aria-expanded={feedFilterOpen}
                 >
-                  For You ∨
+                  <span>{feedFilterLabels[feedFilterTab]}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-[#6E5952] transition-transform duration-200 ${feedFilterOpen ? "rotate-180" : ""}`} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedFilterTab("following")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    feedFilterTab === "following"
-                      ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#2D120D] shadow-2xs"
-                      : "text-[#6E5952] hover:bg-white"
-                  }`}
-                >
-                  Following
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedFilterTab("latest")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    feedFilterTab === "latest"
-                      ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#2D120D] shadow-2xs"
-                      : "text-[#6E5952] hover:bg-white"
-                  }`}
-                >
-                  Latest
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeedFilterTab("projects")}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    feedFilterTab === "projects"
-                      ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#2D120D] shadow-2xs"
-                      : "text-[#6E5952] hover:bg-white"
-                  }`}
-                >
-                  Projects
-                </button>
+
+                {feedFilterOpen && (
+                  <div className="absolute right-0 mt-1.5 w-44 rounded-2xl bg-white border border-[#DECDBA] shadow-md py-1.5 z-20 font-sans">
+                    {(["for-you", "following", "latest", "projects"] as const).map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setFeedFilterTab(key);
+                          setFeedFilterOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2 text-xs transition text-left cursor-pointer ${
+                          feedFilterTab === key
+                            ? "bg-[#FAF7F2] text-[#780D18] font-bold"
+                            : "text-[#3E2217] hover:bg-[#FAF7F2]"
+                        }`}
+                      >
+                        <span>{feedFilterLabels[key]}</span>
+                        {feedFilterTab === key && <Check className="w-3.5 h-3.5 text-[#780D18]" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1076,11 +1077,11 @@ export function NetworkPage() {
           {/* COLUMN 3 (RIGHT): People you can reach, Suggested Creators, Notes       */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
           <aside className="space-y-6">
-            {/* 01. People you can reach (Carousel Card) */}
+            {/* People you can reach (Carousel Card) */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs relative">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  01. People you can reach
+                  People you can reach
                 </h3>
                 <Link
                   to="/network/connections"
@@ -1168,11 +1169,11 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* 04. Suggested Creators */}
+            {/* Suggested Creators */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  04. Suggested Creators
+                  Suggested Creators
                 </h3>
                 <Link
                   to="/explore/developers"
@@ -1224,11 +1225,11 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* 02. Community Notes */}
+            {/* Community Notes */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  02. Community Notes
+                  Community Notes
                 </h3>
                 <Link
                   to="/network"
