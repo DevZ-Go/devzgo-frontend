@@ -45,6 +45,7 @@ const GitHubOnboardingPage = page(() => import("./pages/GitHubOnboardingPage"), 
 const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
 const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
+const ExploreShowcasePage = page(() => import("./pages/ExploreShowcasePage"), "ExploreShowcasePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
 const StudioWallPage = page(() => import("./pages/StudioWallPage"), "StudioWallPage");
@@ -146,6 +147,14 @@ export const router = createBrowserRouter([
       },
       {
         path: "/explore",
+        element: (
+          <ProtectedRoute>
+            <ExploreShowcasePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/explore/reels",
         element: (
           <ProtectedRoute>
             <StudioWallPage />
