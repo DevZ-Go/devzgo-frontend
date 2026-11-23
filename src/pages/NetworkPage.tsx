@@ -2,20 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  LayoutGrid,
-  Users,
   Boxes,
-  Compass,
-  Settings,
-  Mail,
-  UserCheck,
   UsersRound,
-  ChevronRight,
-  ChevronLeft,
   ChevronDown,
-  FileText,
-  CodeXml,
-  Flag,
   UserPlus,
   Send,
   Heart,
@@ -24,13 +13,16 @@ import {
   Bookmark,
   MoreHorizontal,
   ExternalLink,
-  Megaphone,
-  StickyNote,
   Check,
   Loader2,
   Cpu,
   Globe,
-  CheckCircle2,
+  Layers,
+  Calendar,
+  BarChart2,
+  BarChart3,
+  Image as ImageIcon,
+  ArrowRight,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { createPost, fetchFeedPage } from "../api/network";
@@ -40,55 +32,12 @@ import {
   sendConnectionRequest,
   fetchSuggestedDevelopers,
 } from "../api/connections";
-import type { Connection, ConnectionUserSummary } from "../types/network";
 import { useAuth } from "../auth/AuthContext";
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
 import { FeedItem } from "../features/network/FeedItem";
-import { ConstellationGraph } from "../components/network/ConstellationGraph";
 
-/* ── Vintage Editorial Ornaments for the Network Banner ── */
 
-/** Hand-drawn vintage corner vine swirl & stars (inspired by heritage invitation prints) */
-function VintageCornerSwirl({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
-      <path
-        d="M8 70 C10 42, 26 22, 54 14 C72 9, 88 12, 96 22 C102 29, 96 38, 88 36 C81 34, 80 25, 86 22"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M28 38 C22 28, 28 16, 38 18 C46 20, 44 30, 37 30"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M52 16 C56 7, 68 6, 72 14"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M16 52 C8 50, 6 40, 14 36"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      {/* Hand-drawn tiny stars */}
-      <path
-        d="M18 14 L20.5 19.5 L26 20 L21.5 23.5 L23 29 L18 25.8 L13 29 L14.5 23.5 L10 20 L15.5 19.5 Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-      <circle cx="72" cy="30" r="1.8" fill="currentColor" />
-      <circle cx="24" cy="60" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
 
 /** TaskFlow v2 Mini Dashboard UI Mockup */
 function TaskFlowMockup() {
@@ -163,9 +112,6 @@ export function NetworkPage() {
   const [params] = useSearchParams();
   const filter = params.get("filter") ?? "all";
   const [feedFilterTab, setFeedFilterTab] = useState<"for-you" | "following" | "latest" | "projects">("for-you");
-  const [activeNavTab, setActiveNavTab] = useState<"feed" | "network" | "clubs" | "creators">("feed");
-  const [networkMenuOpen, setNetworkMenuOpen] = useState(false);
-  const networkMenuRef = useRef<HTMLDivElement>(null);
   const [feedFilterOpen, setFeedFilterOpen] = useState(false);
   const feedFilterRef = useRef<HTMLDivElement>(null);
 
@@ -178,9 +124,6 @@ export function NetworkPage() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (networkMenuRef.current && !networkMenuRef.current.contains(event.target as Node)) {
-        setNetworkMenuOpen(false);
-      }
       if (feedFilterRef.current && !feedFilterRef.current.contains(event.target as Node)) {
         setFeedFilterOpen(false);
       }
@@ -221,16 +164,14 @@ export function NetworkPage() {
   const [postType, setPostType] = useState<string>("spark");
   const [posting, setPosting] = useState(false);
 
-  // Connections state
-  const [connections, setConnections] = useState<{
-    accepted: Connection[];
-    pendingIncoming: Connection[];
-    pendingOutgoing: Connection[];
-  }>({ accepted: [], pendingIncoming: [], pendingOutgoing: [] });
-  const [suggested, setSuggested] = useState<ConnectionUserSummary[]>([]);
+  // Connection requests state
   const [requestedUsers, setRequestedUsers] = useState<Record<string, boolean>>({});
 
   // Interactive like / bookmark states for demo showcase posts
+  const [chanLiked, setChanLiked] = useState(false);
+  const [chanLikesCount, setChanLikesCount] = useState(94);
+  const [chanBookmarked, setChanBookmarked] = useState(false);
+
   const [arjunLiked, setArjunLiked] = useState(false);
   const [arjunLikesCount, setArjunLikesCount] = useState(128);
   const [arjunBookmarked, setArjunBookmarked] = useState(false);
@@ -238,9 +179,6 @@ export function NetworkPage() {
   const [miraLiked, setMiraLiked] = useState(false);
   const [miraLikesCount, setMiraLikesCount] = useState(86);
   const [miraBookmarked, setMiraBookmarked] = useState(false);
-
-  // Carousel scroll index for "People you can reach"
-  const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -252,16 +190,10 @@ export function NetworkPage() {
 
   const loadSidebar = useCallback(async () => {
     try {
-      const [connData, suggData] = await Promise.all([
+      await Promise.all([
         fetchConnections(),
         fetchSuggestedDevelopers(),
       ]);
-      if (connData && Array.isArray(connData.accepted)) {
-        setConnections(connData);
-      }
-      if (Array.isArray(suggData)) {
-        setSuggested(suggData);
-      }
     } catch {
       // Ignore
     }
@@ -313,74 +245,12 @@ export function NetworkPage() {
     }
   }
 
-  // People you can reach items
-  const peopleYouCanReach = [
-    {
-      id: "demo-p1",
-      name: "Manasi Sharma",
-      username: "manasi",
-      role: "Analytics Engineer",
-      mutuals: "4 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p2",
-      name: "Bhupesh Verma",
-      username: "bhupesh",
-      role: "Backend Developer",
-      mutuals: "2 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p3",
-      name: "Riya Anand",
-      username: "riya",
-      role: "DevOps Engineer",
-      mutuals: "5 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-p4",
-      name: "Chan S.",
-      username: "chan",
-      role: "Security Architect",
-      mutuals: "3 mutual",
-      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces",
-    },
-  ];
-
-  // Suggested Creators items
-  const suggestedCreators = [
-    {
-      id: "demo-c1",
-      name: "Karan Malhotra",
-      username: "karan",
-      headline: "AI/ML Engineer · Building with LLMs",
-      avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-c2",
-      name: "Aditi Desai",
-      username: "aditi",
-      headline: "Product Engineer · React · Design Systems",
-      avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop&crop=faces",
-    },
-    {
-      id: "demo-c3",
-      name: "Neel Iyer",
-      username: "neel",
-      headline: "SRE · Cloud · Observability",
-      avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces",
-    },
-  ];
-
   // Current logged in user info (or default to Janasi Rajput as shown in the design)
   const userDisplayName: string =
     me.data?.fullName ||
     (typeof user?.fullName === "string" ? user.fullName : "") ||
     (typeof user?.full_name === "string" ? user.full_name : "") ||
     "Janasi Rajput";
-  const userDisplayUsername: string = user?.username ? `@${user.username}` : "@janasi";
   const userDisplayRole: string =
     me.data?.headline ||
     (typeof user?.headline === "string" ? user.headline : "") ||
@@ -404,339 +274,130 @@ export function NetworkPage() {
 
       <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         {/* ========================================================================= */}
-        {/* 1. TOP BANNER: Vintage Heritage Striped Medallion                         */}
-        {/* ========================================================================= */}
-        <section
-          className="relative rounded-[2rem] border border-[#2D120D]/30 shadow-[0_12px_30px_rgba(45,18,13,0.16)] overflow-hidden mb-6 py-5 sm:py-6 px-4 sm:px-8"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 16px, #520809 16px, #520809 32px)",
-          }}
-        >
-          {/* Soft dark-espresso edge vignette */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, transparent 45%, rgba(45, 18, 13, 0.32) 100%)",
-            }}
-            aria-hidden
-          />
-
-          {/* Vintage corner vine swirls & stars on striped backdrop */}
-          <VintageCornerSwirl className="hidden sm:block absolute top-2.5 left-3 w-24 h-18 text-[#FFF8CA]/80 pointer-events-none" />
-          <VintageCornerSwirl className="hidden sm:block absolute top-2.5 right-3 w-24 h-18 text-[#FFF8CA]/80 -scale-x-100 pointer-events-none" />
-          <VintageCornerSwirl className="hidden md:block absolute bottom-2.5 left-3 w-20 h-14 text-[#FFF8CA]/55 -scale-y-100 pointer-events-none" />
-          <VintageCornerSwirl className="hidden md:block absolute bottom-2.5 right-3 w-20 h-14 text-[#FFF8CA]/55 -scale-x-100 -scale-y-100 pointer-events-none" />
-
-          {/* Centered Warm Cream Vintage Medallion */}
-          <div className="relative z-10 max-w-2xl mx-auto rounded-[2.75rem] bg-[#FAF3E3] border border-[#6B0B0C]/30 shadow-[0_6px_22px_rgba(45,18,13,0.22)] px-6 py-4 sm:px-12 sm:py-5 text-center overflow-hidden">
-            {/* Inner delicate vintage frame */}
-            <div
-              className="absolute inset-2 rounded-[2.25rem] border border-[#6B0B0C]/20 pointer-events-none"
-              aria-hidden
-            />
-
-            <div className="relative z-10 flex flex-col items-center">
-              <span className="font-editorial italic text-sm sm:text-base text-[#6B0B0C]/80 tracking-wide">
-                ( community )
-              </span>
-
-              <h1 className="m-0 mt-0.5 font-editorial font-normal text-3xl sm:text-[2.65rem] text-[#2D120D] tracking-[-0.015em] leading-[0.95]">
-                <span className="font-flourish text-4xl sm:text-[3.3rem] text-[#6B0B0C] leading-none -mr-1 align-baseline">
-                  C
-                </span>
-                ommunity{" "}
-                <span className="uppercase tracking-[0.06em] text-[#6B0B0C]">NETWORK</span>
-              </h1>
-
-              <p className="mt-1.5 font-sans text-xs sm:text-sm text-[#2D120D]/80 max-w-md">
-                Share project updates, discover fellow builders, and grow together.
-              </p>
-
-              <div className="mt-2.5 inline-flex items-center gap-2.5 sm:gap-3 font-editorial italic text-xs sm:text-sm text-[#6B0B0C]/85">
-                <span>( creators )</span>
-                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>&middot;</span>
-                <span>( builds )</span>
-                <span className="not-italic text-[10px] text-[#6B0B0C]/60" aria-hidden>&middot;</span>
-                <span>( connections )</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ========================================================================= */}
-        {/* 2. SEGMENTED NAVIGATION BAR (Main Name + Dropdown for secondary views)     */}
-        {/* ========================================================================= */}
-        <nav aria-label="Network Sections" className="flex items-center justify-center gap-2.5 sm:gap-3.5 mb-8">
-          <button
-            type="button"
-            onClick={() => setActiveNavTab("feed")}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer ${
-              activeNavTab === "feed"
-                ? "bg-[#780D18] text-white"
-                : "bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white"
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>Feed</span>
-          </button>
-
-          {/* Secondary Views Dropdown */}
-          <div className="relative" ref={networkMenuRef}>
-            <button
-              type="button"
-              onClick={() => setNetworkMenuOpen((prev) => !prev)}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-sans text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer ${
-                activeNavTab === "creators" || networkMenuOpen
-                  ? "bg-white text-[#780D18] border-2 border-[#780D18]"
-                  : "bg-white/80 text-[#3E2217] border border-[#DECDBA] hover:bg-white"
-              }`}
-              aria-expanded={networkMenuOpen}
-            >
-              <span>{activeNavTab === "creators" ? "Discover Creators" : "More"}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${networkMenuOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {networkMenuOpen && (
-              <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 rounded-2xl bg-white border border-[#DECDBA] shadow-lg py-2 z-30 font-sans">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveNavTab((curr) => (curr === "creators" ? "feed" : "creators"));
-                    setNetworkMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left cursor-pointer"
-                >
-                  <Compass className="w-4 h-4 text-[#780D18]" />
-                  <div>
-                    <div className="font-semibold">{activeNavTab === "creators" ? "Hide Creator Mesh" : "Discover Creators"}</div>
-                    <div className="text-[11px] text-[#6E5952]">Interactive constellation</div>
-                  </div>
-                </button>
-
-                <Link
-                  to="/network/connections"
-                  onClick={() => setNetworkMenuOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left"
-                >
-                  <Users className="w-4 h-4 text-[#780D18]" />
-                  <div>
-                    <div className="font-semibold">My Network</div>
-                    <div className="text-[11px] text-[#6E5952]">Connections &amp; requests</div>
-                  </div>
-                </Link>
-
-                <Link
-                  to="/network/groups"
-                  onClick={() => setNetworkMenuOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#3E2217] hover:bg-[#FAF7F2] transition text-left"
-                >
-                  <Boxes className="w-4 h-4 text-[#780D18]" />
-                  <div>
-                    <div className="font-semibold">Clubs &amp; Showcases</div>
-                    <div className="text-[11px] text-[#6E5952]">Developer communities</div>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </div>
-        </nav>
-
-        {/* Constellation View Mode (when toggled via Discover Creators) */}
-        {activeNavTab === "creators" && (
-          <div className="mb-8 rounded-3xl bg-white border border-[#DECDBA] p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#2D120D]">Interactive Creator Constellation</h2>
-                <p className="text-xs text-[#6E5952]">Explore developers, connections, and activity nodes in the community mesh.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveNavTab("feed")}
-                className="px-4 py-1.5 rounded-full bg-[#780D18] text-white text-xs font-semibold"
-              >
-                Back to Feed
-              </button>
-            </div>
-            <ConstellationGraph
-              meId={meId}
-              creators={suggested.filter((person) => person.id !== meId)}
-              connections={connections.accepted.filter((c) => c.partner.id !== meId)}
-              activities={feed.filter((item) => item.userId !== meId)}
-              onConnect={handleSendConnect}
-              requestedUsers={requestedUsers}
-            />
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* 3. THREE-COLUMN RESPONSIVE LAYOUT (Exactly matching reference artwork)    */}
+        {/* THREE-COLUMN RESPONSIVE LAYOUT (Picture format)                           */}
         {/* ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] xl:grid-cols-[290px_1fr_340px] gap-6 items-start">
           {/* ─────────────────────────────────────────────────────────────────────── */}
           {/* COLUMN 1 (LEFT): User Card, YOUR NETWORK, COMMUNITIES & CLUBS           */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
           <aside className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto scrollbar-none">
-            {/* Card 1: User Profile Mini Card */}
-            <div className="relative rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs overflow-hidden">
-              {/* Top Card Gingham Checkered Accent */}
-              <div
-                className="absolute top-0 left-0 right-0 h-14 opacity-25"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(0deg, #6B0B0C 0px, #6B0B0C 1px, transparent 1px, transparent 12px), repeating-linear-gradient(90deg, #6B0B0C 0px, #6B0B0C 1px, transparent 1px, transparent 12px)",
-                  backgroundColor: "#FAF3E8",
-                }}
-              />
+            {/* Card 1: User Profile Card with Sunset Cover */}
+            <div className="rounded-3xl border border-[#DECDBA] bg-white overflow-hidden shadow-xs">
+              <div className="h-28 w-full relative overflow-hidden bg-[#2D120D]">
+                <img
+                  src="/brand/profile_cover.jpg"
+                  alt=""
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
 
-              <div className="relative z-10 flex items-center gap-3.5 pt-2">
-                <Link to="/profile" className="shrink-0 group">
-                  <img
-                    src={userAvatarUrl}
-                    alt={userDisplayName}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-xs group-hover:scale-105 transition-transform"
-                  />
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <Link
-                    to="/profile"
-                    className="font-bold text-base text-[#2D120D] hover:text-[#780D18] transition truncate block"
-                  >
-                    {userDisplayName}
+              <div className="px-5 pb-5 pt-0 relative">
+                <div className="-mt-10 mb-3 flex items-end justify-between">
+                  <Link to="/profile" className="shrink-0 group block">
+                    <img
+                      src={userAvatarUrl}
+                      alt={userDisplayName}
+                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm group-hover:scale-105 transition-transform bg-white"
+                    />
                   </Link>
-                  <p className="text-xs text-[#6E5952] truncate font-medium">{userDisplayUsername}</p>
-                  <span className="inline-block mt-1.5 px-3 py-0.5 rounded-full bg-[#FFF8CA] border border-[#780D18]/15 text-[#780D18] text-[11px] font-semibold">
-                    {userDisplayRole}
-                  </span>
+                </div>
+
+                <Link
+                  to="/profile"
+                  className="font-serif font-bold text-xl text-[#2D120D] hover:text-[#780D18] transition block leading-tight"
+                >
+                  {userDisplayName}
+                </Link>
+                <p className="text-xs text-[#6E5952] font-medium mt-0.5 flex items-center gap-1.5">
+                  <span className="font-mono text-[#780D18]">&lt;/&gt;</span>
+                  <span>{userDisplayRole}</span>
+                </p>
+
+                <Link
+                  to="/profile"
+                  className="mt-4 w-full py-2 px-4 rounded-full border border-[#DECDBA] bg-white hover:bg-[#FAF7F2] text-xs font-semibold text-[#2D120D] transition flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <span>View Profile</span>
+                  <span aria-hidden>&rarr;</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Card 2: My Space */}
+            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
+              <h3 className="font-serif font-bold text-lg text-[#2D120D] mb-4">
+                My Space
+              </h3>
+
+              <div className="space-y-3.5">
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
+                >
+                  <Layers className="w-4 h-4 text-[#780D18]" />
+                  <span>My Projects</span>
+                </Link>
+
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
+                >
+                  <Bookmark className="w-4 h-4 text-[#780D18]" />
+                  <span>Saved</span>
+                </Link>
+
+                <Link
+                  to="/network/groups"
+                  className="flex items-center gap-3 text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
+                >
+                  <UsersRound className="w-4 h-4 text-[#780D18]" />
+                  <span>My Communities</span>
+                </Link>
+
+                <Link
+                  to="/network"
+                  className="flex items-center gap-3 text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
+                >
+                  <Calendar className="w-4 h-4 text-[#780D18]" />
+                  <span>Events</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Card 3: Build Streak 🔥 */}
+            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs flex items-center justify-between">
+              <div>
+                <h3 className="font-serif font-bold text-sm text-[#2D120D] flex items-center gap-1.5">
+                  <span>Build Streak</span>
+                  <span>🔥</span>
+                </h3>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="font-serif text-3xl font-bold text-[#2D120D]">12</span>
+                  <span className="text-xs font-semibold text-[#6E5952]">days</span>
                 </div>
               </div>
-            </div>
 
-            {/* Card 2: YOUR NETWORK */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <h3 className="text-xs font-bold tracking-wider uppercase text-[#2D120D] mb-4">
-                YOUR NETWORK
-              </h3>
-
-              <div className="space-y-3.5 mb-5">
-                <Link
-                  to="/network/connections"
-                  className="flex items-center justify-between text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-[#6E5952] group-hover:text-[#780D18]" />
-                    <span>Connections</span>
-                  </div>
-                  <span className="font-semibold text-[#2D120D]">
-                    {connections.accepted.length > 0 ? connections.accepted.length : 922}
-                  </span>
-                </Link>
-
-                <Link
-                  to="/network/connections?tab=requests"
-                  className="flex items-center justify-between text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Mail className="w-4 h-4 text-[#6E5952] group-hover:text-[#780D18]" />
-                    <span>Invitations</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-[#780D18] text-white text-[11px] font-bold">
-                    {connections.pendingIncoming.length > 0 ? connections.pendingIncoming.length : 3}
-                  </span>
-                </Link>
-
-                <Link
-                  to="/network/connections"
-                  className="flex items-center justify-between text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <UserCheck className="w-4 h-4 text-[#6E5952] group-hover:text-[#780D18]" />
-                    <span>Following</span>
-                  </div>
-                  <span className="font-semibold text-[#2D120D]">128</span>
-                </Link>
-
-                <Link
-                  to="/network/groups"
-                  className="flex items-center justify-between text-xs sm:text-sm font-medium text-[#2D120D] hover:text-[#780D18] transition group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <UsersRound className="w-4 h-4 text-[#6E5952] group-hover:text-[#780D18]" />
-                    <span>Groups</span>
-                  </div>
-                  <span className="font-semibold text-[#2D120D]">5</span>
-                </Link>
+              <div className="w-20 h-14 relative flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 88 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <rect x="2" y="46" width="84" height="6" rx="2" fill="#8C5C1B" opacity="0.8" />
+                  <rect x="0" y="44" width="88" height="4" rx="1.5" fill="#C98B28" />
+                  <rect x="12" y="10" width="40" height="30" rx="3" fill="#2D120D" stroke="#780D18" strokeWidth="1.5" />
+                  <rect x="15" y="13" width="34" height="22" rx="1.5" fill="#1A2D23" />
+                  <path d="M19 20 L23 24 L19 28" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="26" y1="28" x2="33" y2="28" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" />
+                  <rect x="28" y="40" width="8" height="4" fill="#2D120D" />
+                  <path d="M22 44 L42 44" stroke="#2D120D" strokeWidth="2" strokeLinecap="round" />
+                  <g transform="translate(56, 18)">
+                    <ellipse cx="14" cy="18" rx="11" ry="8" fill="#FACC15" />
+                    <ellipse cx="12" cy="18" rx="8" ry="6" fill="#EAB308" />
+                    <circle cx="8" cy="10" r="7" fill="#FACC15" />
+                    <circle cx="6.5" cy="8.5" r="1.3" fill="#1C1917" />
+                    <circle cx="6" cy="8" r="0.4" fill="#FFFFFF" />
+                    <path d="M1 9 Q-2 11 1 13 L5 12 Z" fill="#F97316" />
+                    <path d="M14 16 Q19 14 20 18 Q16 22 13 18 Z" fill="#F59E0B" />
+                  </g>
+                </svg>
               </div>
-
-              <Link
-                to="/network/connections"
-                className="w-full py-2.5 px-4 rounded-xl border border-[#DECDBA] text-xs font-semibold text-[#2D120D] hover:bg-[#FAF7F2] transition flex items-center justify-center gap-2 shadow-2xs"
-              >
-                <Settings className="w-3.5 h-3.5 text-[#6E5952]" />
-                <span>Manage Network →</span>
-              </Link>
-            </div>
-
-            {/* Card 3: COMMUNITIES & CLUBS */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold tracking-wider uppercase text-[#780D18]">
-                  COMMUNITIES &amp; CLUBS
-                </span>
-              </div>
-
-              <h3 className="font-bold text-lg text-[#2D120D] mb-1">
-                Clubs &amp; Showcases
-              </h3>
-              <p className="text-xs text-[#6E5952] leading-relaxed mb-4">
-                Join developer clubs, participate in events, and showcase your projects.
-              </p>
-
-              <div className="space-y-2.5 mb-4">
-                <Link
-                  to="/network/groups/robotics-club"
-                  className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#FAF7F2] border border-transparent hover:border-[#DECDBA] transition group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#F7DDD4] text-[#9E3922] flex items-center justify-center shrink-0">
-                      <Cpu className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-xs text-[#2D120D] group-hover:text-[#780D18]">
-                        Robotics Club
-                      </p>
-                      <p className="text-[11px] text-[#6E5952]">432 members</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#DECDBA] group-hover:text-[#780D18]" />
-                </Link>
-
-                <Link
-                  to="/network/groups"
-                  className="flex items-center justify-between p-2.5 rounded-2xl hover:bg-[#FAF7F2] border border-transparent hover:border-[#DECDBA] transition group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#FFF5C0] text-[#8C6D1F] flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-xs text-[#2D120D] group-hover:text-[#780D18]">
-                        Web Dev Collective
-                      </p>
-                      <p className="text-[11px] text-[#6E5952]">1.2k members</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#DECDBA] group-hover:text-[#780D18]" />
-                </Link>
-              </div>
-
-              <Link
-                to="/network/groups"
-                className="w-full py-2.5 px-4 rounded-xl bg-[#F3EBDD] hover:bg-[#EAE0D0] text-[#3E2217] font-semibold text-xs transition flex items-center justify-center"
-              >
-                Browse All Clubs
-              </Link>
             </div>
           </aside>
 
@@ -771,51 +432,54 @@ export function NetworkPage() {
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
-                    onClick={() => setPostType("post")}
+                    onClick={() => setPostType("project")}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      postType === "post"
+                      postType === "project"
                         ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18]"
                         : "text-[#6E5952] hover:bg-[#FAF7F2]"
                     }`}
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Note</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPostType("spark")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      postType === "spark"
-                        ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18]"
-                        : "text-[#6E5952] hover:bg-[#FAF7F2]"
-                    }`}
-                  >
-                    <CodeXml className="w-3.5 h-3.5" />
+                    <Layers className="w-3.5 h-3.5 text-[#780D18]" />
                     <span>Project</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setPostType("milestone")}
+                    onClick={() => setPostType("media")}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      postType === "milestone"
+                      postType === "media"
                         ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18]"
                         : "text-[#6E5952] hover:bg-[#FAF7F2]"
                     }`}
                   >
-                    <Flag className="w-3.5 h-3.5" />
-                    <span>Milestone</span>
+                    <ImageIcon className="w-3.5 h-3.5 text-[#780D18]" />
+                    <span>Media</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setPostType("collab_call")}
+                    onClick={() => setPostType("poll")}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      postType === "collab_call"
+                      postType === "poll"
                         ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18]"
                         : "text-[#6E5952] hover:bg-[#FAF7F2]"
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Collab Call</span>
+                    <BarChart2 className="w-3.5 h-3.5 text-[#780D18]" />
+                    <span>Poll</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPostType("event")}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                      postType === "event"
+                        ? "bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18]"
+                        : "text-[#6E5952] hover:bg-[#FAF7F2]"
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#780D18]" />
+                    <span>Event</span>
                   </button>
                 </div>
 
@@ -834,6 +498,93 @@ export function NetworkPage() {
                 </button>
               </div>
             </div>
+
+            {/* Post: Chan Li (Featured Module Post) */}
+            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/team/chan.jpg"
+                    alt="Chan Li"
+                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
+                  />
+                  <div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-bold text-sm text-[#2D120D]">Chan Li</span>
+                    </div>
+                    <p className="text-xs text-[#6E5952] flex items-center gap-1">
+                      <span>2h ago &middot; Software Developer</span>
+                      <span aria-hidden>&middot;</span>
+                      <Globe className="w-3 h-3 text-[#6E5952]" />
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="text-[#6E5952] hover:text-[#2D120D] p-1.5 rounded-full hover:bg-[#FAF7F2] transition"
+                  title="More options"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3">
+                Just shipped the Network &amp; Messages module for DevZ-Go! 💻 Added real-time messaging and project collaboration—would love feedback from the community.
+              </p>
+
+              <div className="rounded-2xl overflow-hidden border border-[#DECDBA] mb-3.5 bg-[#2D120D]">
+                <img
+                  src="/brand/chan_workspace.jpg"
+                  alt="Workstations showing DevZ-Go"
+                  className="w-full h-auto object-cover max-h-72"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChanLiked((l) => !l);
+                      setChanLikesCount((c) => (chanLiked ? c - 1 : c + 1));
+                    }}
+                    className={`flex items-center gap-1.5 transition cursor-pointer ${
+                      chanLiked ? "text-[#780D18] font-bold" : "hover:text-[#780D18]"
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${chanLiked ? "fill-[#780D18]" : ""}`} />
+                    <span>{chanLikesCount}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 hover:text-[#780D18] transition cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>32</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 hover:text-[#780D18] transition cursor-pointer"
+                  >
+                    <Repeat className="w-4 h-4" />
+                    <span>18</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setChanBookmarked((b) => !b)}
+                  className={`hover:text-[#780D18] transition cursor-pointer ${
+                    chanBookmarked ? "text-[#780D18]" : ""
+                  }`}
+                >
+                  <Bookmark className={`w-4 h-4 ${chanBookmarked ? "fill-[#780D18]" : ""}`} />
+                </button>
+              </div>
+            </article>
 
             {/* Community Feed Header & Filter Dropdown */}
             <div className="flex items-center justify-between gap-3 pt-2">
@@ -1074,117 +825,68 @@ export function NetworkPage() {
           </div>
 
           {/* ─────────────────────────────────────────────────────────────────────── */}
-          {/* COLUMN 3 (RIGHT): People you can reach, Suggested Creators, Notes       */}
+          {/* COLUMN 3 (RIGHT): Your Progress, Suggested Connections, Communities     */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
           <aside className="space-y-6">
-            {/* People you can reach (Carousel Card) */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs relative">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  People you can reach
+            {/* Card 1: Your Progress */}
+            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D] flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-[#780D18]" />
+                  <span>Your Progress</span>
                 </h3>
-                <Link
-                  to="/network/connections"
-                  className="text-xs font-semibold text-[#780D18] hover:underline"
-                >
-                  View All →
-                </Link>
+                <span className="text-xs text-[#6E5952]">This month</span>
               </div>
 
-              {/* Carousel Container with Left / Right Navigation */}
-              <div className="relative">
-                {/* Arrow Left */}
-                <button
-                  type="button"
-                  onClick={() => setCarouselIndex((i) => (i > 0 ? i - 1 : peopleYouCanReach.length - 3))}
-                  className="absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white border border-[#DECDBA] shadow-xs flex items-center justify-center text-[#2D120D] hover:bg-[#FAF7F2] transition cursor-pointer"
-                  title="Previous creators"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {/* Arrow Right */}
-                <button
-                  type="button"
-                  onClick={() => setCarouselIndex((i) => (i + 1 < peopleYouCanReach.length ? i + 1 : 0))}
-                  className="absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white border border-[#DECDBA] shadow-xs flex items-center justify-center text-[#2D120D] hover:bg-[#FAF7F2] transition cursor-pointer"
-                  title="Next creators"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                {/* Carousel Cards Track */}
-                <div className="grid grid-cols-3 gap-2 px-3">
-                  {peopleYouCanReach.slice(carouselIndex, carouselIndex + 3).map((person) => {
-                    const isRequested = requestedUsers[person.id];
-                    return (
-                      <div
-                        key={person.id}
-                        className="flex flex-col items-center text-center p-2 rounded-2xl bg-[#FAF7F2] border border-[#DECDBA]/60"
-                      >
-                        <img
-                          src={person.avatarUrl}
-                          alt={person.name}
-                          className="w-11 h-11 rounded-full object-cover border border-white shadow-2xs mb-1.5"
-                        />
-                        <p className="font-bold text-xs text-[#2D120D] truncate w-full">
-                          {person.name}
-                        </p>
-                        <p className="text-[10px] text-[#6E5952] truncate w-full">
-                          @{person.username}
-                        </p>
-                        <p className="text-[10px] text-[#6E5952] truncate w-full mt-0.5 font-medium">
-                          {person.role}
-                        </p>
-                        <p className="text-[10px] text-[#780D18] font-semibold mt-1 flex items-center gap-0.5">
-                          <span>👥</span> {person.mutuals}
-                        </p>
-
-                        <button
-                          type="button"
-                          disabled={isRequested}
-                          onClick={() => handleSendConnect(person.id)}
-                          className={`mt-2 w-full py-1 px-2 rounded-full text-[10px] font-semibold transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs ${
-                            isRequested
-                              ? "bg-stone-200 text-stone-500 cursor-default"
-                              : "bg-[#780D18] hover:bg-[#5C0A12] text-white"
-                          }`}
-                        >
-                          {isRequested ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Sent</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-3 h-3" />
-                              <span>Connect</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
+              {/* Progress Bar */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-2.5 rounded-full bg-[#FAF3E8] border border-[#DECDBA] overflow-hidden">
+                  <div className="h-full w-3/5 rounded-full bg-[#780D18]" />
                 </div>
+                <span className="text-xs font-bold text-[#2D120D] shrink-0">3 / 5 builds</span>
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E8] border border-[#DECDBA] text-[11px] font-semibold text-[#780D18] shadow-2xs">
+                <span>Keep Building!</span>
+                <span>✨</span>
               </div>
             </div>
 
-            {/* Suggested Creators */}
+            {/* Card 2: Suggested Connections */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  Suggested Creators
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D]">
+                  Suggested Connections
                 </h3>
                 <Link
                   to="/explore/developers"
                   className="text-xs font-semibold text-[#780D18] hover:underline"
                 >
-                  Discover →
+                  See All
                 </Link>
               </div>
 
               <div className="space-y-3.5">
-                {suggestedCreators.map((creator) => {
+                {[
+                  {
+                    id: "sugg-1",
+                    name: "Manasi Sharma",
+                    role: "Full-Stack Developer",
+                    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
+                  },
+                  {
+                    id: "sugg-2",
+                    name: "Khushbu Patel",
+                    role: "Frontend Developer",
+                    avatarUrl: "/team/khushbu.jpeg",
+                  },
+                  {
+                    id: "sugg-3",
+                    name: "Janasi Reddy",
+                    role: "DevOps Enthusiast",
+                    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
+                  },
+                ].map((creator) => {
                   const isRequested = requestedUsers[creator.id];
                   return (
                     <div key={creator.id} className="flex items-center justify-between gap-3">
@@ -1195,14 +897,11 @@ export function NetworkPage() {
                           className="w-10 h-10 rounded-full object-cover border border-[#DECDBA] shrink-0"
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-1 truncate">
-                            <span className="font-bold text-xs sm:text-sm text-[#2D120D] truncate">
-                              {creator.name}
-                            </span>
-                            <span className="text-[11px] text-[#6E5952]">@{creator.username}</span>
-                          </div>
-                          <p className="text-[11px] text-[#6E5952] truncate leading-tight mt-0.5">
-                            {creator.headline}
+                          <p className="font-bold text-xs sm:text-sm text-[#2D120D] truncate">
+                            {creator.name}
+                          </p>
+                          <p className="text-[11px] text-[#6E5952] truncate">
+                            {creator.role}
                           </p>
                         </div>
                       </div>
@@ -1211,13 +910,18 @@ export function NetworkPage() {
                         type="button"
                         disabled={isRequested}
                         onClick={() => handleSendConnect(creator.id)}
-                        className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition cursor-pointer ${
+                        className={`w-8 h-8 rounded-xl border border-[#DECDBA] flex items-center justify-center transition cursor-pointer shrink-0 ${
                           isRequested
-                            ? "bg-stone-200 text-stone-500 border border-stone-300"
-                            : "border border-[#780D18] text-[#780D18] hover:bg-[#780D18] hover:text-white"
+                            ? "bg-stone-100 text-stone-400 cursor-default"
+                            : "bg-white hover:bg-[#FAF7F2] text-[#2D120D] hover:text-[#780D18] shadow-2xs"
                         }`}
+                        title={isRequested ? "Request sent" : "Connect"}
                       >
-                        {isRequested ? "Sent" : "+ Connect"}
+                        {isRequested ? (
+                          <Check className="w-4 h-4 text-[#780D18]" />
+                        ) : (
+                          <UserPlus className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   );
@@ -1225,44 +929,69 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Community Notes */}
+            {/* Card 3: Communities & Clubs */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-sm sm:text-base text-[#2D120D]">
-                  Community Notes
+                <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D]">
+                  Communities &amp; Clubs
                 </h3>
                 <Link
-                  to="/network"
+                  to="/network/groups"
                   className="text-xs font-semibold text-[#780D18] hover:underline"
                 >
-                  View All →
+                  See All
                 </Link>
               </div>
 
-              <div className="space-y-3.5">
-                <div className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-[#FAF7F2] transition">
-                  <div className="w-9 h-9 rounded-xl bg-[#F7DDD4] text-[#9E3922] flex items-center justify-center shrink-0 mt-0.5">
-                    <Megaphone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-[#2D120D] leading-snug">
-                      New: Spring Boot Showcase this weekend!
-                    </h4>
-                    <p className="text-[11px] text-[#6E5952] mt-0.5">DevZGo Events · 2d ago</p>
-                  </div>
-                </div>
+              <div className="space-y-3">
+                {[
+                  {
+                    name: "Sheridan Developers",
+                    members: "1.2K members",
+                    link: "/network/groups",
+                    bg: "bg-[#780D18]",
+                    icon: Cpu,
+                  },
+                  {
+                    name: "Women in Tech",
+                    members: "3.4K members",
+                    link: "/network/groups",
+                    bg: "bg-[#2D120D]",
+                    icon: Globe,
+                  },
+                  {
+                    name: "Hackathon Hub",
+                    members: "2.1K members",
+                    link: "/network/groups",
+                    bg: "bg-[#8C5C1B]",
+                    icon: Boxes,
+                  },
+                ].map((club) => {
+                  const Icon = club.icon;
+                  return (
+                    <Link
+                      key={club.name}
+                      to={club.link}
+                      className="flex items-center justify-between p-2 rounded-2xl hover:bg-[#FAF7F2] transition group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-xl ${club.bg} text-white flex items-center justify-center shrink-0 shadow-2xs`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs sm:text-sm text-[#2D120D] group-hover:text-[#780D18] truncate">
+                            {club.name}
+                          </p>
+                          <p className="text-[11px] text-[#6E5952]">{club.members}</p>
+                        </div>
+                      </div>
 
-                <div className="flex items-start gap-3 p-2.5 rounded-2xl hover:bg-[#FAF7F2] transition">
-                  <div className="w-9 h-9 rounded-xl bg-[#FFF5C0] text-[#8C6D1F] flex items-center justify-center shrink-0 mt-0.5">
-                    <StickyNote className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-[#2D120D] leading-snug">
-                      Looking for collaborators on an open-source tool
-                    </h4>
-                    <p className="text-[11px] text-[#6E5952] mt-0.5">Community · 3d ago</p>
-                  </div>
-                </div>
+                      <div className="w-7 h-7 rounded-full border border-[#DECDBA] flex items-center justify-center text-[#2D120D] group-hover:bg-[#FAF7F2] group-hover:border-[#780D18] group-hover:text-[#780D18] transition shrink-0">
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </aside>

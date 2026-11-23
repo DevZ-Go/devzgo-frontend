@@ -6,9 +6,9 @@
    ════════════════════════════════════════════════════════════════ */
 
 .tvw-root {
-  --tvw-font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --tvw-font: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   --tvw-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --tvw-serif: "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+  --tvw-serif: "Bropella", "Instrument Serif", Georgia, serif;
   --tvw-ink: #FFF8CA;
   --tvw-dim: #CBE4EE;
   --tvw-faint: #E2F0CB;

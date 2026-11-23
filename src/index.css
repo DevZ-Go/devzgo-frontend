@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Bropella Display Typography */
+@font-face {
+  font-family: 'Bropella';
+  src: url('/fonts/Bropella.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bropella';
+  src: url('/fonts/Bropella.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
 
 :root {
   --text: #3E2217;
@@ -16,8 +32,8 @@
   --shadow:
     rgba(62, 34, 23, 0.08) 0 4px 15px -3px, rgba(62, 34, 23, 0.04) 0 2px 6px -1px;
 
-  --sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Bropella', 'Instrument Serif', Georgia, serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 16px/155% var(--sans);
@@ -62,9 +78,11 @@ body {
 @layer base {
   h1,
   h2,
-  h3 {
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--heading);
-    font-weight: 700;
   }
 
   h1 {
@@ -242,20 +260,22 @@ code {
   box-shadow: 0 0 0 1000px rgba(45, 18, 13, 0.35) inset;
 }
 
-/* Site-wide Editorial Serif Scheme (Instrument Serif + Pinyon Script flourish) */
-/* Instrument Serif is weight 400 — keeping font-weight: 400 prevents fallback to bold Georgia/Garamond */
+/* Site-wide Typography: Bropella (Headings & Logo) + DM Sans (Interface & Body) */
+.font-bropella,
+.font-heading,
 .font-serif,
 .font-editorial,
 .font-cursive,
 .font-gift,
 .font-cake {
-  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
-  font-weight: 400;
+  font-family: 'Bropella', 'Instrument Serif', Georgia, serif;
   letter-spacing: -0.015em;
 }
+.font-sans {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 .font-hand {
-  font-family: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
-  font-weight: 400;
+  font-family: 'Bropella', 'Instrument Serif', Georgia, serif;
   font-style: italic;
   letter-spacing: -0.015em;
 }

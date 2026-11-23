@@ -5,10 +5,13 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        serif: ['"Instrument Serif"', '"Cormorant Garamond"', 'Georgia', 'serif'],
-        cursive: ['"Instrument Serif"', '"Cormorant Garamond"', 'Georgia', 'serif'],
-        hand: ['"Instrument Serif"', '"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: ['"DM Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        serif: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        heading: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        bropella: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        editorial: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        cursive: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        hand: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
       },
       colors: {
         // Rich Red and Green
