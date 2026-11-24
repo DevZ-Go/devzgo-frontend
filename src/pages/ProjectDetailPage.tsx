@@ -24,6 +24,7 @@ import { ProjectFileTree } from "../components/ProjectFileTree";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { useAuth } from "../auth/AuthContext";
 import { CollaborationModal } from "../components/CollaborationModal";
+import { GuestPreviewBanner } from "../components/GuestPreviewBanner";
 import { ShareProjectDialog } from "../components/ShareProjectDialog";
 import { isProjectOwner } from "../utils/projectOwnership";
 import type { FileTreeNode } from "../utils/buildFileTree";
@@ -43,7 +44,8 @@ export function ProjectDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "report" ? "report" : "overview";
-  const { user, token, refreshUser } = useAuth();
+  const { user, token, refreshUser, isAuthenticated, isReady } = useAuth();
+  const guest = isReady && !isAuthenticated;
   const [project, setProject] = useState<ApiProject | null>(null);
   const [files, setFiles] = useState<ProjectFileEntry[]>([]);
   const [filesError, setFilesError] = useState<string | null>(null);
@@ -182,13 +184,18 @@ export function ProjectDetailPage() {
   return (
     <div className="min-h-screen bg-[#f8f6f0] text-stone-900">
       <Navbar />
-      <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-8 pt-28 pb-20">
+      <div className="pt-14 sm:pt-16">
+        {guest && (
+          <GuestPreviewBanner message="Preview only — you can read this project. Sign in to like, comment, collaborate, or open member profiles." />
+        )}
+      </div>
+      <main className="relative z-10 max-w-4xl mx-auto px-6 sm:px-8 pt-8 pb-20">
         <Link
-          to="/home"
+          to={guest ? "/explore" : "/home"}
           className="inline-flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-maroon-800 transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to home
+          {guest ? "Back to Explore" : "Back to home"}
         </Link>
 
         {loading && (
@@ -236,9 +243,15 @@ export function ProjectDetailPage() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-600 text-sm mb-6">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 shrink-0" />
-                    <Link to={project.owner_id ? `/profile/${project.owner_id}` : `/profile/${owner}`} className="font-semibold text-stone-800 hover:text-maroon-800">
-                      @{owner}
-                    </Link>
+                    {guest ? (
+                      <Link to="/login" className="font-semibold text-stone-800 hover:text-maroon-800" title="Sign in to view profiles">
+                        @{owner}
+                      </Link>
+                    ) : (
+                      <Link to={project.owner_id ? `/profile/${project.owner_id}` : `/profile/${owner}`} className="font-semibold text-stone-800 hover:text-maroon-800">
+                        @{owner}
+                      </Link>
+                    )}
                     {project.visibility && (
                       <span className="text-slate-400">· {project.visibility}</span>
                     )}
@@ -522,14 +535,21 @@ function ProjectLikeButton({ projectId, count: initialCount, liked: initialLiked
   canLike: boolean;
   hideCount?: boolean;
 }) {
+  const navigate = useNavigate();
   const { count, liked, busy, toggle } = useProjectLike(projectId, initialCount, initialLiked);
   return (
     <button
       type="button"
-      onClick={() => void toggle()}
-      disabled={!canLike || busy}
-      title={canLike ? undefined : "Log in to like projects"}
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-default ${
+      onClick={() => {
+        if (!canLike) {
+          navigate("/login");
+          return;
+        }
+        void toggle();
+      }}
+      disabled={busy}
+      title={canLike ? undefined : "Sign in to like projects"}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
         liked ? "border-rose-200 bg-rose-50 text-rose-600" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >

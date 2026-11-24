@@ -1,5 +1,6 @@
 import { useId, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { resolveApiAssetUrl } from "../api/config";
 import { MemberAvatar } from "./MemberAvatar";
 
@@ -38,6 +39,8 @@ export function ProjectTeamAvatars({
   onDark = false,
 }: Props) {
   const navigate = useNavigate();
+  const { isAuthenticated, isReady } = useAuth();
+  const guest = isReady && !isAuthenticated;
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
   const list = people.filter((p) => p?.username);
@@ -49,9 +52,14 @@ export function ProjectTeamAvatars({
   const solo = list.length === 1;
 
   // Use buttons + navigate (not <Link>) so this can sit inside ProjectCard's <Link> without nested <a>.
+  // Guests may see names/avatars but cannot open member profiles.
   function openProfile(person: ProjectTeamPerson, e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (guest) {
+      navigate("/login");
+      return;
+    }
     navigate(profileHref(person));
   }
 

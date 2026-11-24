@@ -138,7 +138,12 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           <h2 className="font-serif text-2xl text-stone-900">Team ({list.length})</h2>
         </div>
         <div id="collab-invite-actions" className="flex flex-wrap gap-2 scroll-mt-28">
-          {status === "none" && <button className={primary} onClick={() => setShowRequest(true)}>Request to join</button>}
+          {!token && (
+            <Link to="/login" className={primary}>
+              Sign in to join
+            </Link>
+          )}
+          {token && status === "none" && <button className={primary} onClick={() => setShowRequest(true)}>Request to join</button>}
           {status === "requested" && (
             <>
               <span className={`${btn} bg-stone-100 text-stone-500 border border-stone-200`}>Request sent</span>
@@ -168,7 +173,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           return (
             <li key={m.id} className="py-3">
               <div className="flex flex-wrap items-center gap-3">
-                <Link to={`/profile/${m.userId}`} className="min-w-0 flex-1">
+                <Link to={token ? `/profile/${m.userId}` : "/login"} className="min-w-0 flex-1" title={token ? undefined : "Sign in to view profiles"}>
                   <span className="block truncate font-cursive text-xl font-bold text-[#1C1917]">{m.fullName || m.username}</span>
                   <span className="block truncate font-sans text-xs text-stone-500">@{m.username} · {m.role}</span>
                 </Link>

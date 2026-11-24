@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   ChevronDown,
@@ -15,6 +15,7 @@ import {
   Trophy,
   Tv,
 } from "lucide-react";
+import { useAuth } from "../auth/AuthContext";
 import { ExploreStage } from "../components/explore/ExploreStage";
 import { ExploreFilters } from "../components/ExploreFilters";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
@@ -59,6 +60,9 @@ function ReelLikeButton({
   initialLikes: number;
   initialLiked: boolean;
 }) {
+  const navigate = useNavigate();
+  const { token } = useAuth();
+  const signedIn = Boolean(token);
   const { count, liked, toggle } = useProjectLike(projectId, initialLikes, initialLiked);
   return (
     <div className="flex flex-col items-center">
@@ -67,6 +71,10 @@ function ReelLikeButton({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (!signedIn) {
+            navigate("/login");
+            return;
+          }
           toggle();
         }}
         className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 cursor-pointer hover:scale-110 active:scale-90 ${
@@ -74,7 +82,7 @@ function ReelLikeButton({
             ? "border-[#FF4A65]/50 bg-[#FF4A65]/25 text-[#FF4A65] shadow-[0_0_20px_rgba(255,74,101,0.45)]"
             : "border-white/25 bg-black/40 text-white hover:border-white/50 hover:bg-black/60"
         }`}
-        title={liked ? "Unlike build" : "Like build"}
+        title={signedIn ? (liked ? "Unlike build" : "Like build") : "Sign in to like"}
         aria-label="Like build"
       >
         <Heart
@@ -121,10 +129,17 @@ function ReelShareButton({
   projectId: string;
   title: string;
 }) {
+  const navigate = useNavigate();
+  const { token } = useAuth();
+  const signedIn = Boolean(token);
   const [copied, setCopied] = useState(false);
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!signedIn) {
+      navigate("/login");
+      return;
+    }
     const url = `${window.location.origin}/project/${projectId}`;
     if (navigator.clipboard) {
       void navigator.clipboard.writeText(url);
@@ -138,7 +153,7 @@ function ReelShareButton({
         type="button"
         onClick={handleShare}
         className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition-all duration-200 cursor-pointer hover:border-white/50 hover:bg-black/60 hover:scale-110 active:scale-90"
-        title={`Share ${title}`}
+        title={signedIn ? `Share ${title}` : "Sign in to share"}
         aria-label="Share build"
       >
         <Share2 className="w-5 h-5" />
@@ -160,6 +175,9 @@ export function StudioWallPage({
 }: {
   initialMode?: "horizontal" | "vertical" | "cinematic" | "grid";
 } = {}) {
+  const { token } = useAuth();
+  const signedIn = Boolean(token);
+  const [searchParams, setSearchParams] = useSearchParams();
   const data = useExploreProjects();
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(
     initialMode === "vertical" || initialMode === "grid" ? "vertical" : "horizontal"
@@ -167,6 +185,25 @@ export function StudioWallPage({
   const [currentReel, setCurrentReel] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const projects = data.projects ?? [];
+
+  // Keep Reels/Directory in sync with `?view=` (guest tour + shareable links).
+  useEffect(() => {
+    const view = searchParams.get("view");
+    setViewMode(view === "reels" ? "horizontal" : "vertical");
+  }, [searchParams]);
+
+  const setGalleryMode = (mode: "horizontal" | "vertical") => {
+    setViewMode(mode);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (mode === "horizontal") next.set("view", "reels");
+        else next.delete("view");
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   // Reset active reel when filter changes
   useEffect(() => {
@@ -269,7 +306,7 @@ export function StudioWallPage({
               <button
                 type="button"
                 role="tab"
-                onClick={() => setViewMode("horizontal")}
+                onClick={() => setGalleryMode("horizontal")}
                 aria-selected={viewMode === "horizontal"}
                 title="Scrollable Reels gallery view"
                 className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${
@@ -284,7 +321,7 @@ export function StudioWallPage({
               <button
                 type="button"
                 role="tab"
-                onClick={() => setViewMode("vertical")}
+                onClick={() => setGalleryMode("vertical")}
                 aria-selected={viewMode === "vertical"}
                 title="Vertical directory grid view"
                 className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${
@@ -298,9 +335,9 @@ export function StudioWallPage({
                 <span className="md:hidden">Grid</span>
               </button>
               <Link
-                to="/explore/tv"
+                to={signedIn ? "/explore/tv" : "/login"}
                 role="tab"
-                title="Switch to TV World interactive retro room"
+                title={signedIn ? "Switch to TV World interactive retro room" : "Sign in for TV World"}
                 className={`inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold transition-all cursor-pointer ${modeIdle}`}
               >
                 <Tv className="w-3.5 h-3.5" />
@@ -312,13 +349,19 @@ export function StudioWallPage({
 
       {/* Main Body */}
       {data.projects === null ? (
-        <div className="flex h-full flex-1 items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] pt-16">
+        <div
+          data-tour={viewMode === "horizontal" ? "explore-reels" : undefined}
+          className="flex h-full flex-1 items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] pt-16"
+        >
           <p className="font-serif italic text-2xl text-[#4A121A]/70 animate-pulse">
             Curating the gallery frames…
           </p>
         </div>
       ) : projects.length === 0 ? (
-        <div className="flex h-full flex-1 flex-col items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] p-6 pt-20 text-center">
+        <div
+          data-tour={viewMode === "horizontal" ? "explore-reels" : undefined}
+          className="flex h-full flex-1 flex-col items-center justify-center bg-[#FAF7F2] dark:bg-[#18080C] p-6 pt-20 text-center"
+        >
           <p className="font-serif text-xl text-[#4A121A] dark:text-[#FAF7F2]">
             No projects match these filters.
           </p>
@@ -334,6 +377,7 @@ export function StudioWallPage({
         /* ================= INSTAGRAM REELS VERTICAL SCROLL GALLERY ================= */
         <div
           ref={containerRef}
+          data-tour="explore-reels"
           onScroll={handleScroll}
           className="reels-container relative flex-1 h-full w-full overflow-y-auto select-none bg-[#120507]"
           style={{ scrollSnapType: "y mandatory" }}

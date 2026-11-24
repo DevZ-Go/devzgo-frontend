@@ -50,6 +50,7 @@ const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), 
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
 const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
+const GuestFeaturePreviewPage = page(() => import("./pages/GuestFeaturePreviewPage"), "GuestFeaturePreviewPage");
 const DevelopersPage = page(() => import("./pages/DevelopersPage"), "DevelopersPage");
 const WrapPage = page(() => import("./pages/WrapPage"), "WrapPage");
 const NetworkPage = page(() => import("./pages/NetworkPage"), "NetworkPage");
@@ -148,11 +149,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/explore",
-        element: (
-          <ProtectedRoute>
-            <CatalogPage />
-          </ProtectedRoute>
-        ),
+        element: <CatalogPage />,
       },
       {
         path: "/explore/showcase",
@@ -173,6 +170,10 @@ export const router = createBrowserRouter([
             <CardsWorldPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/preview/:feature",
+        element: <GuestFeaturePreviewPage />,
       },
       {
         path: "/explore/studio",
@@ -228,11 +229,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/project/:id",
-        element: (
-          <ProtectedRoute>
-            <ProjectDetailPage />
-          </ProtectedRoute>
-        ),
+        element: <ProjectDetailPage />,
       },
       {
         path: "/project/:id/workspace",

@@ -7,6 +7,7 @@ import { noteVisit } from "../usage";
 import { AvatarPrompt } from "./AvatarPrompt";
 import { Footer } from "./Footer";
 import { DeveloperTour } from "./tour/DeveloperTour";
+import { GuestTour } from "./tour/GuestTour";
 import { RecruiterTour } from "./tour/RecruiterTour";
 
 function PageLoading() {
@@ -51,7 +52,8 @@ export function AppLayout() {
   const fullScreen =
     isHome ||
     location.pathname.startsWith("/explore") ||
-    location.pathname.startsWith("/wrap");
+    location.pathname.startsWith("/wrap") ||
+    location.pathname.startsWith("/preview");
   const deskFit = location.pathname === "/messages";
 
   return (
@@ -61,6 +63,7 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
         <AvatarPrompt />
+        <GuestTour />
         <RecruiterTour />
         <DeveloperTour />
       </div>

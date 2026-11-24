@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, Copy, Link2, Linkedin, Loader2, Share2, X } from "lucide-react";
+import { useAuth } from "../auth/AuthContext";
 import { fetchConnections } from "../api/connections";
 import { createPost } from "../api/network";
 import { fetchGroups, sendGroupMessage, sendMessage } from "../api/messages";
@@ -31,6 +32,8 @@ export function ShareProjectDialog({
   techStacks?: string[] | null;
 }) {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const signedIn = Boolean(token);
   const [query, setQuery] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,12 +42,12 @@ export function ShareProjectDialog({
   const connections = useQuery({
     queryKey: [...queryKeys.connections, "summary"],
     queryFn: fetchConnections,
-    enabled: open,
+    enabled: open && signedIn,
   });
   const groups = useQuery({
     queryKey: ["chat-groups", "share"],
     queryFn: fetchGroups,
-    enabled: open,
+    enabled: open && signedIn,
   });
   const details = useQuery({
     queryKey: queryKeys.project(projectId),
@@ -143,13 +146,15 @@ export function ShareProjectDialog({
                   <Share2 className="h-3.5 w-3.5" /> Device share
                 </button>
               )}
-              <button type="button" className={`${ui.btn} ${ui.neutral} justify-center`} disabled={busy !== null || !safeId} onClick={() => void run("feed", async () => {
-                await createPost({ activity_type: "project_share", title: displayTitle.slice(0, 255), content: displayTitle.slice(0, 255), project_id: safeId });
-                setNotice("Posted to the network.");
-              })}>
-                {busy === "feed" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                Post to network
-              </button>
+              {signedIn && (
+                <button type="button" className={`${ui.btn} ${ui.neutral} justify-center`} disabled={busy !== null || !safeId} onClick={() => void run("feed", async () => {
+                  await createPost({ activity_type: "project_share", title: displayTitle.slice(0, 255), content: displayTitle.slice(0, 255), project_id: safeId });
+                  setNotice("Posted to the network.");
+                })}>
+                  {busy === "feed" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                  Post to network
+                </button>
+              )}
               <button type="button" className={`${ui.btn} ${ui.neutral} justify-center`} disabled={!url} onClick={() => shareExternally(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`)}>
                 <Linkedin className="h-3.5 w-3.5" /> LinkedIn
               </button>
@@ -159,73 +164,77 @@ export function ShareProjectDialog({
             </div>
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
-            Add a note
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value.slice(0, 500))}
-              rows={2}
-              placeholder="Optional message for the chat"
-              className={`${ui.input} mt-1 normal-case tracking-normal`}
-            />
-          </label>
+          {signedIn && (
+            <>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500">
+                Add a note
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value.slice(0, 500))}
+                  rows={2}
+                  placeholder="Optional message for the chat"
+                  className={`${ui.input} mt-1 normal-case tracking-normal`}
+                />
+              </label>
 
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Send in messages</p>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search people and groups"
-              className={`${ui.input} mt-2 normal-case tracking-normal`}
-            />
-            <ul className="mt-2 max-h-52 overflow-y-auto rounded-2xl border border-stone-200">
-              {connections.isLoading || groups.isLoading ? (
-                <li className="px-3 py-4 text-sm text-stone-500">Loading chats…</li>
-              ) : people.length === 0 && rooms.length === 0 ? (
-                <li className="px-3 py-4 text-sm text-stone-500">No chats match. Copy the link or post to the network instead.</li>
-              ) : (
-                <>
-                  {rooms.map((room) => (
-                    <li key={room.id} className="flex items-center justify-between gap-3 border-b border-stone-100 px-3 py-2.5">
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-stone-800">{room.title}</span>
-                        <span className="block text-[11px] text-stone-500">Group</span>
-                      </span>
-                      <button
-                        type="button"
-                        className={`${ui.btn} ${ui.primary} shrink-0 px-3 py-1.5 text-xs`}
-                        disabled={busy !== null || !safeId}
-                        onClick={() => void run(`room:${room.id}`, async () => {
-                          await sendGroupMessage(room.id, card);
-                          onClose();
-                          navigate(`/messages?room=${room.id}`);
-                        })}
-                      >
-                        {busy === `room:${room.id}` ? "Sending…" : "Send"}
-                      </button>
-                    </li>
-                  ))}
-                  {people.map((row) => (
-                    <li key={row.id} className="flex items-center justify-between gap-3 border-b border-stone-100 px-3 py-2.5 last:border-0">
-                      <span className="min-w-0 truncate text-sm font-medium text-stone-800">{row.partner.fullName || row.partner.username}</span>
-                      <button
-                        type="button"
-                        className={`${ui.btn} ${ui.primary} shrink-0 px-3 py-1.5 text-xs`}
-                        disabled={busy !== null || !safeId}
-                        onClick={() => void run(row.partner.id, async () => {
-                          await sendMessage(row.partner.id, card);
-                          onClose();
-                          navigate(`/messages?user=${row.partner.id}`);
-                        })}
-                      >
-                        {busy === row.partner.id ? "Sending…" : "Send"}
-                      </button>
-                    </li>
-                  ))}
-                </>
-              )}
-            </ul>
-          </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Send in messages</p>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search people and groups"
+                  className={`${ui.input} mt-2 normal-case tracking-normal`}
+                />
+                <ul className="mt-2 max-h-52 overflow-y-auto rounded-2xl border border-stone-200">
+                  {connections.isLoading || groups.isLoading ? (
+                    <li className="px-3 py-4 text-sm text-stone-500">Loading chats…</li>
+                  ) : people.length === 0 && rooms.length === 0 ? (
+                    <li className="px-3 py-4 text-sm text-stone-500">No chats match. Copy the link or post to the network instead.</li>
+                  ) : (
+                    <>
+                      {rooms.map((room) => (
+                        <li key={room.id} className="flex items-center justify-between gap-3 border-b border-stone-100 px-3 py-2.5">
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium text-stone-800">{room.title}</span>
+                            <span className="block text-[11px] text-stone-500">Group</span>
+                          </span>
+                          <button
+                            type="button"
+                            className={`${ui.btn} ${ui.primary} shrink-0 px-3 py-1.5 text-xs`}
+                            disabled={busy !== null || !safeId}
+                            onClick={() => void run(`room:${room.id}`, async () => {
+                              await sendGroupMessage(room.id, card);
+                              onClose();
+                              navigate(`/messages?room=${room.id}`);
+                            })}
+                          >
+                            {busy === `room:${room.id}` ? "Sending…" : "Send"}
+                          </button>
+                        </li>
+                      ))}
+                      {people.map((row) => (
+                        <li key={row.id} className="flex items-center justify-between gap-3 border-b border-stone-100 px-3 py-2.5 last:border-0">
+                          <span className="min-w-0 truncate text-sm font-medium text-stone-800">{row.partner.fullName || row.partner.username}</span>
+                          <button
+                            type="button"
+                            className={`${ui.btn} ${ui.primary} shrink-0 px-3 py-1.5 text-xs`}
+                            disabled={busy !== null || !safeId}
+                            onClick={() => void run(row.partner.id, async () => {
+                              await sendMessage(row.partner.id, card);
+                              onClose();
+                              navigate(`/messages?user=${row.partner.id}`);
+                            })}
+                          >
+                            {busy === row.partner.id ? "Sending…" : "Send"}
+                          </button>
+                        </li>
+                      ))}
+                    </>
+                  )}
+                </ul>
+              </div>
+            </>
+          )}
 
           {notice && <p className="flex items-center gap-1.5 text-sm text-forest-800"><Check className="h-4 w-4" /> {notice}</p>}
           {error && <p className={ui.error}>{error}</p>}

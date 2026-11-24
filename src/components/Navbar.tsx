@@ -37,7 +37,7 @@ import { fetchMyProfile } from "../api/profiles";
 import { resolveApiAssetUrl } from "../api/config";
 import { queryKeys } from "../api/queryKeys";
 import { useAccount } from "../auth/account";
-import { openDeveloperTour, openRecruiterTour } from "./tour/events";
+import { openDeveloperTour, openGuestTour, openRecruiterTour } from "./tour/events";
 
 interface NavbarProps {
   variant?: "default" | "editorial";
@@ -467,11 +467,24 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
+              to="/explore"
+              className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-sm font-semibold text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10 transition-all"
+            >
+              Explore
+            </Link>
+            <Link
               to="/about-developers"
               className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-sm font-semibold text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10 transition-all"
             >
               About
             </Link>
+            <button
+              type="button"
+              onClick={() => openGuestTour()}
+              className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-sm font-semibold text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10 transition-all"
+            >
+              Tour
+            </button>
             <Link
               to="/login"
               className="inline-flex px-4 py-2 rounded-full text-sm font-semibold text-[#FFF8CA] border border-[#FFF8CA]/30 hover:bg-white/10 transition-all"

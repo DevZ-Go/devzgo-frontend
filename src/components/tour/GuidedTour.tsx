@@ -36,7 +36,8 @@ function routeKey(path: string): { pathname: string; search: string } {
 
 function onRoute(location: { pathname: string; search: string }, path: string): boolean {
   const want = routeKey(path);
-  return location.pathname === want.pathname && (want.search === "" || location.search === want.search);
+  // Exact search match so `/explore` and `/explore?view=reels` stay distinct tour stops.
+  return location.pathname === want.pathname && location.search === want.search;
 }
 
 /** Spotlight card that follows `[data-tour]` targets across pages. Escape, Skip, and arrows always work. */

@@ -10,6 +10,7 @@ import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import { ProjectTeamAvatars, teamFromProject } from "../components/ProjectTeamAvatars";
 import type { ApiProject } from "../types/project";
 import { useAuth } from "../auth/AuthContext";
+import { openGuestTour } from "../components/tour/events";
 import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
@@ -115,6 +116,13 @@ export function LandingPage() {
                 >
                   Get Started
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => openGuestTour()}
+                  className="inline-block px-8 py-3 rounded-full border border-white/50 bg-transparent hover:bg-white/15 text-[#fced96] font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200"
+                >
+                  Take a tour
+                </button>
               </>
             )}
           </motion.div>
@@ -183,7 +191,10 @@ export function LandingPage() {
           </div>
 
           {/* Cards Grid: 1 Special Promo Card + 3 Dynamic Project Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 items-stretch">
+          <div
+            data-tour="guest-featured"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 items-stretch"
+          >
             {/* 1. Feature / Promo Card */}
             <div className="group relative rounded-3xl bg-[#F3EDE4] text-[#2D120D] border border-[#2D120D]/10 p-6 flex flex-col justify-between overflow-hidden min-h-[300px] shadow-xl hover:-translate-y-1.5 transition-all duration-300">
               {/* Top Tag */}
@@ -269,22 +280,36 @@ export function LandingPage() {
                     <div className="mt-auto border-t border-[#2D120D]/08 px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <ProjectTeamAvatars people={teamFromProject(project)} maxVisible={4} />
+                        {!isAuthenticated && (
+                          <Link
+                            to={`/project/${projectId}`}
+                            className="text-[11px] font-bold uppercase tracking-wider text-[#6B0B0C] hover:underline"
+                          >
+                            View →
+                          </Link>
+                        )}
                       </div>
-                      <ProjectSocialBar
-                        projectId={projectId}
-                        title={project.title}
-                        initialLikes={project.likes_count ?? project.likes ?? 0}
-                        initialLiked={Boolean(project.is_liked)}
-                        likesHidden={Boolean(project.likes_hidden)}
-                        isOwner={Boolean(project.is_owner)}
-                        commentsCount={project.comments_count ?? 0}
-                        commentsEnabled={project.comments_enabled !== false}
-                        coverUrl={coverUrl}
-                        blurb={project.short_description}
-                        techStacks={project.tech_stacks}
-                        compact
-                        className="w-full justify-between sm:justify-start"
-                      />
+                      {isAuthenticated ? (
+                        <ProjectSocialBar
+                          projectId={projectId}
+                          title={project.title}
+                          initialLikes={project.likes_count ?? project.likes ?? 0}
+                          initialLiked={Boolean(project.is_liked)}
+                          likesHidden={Boolean(project.likes_hidden)}
+                          isOwner={Boolean(project.is_owner)}
+                          commentsCount={project.comments_count ?? 0}
+                          commentsEnabled={project.comments_enabled !== false}
+                          coverUrl={coverUrl}
+                          blurb={project.short_description}
+                          techStacks={project.tech_stacks}
+                          compact
+                          className="w-full justify-between sm:justify-start"
+                        />
+                      ) : (
+                        <p className="text-[11px] text-[#2D120D]/55">
+                          Open the project to preview. Sign in to like or comment.
+                        </p>
+                      )}
                     </div>
                   )}
                 </article>
