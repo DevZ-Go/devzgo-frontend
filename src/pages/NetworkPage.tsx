@@ -586,10 +586,8 @@ export function NetworkPage() {
               </div>
             </article>
 
-            {/* Community Feed Header & Filter Dropdown */}
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <h2 className="font-bold text-xl sm:text-2xl text-[#2D120D]">Community Feed</h2>
-
+            {/* Feed Filter Dropdown (aligned right, Community Feed text removed as per design) */}
+            <div className="flex justify-end pt-1">
               <div className="relative" ref={feedFilterRef}>
                 <button
                   type="button"

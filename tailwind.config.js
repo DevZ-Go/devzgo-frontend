@@ -5,13 +5,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"DM Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        serif: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
-        heading: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
-        bropella: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
-        editorial: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
-        cursive: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
-        hand: ['Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        sans: ['"Manrope"', '"DM Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        serif: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        heading: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        bropella: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        gray: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        editorial: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        cursive: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
+        hand: ['"Gray & Co"', '"Gray"', 'Bropella', '"Instrument Serif"', 'Georgia', 'serif'],
       },
       colors: {
         // Rich Red and Green
