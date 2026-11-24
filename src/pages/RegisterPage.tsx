@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { Zap } from "lucide-react";
 import { loginWithPassword, registerUser } from "../api";
 import { useAuth } from "../auth/AuthContext";
-import { destinationAfterLogin } from "../auth/session";
+import { destinationAfterLogin, markNewAccountWelcome } from "../auth/session";
 import { AuthLayout } from "../components/AuthLayout";
 import { getApiErrorMessage } from "../utils/apiError";
 import { GitHubButton } from "../components/GitHubButton";
@@ -20,6 +20,8 @@ const inputClass =
 export function RegisterPage() {
   const navigate = useNavigate();
   const { login, refreshUser } = useAuth();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameOk, setUsernameOk] = useState(false);
   const [email, setEmail] = useState("");
@@ -31,6 +33,8 @@ export function RegisterPage() {
 
   function criteriaErrors(): string[] {
     const issues: string[] = [];
+    if (!firstName.trim()) issues.push("Enter your first name.");
+    if (!lastName.trim()) issues.push("Enter your last name.");
     if (!username.trim()) issues.push("Choose a username.");
     else if (!usernameOk) issues.push("Pick an available username that meets the format rules.");
     if (!email.trim()) issues.push("Add your email address.");
@@ -59,12 +63,15 @@ export function RegisterPage() {
     try {
       const result = await registerUser({
         username,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         email,
         password,
         role,
         company: role === "Recruiter" ? company.trim() : undefined,
       });
       if ("verification_required" in result && result.verification_required) {
+        markNewAccountWelcome(email);
         navigate("/verify-email", {
           replace: true,
           state: {
@@ -77,7 +84,7 @@ export function RegisterPage() {
         return;
       }
       login((await loginWithPassword(email, password)).access_token);
-      navigate(await destinationAfterLogin(await refreshUser()), { replace: true });
+      navigate(await destinationAfterLogin(await refreshUser(), { isNewAccount: true }), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -109,6 +116,47 @@ export function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="first-name"
+                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                >
+                  First Name
+                </label>
+                <input
+                  id="first-name"
+                  type="text"
+                  required
+                  maxLength={60}
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="last-name"
+                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                >
+                  Last Name
+                </label>
+                <input
+                  id="last-name"
+                  type="text"
+                  required
+                  maxLength={60}
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="username"

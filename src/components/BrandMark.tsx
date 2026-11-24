@@ -27,16 +27,16 @@ export function DevZLockup({ compact = false, tone = "dark" }: DevZLockupProps) 
         className={compact ? "h-6 w-6 rounded-md object-cover" : "h-9 w-9 rounded-lg object-cover"}
       />
       <span
-        className={`font-serif font-bold tracking-tight ${
+        className={`font-bropella font-bold tracking-tight ${
           compact ? "text-sm" : "text-xl sm:text-2xl"
         } ${onDark ? "text-[#FFF8CA]" : "text-[#780D18] dark:text-[#FFF8CA]"}`}
       >
         DevZ
       </span>
       <span
-        className={`-ml-1 font-cursive font-bold italic leading-none ${
+        className={`ml-0.5 font-bropella font-bold italic leading-none ${
           compact ? "text-lg" : "text-2xl sm:text-3xl"
-        } ${onDark ? "text-[#B8C86A]" : "text-[#3F4F23] dark:text-[#B8C86A]"}`}
+        } ${onDark ? "text-[#E6D59E]" : "text-[#780D18] dark:text-[#E6D59E]"}`}
       >
         Go
       </span>

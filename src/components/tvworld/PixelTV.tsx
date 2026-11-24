@@ -11,6 +11,17 @@ interface Props {
 
 const KNOB_ANGLES = [-40, -10, 25, 60];
 
+/** Truncate long project titles to the first few words so TV labels stay consistently sized */
+function formatTvTitle(title: string, maxWords = 3): string {
+  if (!title) return "Project";
+  const words = title.trim().split(/\s+/);
+  if (words.length <= maxWords) {
+    return title.length > 18 ? `${title.slice(0, 16).trim()}…` : title;
+  }
+  const firstFew = words.slice(0, maxWords).join(" ");
+  return firstFew.length > 18 ? `${firstFew.slice(0, 16).trim()}…` : `${firstFew}…`;
+}
+
 /** One project as a retro CRT television, placed at its world coordinates. */
 export const PixelTV = memo(function PixelTV({ tv, focused, onSelect }: Props) {
   const { project } = tv;
@@ -108,8 +119,8 @@ export const PixelTV = memo(function PixelTV({ tv, focused, onSelect }: Props) {
           </div>
         </div>
       </div>
-      <div className="tv-label">
-        <b>{project.title}</b>
+      <div className="tv-label" title={project.title}>
+        <b title={project.title}>{formatTvTitle(project.title)}</b>
         <small>
           CH {num} · {project.likes} likes
         </small>

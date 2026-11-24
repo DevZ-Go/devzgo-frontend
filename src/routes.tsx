@@ -46,9 +46,9 @@ const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
 const MyActivityPage = page(() => import("./pages/MyActivityPage"), "MyActivityPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
 const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
+const ExploreShowcasePage = page(() => import("./pages/ExploreShowcasePage"), "ExploreShowcasePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
-const StudioWallPage = page(() => import("./pages/StudioWallPage"), "StudioWallPage");
 const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
 const DevelopersPage = page(() => import("./pages/DevelopersPage"), "DevelopersPage");
 const WrapPage = page(() => import("./pages/WrapPage"), "WrapPage");
@@ -93,7 +93,7 @@ const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{e
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/home" replace />,
+    element: <Navigate to="/network" replace />,
     errorElement: <RouteError />,
   },
   {
@@ -102,6 +102,10 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/home",
+        element: developer(<LandingPage />),
+      },
+      {
+        path: "/about",
         element: developer(<LandingPage />),
       },
       {
@@ -147,7 +151,7 @@ export const router = createBrowserRouter([
         path: "/explore",
         element: (
           <ProtectedRoute>
-            <StudioWallPage />
+            <ExploreShowcasePage />
           </ProtectedRoute>
         ),
       },
@@ -282,6 +286,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/home" replace />,
+    element: <Navigate to="/network" replace />,
   },
 ]);

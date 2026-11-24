@@ -44,10 +44,10 @@ interface NavbarProps {
 }
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/explore", label: "Explore", icon: Compass },
   { to: "/network", label: "Network", icon: Users },
+  { to: "/explore", label: "Explore", icon: Compass },
   { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/home", label: "Overview", icon: Home },
 ];
 
 /** Recruiters review work: no project building, imports, or wraps. */
@@ -77,7 +77,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   const { logout, user } = useAuth();
   const { recruiter } = useAccount();
   const items = recruiter ? RECRUITER_NAV : NAV_ITEMS;
-  const homePath = "/home";
+  const homePath = recruiter ? "/recruit" : "/network";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -337,7 +337,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
       <Link
         to={to}
         aria-current={isActive(to) ? "page" : undefined}
-        className={`inline-flex items-center justify-center gap-2 font-cursive text-xl md:text-[22px] font-semibold tracking-wide transition-all px-4 py-1.5 rounded-full min-w-[124px] ${
+        className={`inline-flex items-center justify-center gap-2 font-sans text-sm md:text-[15px] font-semibold tracking-normal transition-all px-4 py-1.5 rounded-full min-w-[120px] ${
           isActive(to)
             ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs"
             : "text-[#FFF8CA] hover:text-[#CDE3E8] hover:bg-white/10 drop-shadow-sm"
@@ -453,10 +453,10 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     <>
       <nav
         aria-label="Main"
-        className="fixed top-0 left-0 right-0 z-50 bg-[#F7F2E8]/95 dark:bg-[#20100C]/95 backdrop-blur-md border-b border-[#E5DACB] dark:border-[#3D1812] shadow-xs transition-colors duration-300"
+        className="fixed top-0 left-0 right-0 z-50 bg-[#2D120D]/95 backdrop-blur-md border-b border-[#FFF8CA]/15 shadow-lg transition-colors duration-300"
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 py-2.5 flex items-center justify-between gap-3">
-          {/* Left: same DevZ-Go lockup as Home (light-surface tone) */}
+          {/* Left: DevZ-Go lockup (dark-surface tone) */}
           <Link
             to={homePath}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -464,7 +464,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             title="DevZ-Go Home"
             aria-label="DevZ-Go Home"
           >
-            <DevZLockup tone="light" />
+            <DevZLockup />
           </Link>
 
           {/* Center: Home · Explore · Network · Messages · More (with Icons & Labels) */}
@@ -477,14 +477,14 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   to={to}
                   data-tour={tourKey(to)}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-cursive text-lg md:text-[19px] font-semibold tracking-wide leading-none transition-all duration-200 ${
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-sans text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-[#780D18] text-white shadow-xs"
-                      : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
+                      ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs ring-1 ring-[#FFF8CA]/20"
+                      : "text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10"
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span className="leading-none">{label}</span>
+                  <span>{label}</span>
                   {to === "/messages" && <UnreadBadge count={unreadMessages} />}
                 </Link>
               );
@@ -496,13 +496,13 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 aria-expanded={moreOpen}
-                className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-cursive text-lg md:text-[19px] font-semibold tracking-wide leading-none transition-all ${
+                className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-sans text-sm font-semibold transition-all ${
                   isMoreActive
-                    ? "bg-[#780D18] text-white shadow-xs"
-                    : "text-[#3B1812] hover:text-[#780D18] hover:bg-[#EFE5D8]/80 dark:text-[#FFF8CA]/80 dark:hover:text-[#FFF8CA] dark:hover:bg-white/10"
+                    ? "bg-[#6B0B0C] text-[#FFF8CA] shadow-xs ring-1 ring-[#FFF8CA]/20"
+                    : "text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10"
                 }`}
               >
-                <span className="leading-none">More</span>
+                <span>More</span>
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden />
               </button>
 
@@ -618,17 +618,17 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             {!recruiter && (
               <Link
                 to="/add-project"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#780D18] hover:bg-[#5C0A12] text-white rounded-full font-cursive text-base md:text-[17px] font-bold tracking-wide leading-none shadow-xs transition-all hover:scale-[1.02]"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 rounded-full font-sans text-sm font-bold shadow-xs transition-all hover:scale-[1.02]"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span className="leading-none">Add Project</span>
+                <span>Add Project</span>
               </Link>
             )}
 
             {/* Circular Search Button */}
             <Link
               to="/explore"
-              className="p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] hover:text-[#780D18] dark:border-[#6B0B0C] dark:text-[#FFF8CA] dark:hover:bg-white/10 transition-all flex items-center justify-center h-9 w-9"
+              className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9"
               title="Search projects and developers"
               aria-label="Search"
             >
@@ -636,12 +636,12 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             </Link>
 
             {/* Circular Notifications Button */}
-            <NotificationsDropdown className="p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] hover:text-[#780D18] dark:border-[#6B0B0C] dark:text-[#FFF8CA] dark:hover:bg-white/10 transition-all flex items-center justify-center h-9 w-9" />
+            <NotificationsDropdown className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9" />
 
             {/* Circular User Avatar */}
             <Link
               to="/profile"
-              className="rounded-full overflow-hidden border border-[#DECDBA] hover:border-[#780D18] transition-all flex items-center justify-center h-9 w-9 bg-[#780D18] text-[#FFF8CA] text-xs font-serif font-bold shadow-xs hover:scale-105"
+              className="rounded-full overflow-hidden border border-[#FFF8CA]/35 hover:border-[#FFF8CA] transition-all flex items-center justify-center h-9 w-9 bg-[#6B0B0C] text-[#FFF8CA] text-xs font-serif font-bold shadow-xs hover:scale-105"
               title={displayName}
               aria-label="My Profile"
             >
@@ -656,7 +656,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden p-2 rounded-full border border-[#DECDBA] text-[#3B1812] hover:bg-[#EFE5D8] transition-colors h-9 w-9 flex items-center justify-center"
+              className="lg:hidden p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] transition-colors h-9 w-9 flex items-center justify-center"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
@@ -666,7 +666,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </div>
         </div>
 
-        {mobileMenu(false)}
+        {mobileMenu(true)}
       </nav>
 
       {/* Mobile Bottom Navigation Bar (Social App - Reference Image) */}
@@ -680,7 +680,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           }`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-[10px]">Home</span>
+          <span className="text-[10px]">Overview</span>
         </Link>
         <Link
           to="/explore"

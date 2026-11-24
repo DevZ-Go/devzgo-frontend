@@ -22,6 +22,6 @@ export function DeveloperRoute({ children }: { children: ReactNode }) {
 export function RecruiterRoute({ children }: { children: ReactNode }) {
   const { ready, recruiter } = useAccount();
   if (!ready) return <Waiting />;
-  if (!recruiter) return <Navigate to="/home" replace />;
+  if (!recruiter) return <Navigate to="/network" replace />;
   return <>{children}</>;
 }

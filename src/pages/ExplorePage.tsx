@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { LayoutGrid, Tv } from "lucide-react";
 import { ExploreFilters } from "../components/ExploreFilters";
 import { useExploreProjects } from "../hooks/useExploreProjects";
 import { CameraController } from "../components/tvworld/CameraController";
@@ -373,9 +374,31 @@ export function ExplorePage() {
           }}
         />
 
-        <Link to="/explore" className="tvw-btn" title="Back to Gallery">
-          &larr; GALLERY
-        </Link>
+        {/* View Switch: Showcase (present landing) | TV World */}
+        <div
+          className="inline-flex h-9 items-center rounded-full border border-white/25 bg-white/10 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-md"
+          role="tablist"
+          aria-label="Explore view modes"
+        >
+          <Link
+            to="/explore"
+            role="tab"
+            title="Explore Showcase"
+            className="inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold text-[#FFF8CA]/75 hover:text-[#FFF8CA] transition-all cursor-pointer"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Showcase</span>
+          </Link>
+          <div
+            role="tab"
+            aria-selected="true"
+            title="TV World interactive retro room"
+            className="inline-flex h-full items-center gap-1.5 px-3.5 rounded-full text-xs font-sans font-semibold bg-[#780D18]/90 text-[#FFF8CA] shadow-sm cursor-default"
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">TV World</span>
+          </div>
+        </div>
       </div>
 
       <div className="tvw-hud tvw-hud--br" data-ui>

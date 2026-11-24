@@ -2,9 +2,36 @@ import type { AuthUser } from "../types/auth";
 import { fetchMyProfile } from "../api/profiles";
 
 const LAST = "devzgo:last-path";
+const FIRST_WELCOME = "devzgo:first-welcome";
 
 function homeFor(user: AuthUser | null): string {
-  return user?.account_type === "recruiter" ? "/recruit" : "/home";
+  return user?.account_type === "recruiter" ? "/recruit" : "/network";
+}
+
+/** Mark that a newly created account should see the About Us welcome page (/home) on its very first sign-in. */
+export function markNewAccountWelcome(email?: string, userId?: string) {
+  if (email?.trim()) {
+    localStorage.setItem(`${FIRST_WELCOME}:email:${email.trim().toLowerCase()}`, "1");
+  }
+  if (userId?.trim()) {
+    localStorage.setItem(`${FIRST_WELCOME}:id:${userId.trim()}`, "1");
+  }
+}
+
+function consumeNewAccountWelcome(user: AuthUser | null): boolean {
+  if (!user || user.account_type === "recruiter") return false;
+  let pending = false;
+  const email = user.email?.trim().toLowerCase();
+  const id = user.id ? String(user.id) : "";
+  if (email && localStorage.getItem(`${FIRST_WELCOME}:email:${email}`) === "1") {
+    localStorage.removeItem(`${FIRST_WELCOME}:email:${email}`);
+    pending = true;
+  }
+  if (id && localStorage.getItem(`${FIRST_WELCOME}:id:${id}`) === "1") {
+    localStorage.removeItem(`${FIRST_WELCOME}:id:${id}`);
+    pending = true;
+  }
+  return pending;
 }
 
 /** Pages worth returning to. Auth screens are never a landing place. */
@@ -25,8 +52,17 @@ function savedPath(userId: string): string | null {
   return path && rememberablePath(path) ? path : null;
 }
 
-/** Home by default. Resume only when this account chose it, and only their own last page. */
-export async function destinationAfterLogin(user: AuthUser | null): Promise<string> {
+/**
+ * Network (/network) is the main page for developers after sign-in.
+ * Only on the very first sign-in after creating a new account do developers land on the About Us (/home) welcome page.
+ */
+export async function destinationAfterLogin(
+  user: AuthUser | null,
+  options?: { isNewAccount?: boolean },
+): Promise<string> {
+  if (user?.account_type !== "recruiter" && (options?.isNewAccount || consumeNewAccountWelcome(user))) {
+    return "/home";
+  }
   const home = homeFor(user);
   const id = user?.id ? String(user.id) : "";
   if (!id) return home;
