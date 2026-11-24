@@ -45,7 +45,7 @@ export const DEFAULT_DEVELOPERS: TeamDeveloper[] = [
   },
   {
     id: "dev-4",
-    name: "Manasi Sharma",
+    name: "Manasi Rajput",
     role: "Full-Stack Developer",
     tagline: "Connecting talent intelligence, assessments, and collaborative features.",
     craft: "Talent",
@@ -54,7 +54,7 @@ export const DEFAULT_DEVELOPERS: TeamDeveloper[] = [
   },
 ];
 
-export const STORAGE_KEY = "devzgo_team_profiles_v2";
+export const STORAGE_KEY = "devzgo_team_profiles_v3";
 
 export type Portrait = { src: string; place: "left" | "center-left" | "center-right" | "right" };
 
@@ -286,6 +286,7 @@ export function linksFor(dev: TeamDeveloper): { to: string; label: string }[] {
 function knownName(id: string, name: string): string {
   if (id === "dev-2" && (name === "Chan S." || name === "Chan S")) return "Chan Singh";
   if (id === "dev-3" && (name === "Khushbu Patel" || name === "Khushbu")) return "Khushbu Goswami";
+  if (id === "dev-4" && (name === "Manasi Sharma" || name === "Manasi")) return "Manasi Rajput";
   return name;
 }
 

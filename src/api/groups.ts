@@ -80,7 +80,7 @@ const INITIAL_GROUPS: NetworkGroup[] = [
       },
       {
         userId: "usr-manasi",
-        name: "Manasi Sharma",
+        name: "Manasi Rajput",
         username: "manasi",
         avatarUrl: null,
         headline: "Perception & Edge Computer Vision",
@@ -101,7 +101,7 @@ const INITIAL_GROUPS: NetworkGroup[] = [
     bannerUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
     avatarUrl: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=300&q=80",
     hostId: "usr-manasi",
-    hostName: "Manasi Sharma",
+    hostName: "Manasi Rajput",
     hostUsername: "manasi",
     hostTitle: "Director of Research",
     memberCount: 54,
@@ -112,7 +112,7 @@ const INITIAL_GROUPS: NetworkGroup[] = [
     members: [
       {
         userId: "usr-manasi",
-        name: "Manasi Sharma",
+        name: "Manasi Rajput",
         username: "manasi",
         headline: "AI & Vision Researcher",
         role: "host",
@@ -259,7 +259,7 @@ const INITIAL_ANNOUNCEMENTS: Record<string, GroupAnnouncement[]> = {
         {
           id: "ac-3",
           authorId: "usr-manasi",
-          authorName: "Manasi Sharma",
+          authorName: "Manasi Rajput",
           authorUsername: "manasi",
           text: "Can we also test streaming OpenCV bounding boxes over micro-ROS topics during the second half?",
           createdAt: "2026-11-17T11:45:00Z",
@@ -272,7 +272,7 @@ const INITIAL_ANNOUNCEMENTS: Record<string, GroupAnnouncement[]> = {
       id: "anc-3",
       groupId: "grp-ai-lab",
       authorId: "usr-manasi",
-      authorName: "Manasi Sharma",
+      authorName: "Manasi Rajput",
       authorUsername: "manasi",
       authorRole: "host",
       authorTitle: "Director of Research",
@@ -355,7 +355,7 @@ const INITIAL_PROJECTS: Record<string, GroupProjectShowcase[]> = {
       ownerUsername: "chan",
       teamMembers: [
         { name: "Chan S.", roleInProject: "Full-Stack WebSockets & React UI" },
-        { name: "Manasi Sharma", roleInProject: "WebGL 3D Point Cloud Shader" },
+        { name: "Manasi Rajput", roleInProject: "WebGL 3D Point Cloud Shader" },
       ],
       githubUrl: "https://github.com/DevZ-Go/ros2-telemetry-cockpit",
       liveUrl: "https://telemetry.devzgo.internal",
@@ -411,7 +411,7 @@ const INITIAL_PROJECTS: Record<string, GroupProjectShowcase[]> = {
       coverImageUrl: "https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&w=800&q=80",
       techStacks: ["PyTorch", "ONNX Runtime", "Python", "FastAPI", "OpenCV"],
       ownerId: "usr-manasi",
-      ownerName: "Manasi Sharma",
+      ownerName: "Manasi Rajput",
       ownerUsername: "manasi",
       githubUrl: "https://github.com/DevZ-Go/edge-sentry-vision",
       likesCount: 19,

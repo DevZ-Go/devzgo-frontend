@@ -270,7 +270,7 @@ function NamePlate({
       aria-pressed={selected}
       aria-controls="builder-profile"
       className={`flex min-w-0 flex-col justify-center rounded-2xl border px-3 motion-safe:transition-colors motion-safe:duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maroon-800 ${
-        nameOnly ? "h-11 w-[8.4rem] items-center text-center" : "h-[3.25rem] w-[10.75rem] text-left"
+        nameOnly ? "h-11 w-full max-w-[9rem] items-center text-center sm:w-[9rem]" : "h-[3.25rem] w-[10.75rem] text-left"
       } ${
         selected
           ? "border-maroon-800 bg-white shadow-[inset_0_-2px_0_0_#6B0B0C]"
@@ -457,12 +457,12 @@ export function CharacterStage({
       <div className="builder-stage relative overflow-x-clip border border-[#eadcc6] bg-[#f7e0c5] px-1 pb-4 pt-6 max-sm:-mx-5 max-sm:rounded-none max-sm:border-x-0 sm:rounded-[2rem] sm:px-6 sm:pt-8">
         <div
           className="pointer-events-none absolute inset-x-[6%] hidden h-3 rounded-[100%] bg-maroon-950/10 blur-[1px] md:block"
-          style={{ bottom: editing ? "0.35rem" : "4.4rem" }}
+          style={{ bottom: editing ? "0.35rem" : "6.5rem" }}
           aria-hidden
         />
         <svg
           className="pointer-events-none absolute left-6 right-6 hidden h-4 w-[calc(100%-3rem)] md:block"
-          style={{ bottom: editing ? "0.15rem" : "4.4rem" }}
+          style={{ bottom: editing ? "0.15rem" : "6.5rem" }}
           viewBox="0 0 1000 16"
           preserveAspectRatio="none"
           aria-hidden
@@ -500,7 +500,7 @@ export function CharacterStage({
               </StandingFigure>
               <MobileGround />
               {!editing && (
-                <div className="relative mt-3 flex h-[4.4rem] flex-col justify-end md:mt-4">
+                <div className="relative mt-3 flex h-[4.75rem] flex-col justify-end md:mt-4">
                   {identityOf(left) && <Intro text={identityOf(left)!.line} />}
                   {plates(left)}
                 </div>
@@ -524,14 +524,18 @@ export function CharacterStage({
               </StandingFigure>
               <MobileGround />
               {!editing && (
-                <div className="relative mt-3 flex h-[4.4rem] flex-col items-center justify-end gap-1 md:mt-4">
+                <div className="relative mt-3 flex h-[4.75rem] flex-col items-center justify-end gap-1.5 md:mt-4">
                   {identityOf(pair[0]) && <Intro text={identityOf(pair[0])!.line} />}
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-maroon-800">
-                    {identityOf(pair[0])?.label ?? "The Twins"}
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="relative z-10 inline-flex items-center justify-center rounded-full border border-maroon-800/25 bg-[#faebd8] px-3.5 py-0.5 shadow-2xs">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-maroon-900">
+                      {identityOf(pair[0])?.label ?? "The Twins"}
+                    </span>
+                  </div>
+                  <div className="flex w-full items-center justify-center gap-2">
                     {pair.map((dev) => (
-                      <div key={dev.id}>{plates(dev, true)}</div>
+                      <div key={dev.id} className="flex-1 max-w-[9rem]">
+                        {plates(dev, true)}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -561,7 +565,7 @@ export function CharacterStage({
               </StandingFigure>
               <MobileGround />
               {!editing && (
-                <div className="relative mt-3 flex h-[4.4rem] flex-col justify-end md:mt-4">
+                <div className="relative mt-3 flex h-[4.75rem] flex-col justify-end md:mt-4">
                   {identityOf(right) && <Intro text={identityOf(right)!.line} />}
                   {plates(right)}
                 </div>
