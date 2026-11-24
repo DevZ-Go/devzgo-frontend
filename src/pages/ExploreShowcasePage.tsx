@@ -18,7 +18,6 @@ import {
   BarChart2,
   ArrowRight,
   Check,
-  Film,
   Tv,
 } from "lucide-react";
 import { Navbar } from "../components/Navbar";
@@ -927,23 +926,15 @@ export function ExploreShowcasePage() {
                 </button>
               </div>
 
-              {/* Alternate View Switchers (Reels & Retro TV) */}
+              {/* Alternate View Switcher: TV World only */}
               <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-[#DECDBA] shrink-0">
                 <Link
-                  to="/explore/reels"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold text-[#6E5952] hover:text-[#780D18] hover:bg-white transition"
-                  title="Watch as Instagram Reels"
-                >
-                  <Film className="w-3.5 h-3.5 text-[#780D18]" />
-                  <span>Reels</span>
-                </Link>
-                <Link
                   to="/explore/tv"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold text-[#6E5952] hover:text-[#780D18] hover:bg-white transition"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#FAF3E8] border border-[#DECDBA] text-[#780D18] hover:bg-white hover:border-[#780D18] transition shadow-2xs"
                   title="Explore in Retro TV World"
                 >
                   <Tv className="w-3.5 h-3.5 text-[#780D18]" />
-                  <span>TV Room</span>
+                  <span>TV World</span>
                 </Link>
               </div>
             </div>

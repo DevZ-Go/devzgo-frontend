@@ -48,7 +48,6 @@ const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), 
 const ExploreShowcasePage = page(() => import("./pages/ExploreShowcasePage"), "ExploreShowcasePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
-const StudioWallPage = page(() => import("./pages/StudioWallPage"), "StudioWallPage");
 const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
 const DevelopersPage = page(() => import("./pages/DevelopersPage"), "DevelopersPage");
 const WrapPage = page(() => import("./pages/WrapPage"), "WrapPage");
@@ -150,14 +149,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ExploreShowcasePage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/explore/reels",
-        element: (
-          <ProtectedRoute>
-            <StudioWallPage />
           </ProtectedRoute>
         ),
       },
