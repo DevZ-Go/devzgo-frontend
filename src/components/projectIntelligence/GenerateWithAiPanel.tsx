@@ -39,8 +39,8 @@ export function GenerateWithAiPanel({
   const [approvedDone, setApprovedDone] = useState(false);
   const [wantNewRun, setWantNewRun] = useState(false);
   const [publishSimple, setPublishSimple] = useState(true);
-  const [adoptShort, setAdoptShort] = useState(false);
-  const [adoptDetailed, setAdoptDetailed] = useState(false);
+  const [adoptShort, setAdoptShort] = useState(true);
+  const [adoptDetailed, setAdoptDetailed] = useState(true);
 
   const pref = useQuery({
     queryKey: ["pi-project-pref", projectId],
@@ -280,6 +280,42 @@ export function GenerateWithAiPanel({
         </label>
       )}
 
+      <div className="space-y-2 rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+          Choose before generating
+        </p>
+        <label className="flex items-start gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={publishSimple}
+            onChange={(e) => setPublishSimple(e.target.checked)}
+          />
+          <span>Publish the AI brief on the project page after approval.</span>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={adoptShort}
+            onChange={(e) => setAdoptShort(e.target.checked)}
+          />
+          <span>Use the AI short description in my project form (can restore later).</span>
+        </label>
+        {(q?.premium || includeDetailed) && (
+          <label className="flex items-start gap-2 text-sm text-stone-700">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={adoptDetailed}
+              onChange={(e) => setAdoptDetailed(e.target.checked)}
+              disabled={!includeDetailed && !q?.premium}
+            />
+            <span>Use the AI detailed description as my full description when available.</span>
+          </label>
+        )}
+      </div>
+
       {consentAlreadyGranted ? (
         <p className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
           AI provider consent is already on for this project — you won&apos;t be asked again.
@@ -359,25 +395,15 @@ export function GenerateWithAiPanel({
           {selected.full_overview && (
             <Field label="Detailed description (Premium)" value={selected.full_overview} />
           )}
-          {(currentShort || currentFull) && (
-            <p className="text-xs text-stone-500">
-              Your current written description stays as-is unless you choose to replace it below.
-            </p>
-          )}
-          <label className="flex items-start gap-2 text-sm text-stone-700">
-            <input type="checkbox" className="mt-1" checked={publishSimple} onChange={(e) => setPublishSimple(e.target.checked)} />
-            <span>Publish this AI brief on the project page (visitors can read it for free).</span>
-          </label>
-          <label className="flex items-start gap-2 text-sm text-stone-700">
-            <input type="checkbox" className="mt-1" checked={adoptShort} onChange={(e) => setAdoptShort(e.target.checked)} />
-            <span>Replace my short description with the AI short description (can be restored later).</span>
-          </label>
-          {selected.full_overview && (
-            <label className="flex items-start gap-2 text-sm text-stone-700">
-              <input type="checkbox" className="mt-1" checked={adoptDetailed} onChange={(e) => setAdoptDetailed(e.target.checked)} />
-              <span>Replace my full description with the AI detailed description.</span>
-            </label>
-          )}
+          <p className="text-xs text-stone-500">
+            Options you chose above will be applied when you approve
+            {publishSimple ? " · publish brief" : ""}
+            {adoptShort ? " · adopt short" : ""}
+            {adoptDetailed && selected.full_overview ? " · adopt detailed" : ""}.
+            {(currentShort || currentFull) && !adoptShort && !adoptDetailed
+              ? " Your written description stays unchanged."
+              : ""}
+          </p>
           <div className="flex flex-wrap gap-2 border-t border-stone-200 pt-4">
             <button
               type="button"

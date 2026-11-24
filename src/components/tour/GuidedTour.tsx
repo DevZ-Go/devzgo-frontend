@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -46,55 +47,82 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
   const cardRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const bodyId = useId();
-  const current = steps[step]!;
-  const last = step === steps.length - 1;
-  const box = measured.step === step ? measured.box : null;
-  const settled = measured.step === step;
-  const ready = onRoute(location, current.path);
+  const safeStep = steps.length === 0 ? 0 : Math.min(Math.max(0, step), steps.length - 1);
+  const current = steps[safeStep];
+  const last = safeStep === steps.length - 1;
+  const box = measured.step === safeStep ? measured.box : null;
+  const settled = measured.step === safeStep;
+  const ready = Boolean(current && onRoute(location, current.path));
+
+  // Clear spotlight immediately when the step changes so focus never sticks to a stale rect.
+  useLayoutEffect(() => {
+    setMeasured({ step: -1, box: null });
+  }, [safeStep, open]);
 
   useEffect(() => {
-    if (open && !ready) navigate(current.path);
-  }, [open, current.path, ready, navigate]);
+    if (open && current && !ready) navigate(current.path);
+  }, [open, current, ready, navigate]);
 
   useEffect(() => {
-    if (!open || !ready) return;
+    if (!open || !ready || !current) return;
     let element: Element | null = null;
     let tries = 0;
     let settle: number | undefined;
+    let raf = 0;
+
     const measure = () => {
       if (!element) return;
-      const r = element.getBoundingClientRect();
-      setMeasured({ step, box: { top: r.top, left: r.left, width: r.width, height: r.height } });
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (!element) return;
+        const r = element.getBoundingClientRect();
+        setMeasured({
+          step: safeStep,
+          box: { top: r.top, left: r.left, width: r.width, height: r.height },
+        });
+      });
     };
+
     const find = window.setInterval(() => {
       tries += 1;
       const found = document.querySelector(`[data-tour="${current.target}"]`);
       if (found && visible(found)) {
         window.clearInterval(find);
         element = found;
-        found.scrollIntoView({ block: "center", behavior: "smooth" });
-        settle = window.setTimeout(measure, 420);
-      } else if (tries > 30) {
+        found.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+        // Wait for layout/scroll to settle, then measure twice for smoothness.
+        settle = window.setTimeout(() => {
+          measure();
+          settle = window.setTimeout(measure, 280);
+        }, 320);
+      } else if (tries > 40) {
         window.clearInterval(find);
-        setMeasured({ step, box: null });
+        setMeasured({ step: safeStep, box: null });
       }
-    }, 80);
+    }, 70);
+
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
       window.clearInterval(find);
       if (settle) window.clearTimeout(settle);
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [open, step, current.target, current.path, ready]);
+  }, [open, safeStep, current, ready]);
 
   useEffect(() => {
-    if (open && settled) cardRef.current?.focus();
-  }, [open, step, settled]);
+    if (!open || !settled) return;
+    const t = window.setTimeout(() => cardRef.current?.focus({ preventScroll: true }), 40);
+    return () => window.clearTimeout(t);
+  }, [open, safeStep, settled]);
 
-  const next = useCallback(() => (last ? onFinish("completed") : onStep(step + 1)), [last, onFinish, onStep, step]);
-  const back = useCallback(() => onStep(Math.max(0, step - 1)), [onStep, step]);
+  const next = useCallback(
+    () => (last ? onFinish("completed") : onStep(safeStep + 1)),
+    [last, onFinish, onStep, safeStep],
+  );
+  const back = useCallback(() => onStep(Math.max(0, safeStep - 1)), [onStep, safeStep]);
 
   useEffect(() => {
     if (!open) return;
@@ -122,7 +150,7 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
     }
   }
 
-  if (!open) return null;
+  if (!open || !current) return null;
 
   const pad = 10;
   const gap = 16;
@@ -161,12 +189,15 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
       const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
       cardStyle = { top: Math.max(16, highlight.top - gap - cardEstimate), left, width: cardWidth };
     } else if (narrow) {
-      // Keep the spotlight visible: park the card on the opposite half of the screen.
       const highlightMid = box.top + box.height / 2;
       cardPlacementClass = highlightMid > window.innerHeight / 2 ? "inset-x-3 top-3" : "inset-x-3 bottom-3";
     } else {
       const left = Math.min(Math.max(16, box.left), window.innerWidth - cardWidth - 16);
-      cardStyle = { top: Math.max(16, Math.min(highlight.bottom + gap, window.innerHeight - cardEstimate - 16)), left, width: cardWidth };
+      cardStyle = {
+        top: Math.max(16, Math.min(highlight.bottom + gap, window.innerHeight - cardEstimate - 16)),
+        left,
+        width: cardWidth,
+      };
     }
   }
 
@@ -182,7 +213,7 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
             width: box.width + pad * 2,
             height: box.height + pad * 2,
             boxShadow: "0 0 0 9999px rgba(28, 25, 23, 0.52)",
-            opacity: settled ? 1 : 0.55,
+            opacity: settled ? 1 : 0.45,
           }}
         />
       ) : (
@@ -201,11 +232,11 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
           cardStyle
             ? ""
             : cardPlacementClass || (narrow ? "inset-x-3 bottom-3" : "left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2")
-        } ${settled ? "opacity-100" : "opacity-80"}`}
+        } ${settled ? "opacity-100 translate-y-0" : "opacity-70"}`}
       >
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-maroon-800">
-            {label} · {step + 1} of {steps.length}
+            {label} · {safeStep + 1} of {steps.length}
           </p>
           <button
             type="button"
@@ -226,7 +257,7 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
           {steps.map((s, i) => (
             <span
               key={`${s.path}-${s.target}`}
-              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= step ? "bg-maroon-700" : "bg-stone-200"}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= safeStep ? "bg-maroon-700" : "bg-stone-200"}`}
             />
           ))}
         </div>
@@ -239,7 +270,7 @@ export function GuidedTour({ open, step, steps, label, onStep, onFinish }: Props
             Skip tour
           </button>
           <div className="flex gap-2">
-            {step > 0 && (
+            {safeStep > 0 && (
               <button
                 type="button"
                 onClick={back}

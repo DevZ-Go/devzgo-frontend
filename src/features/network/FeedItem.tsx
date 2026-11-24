@@ -28,6 +28,7 @@ import { ShareProjectDialog } from "../../components/ShareProjectDialog";
 import type { ActivityComment, FeedActivity } from "../../types/network";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { LinkPreviewCard, extractFirstUrl } from "./LinkPreviewCard";
+import { useNotice } from "../../components/AppNotice";
 
 function formatTimeAgo(isoString: string): string {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
@@ -80,6 +81,7 @@ export function FeedItem({ activity, expanded = false, notify, focusCommentId = 
 }) {
   const client = useQueryClient();
   const navigate = useNavigate();
+  const { confirm } = useNotice();
   const refresh = () => client.invalidateQueries({ queryKey: queryKeys.feed });
   const [like, setLike] = useState<{ isLiked: boolean; likesCount: number } | null>(null);
   const [saved, setSaved] = useState<boolean | null>(null);
@@ -208,8 +210,12 @@ export function FeedItem({ activity, expanded = false, notify, focusCommentId = 
               <Pencil className="w-4 h-4" />
             </button>
             <button type="button" title="Delete post" disabled={busy} className="p-1 text-[#6E5952] hover:text-crimson-600"
-              onClick={() => window.confirm("Delete this post?") &&
-                void run(async () => { await deletePost(activity.id); if (expanded) navigate("/network"); }, "Could not delete post")}>
+              onClick={() => {
+                void confirm({ title: "Delete post", message: "Delete this post?", confirmLabel: "Delete" }).then((ok) => {
+                  if (!ok) return;
+                  void run(async () => { await deletePost(activity.id); if (expanded) navigate("/network"); }, "Could not delete post");
+                });
+              }}>
               <Trash2 className="w-4 h-4" />
             </button>
           </div>

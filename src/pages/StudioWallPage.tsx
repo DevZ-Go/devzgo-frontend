@@ -239,7 +239,7 @@ export function StudioWallPage({
 
   return (
     <ExploreStage title="projects studio" tone="paper" data={data}>
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div data-tour="explore-studio" className="relative flex min-h-0 flex-1 flex-col">
         {/* Floating liquid-glass toolbar */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-3 sm:px-5 sm:pt-4">
           <div

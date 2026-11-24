@@ -1,26 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Boxes,
   UsersRound,
   ChevronDown,
   UserPlus,
   Send,
-  Heart,
-  MessageSquare,
-  Repeat,
   Bookmark,
-  MoreHorizontal,
-  ExternalLink,
   Check,
   Loader2,
-  Cpu,
-  Globe,
   Layers,
   Calendar,
   BarChart2,
-  BarChart3,
   Image as ImageIcon,
   ArrowRight,
 } from "lucide-react";
@@ -32,6 +23,7 @@ import {
   sendConnectionRequest,
   fetchSuggestedDevelopers,
 } from "../api/connections";
+import { fetchGroups, fetchMyClubs } from "../api/groups";
 import { useAuth } from "../auth/AuthContext";
 import { queryKeys } from "../api/queryKeys";
 import { getApiErrorMessage } from "../utils/apiError";
@@ -39,72 +31,11 @@ import { FeedItem } from "../features/network/FeedItem";
 
 
 
-/** TaskFlow v2 Mini Dashboard UI Mockup */
-function TaskFlowMockup() {
-  return (
-    <div className="w-full sm:w-44 h-28 rounded-xl bg-gradient-to-br from-[#FFFDF9] to-[#F5ECE1] border border-[#DECDBA] p-2 flex flex-col justify-between shrink-0 shadow-inner overflow-hidden">
-      <div className="flex items-center justify-between pb-1.5 border-b border-[#DECDBA]/60">
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E27A7A]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E8C56A]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-[#82C785]" />
-        </div>
-        <span className="text-[8px] font-mono font-semibold text-[#8C7B70]">taskflow.app</span>
-      </div>
-      <div className="flex gap-2 flex-1 pt-1.5">
-        <div className="flex-1 bg-white/90 rounded-lg p-1.5 border border-[#DECDBA]/50 flex flex-col gap-1">
-          <div className="h-1.5 w-8 bg-[#8C7B70]/40 rounded-full" />
-          <div className="h-4 bg-[#FFF8CA] rounded border border-[#E5D7C6] p-0.5">
-            <div className="h-1 w-10 bg-[#780D18]/50 rounded-full" />
-          </div>
-          <div className="h-4 bg-white rounded border border-[#DECDBA] p-0.5">
-            <div className="h-1 w-7 bg-[#8C7B70]/30 rounded-full" />
-          </div>
-        </div>
-        <div className="flex-1 bg-white/90 rounded-lg p-1.5 border border-[#DECDBA]/50 flex flex-col gap-1">
-          <div className="h-1.5 w-10 bg-[#284E45]/40 rounded-full" />
-          <div className="h-5 bg-[#E2F0CB] rounded border border-[#CDE3E8] p-0.5">
-            <div className="h-1 w-8 bg-[#284E45]/60 rounded-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Stack of Isometric Books Mockup */
-function RagBooksMockup() {
-  return (
-    <div className="w-full sm:w-44 h-28 rounded-xl bg-gradient-to-br from-[#FFFDF9] to-[#F5ECE1] border border-[#DECDBA] flex items-center justify-center shrink-0 shadow-inner overflow-hidden p-2">
-      <svg viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-28 h-20 drop-shadow-sm">
-        {/* Bottom Book (Coffee/Burgundy) */}
-        <g>
-          <path d="M22 68 L78 78 L104 62 L48 52 Z" fill="#FBF5E8" stroke="#D4C3B3" strokeWidth="0.8" />
-          <path d="M20 62 L76 72 L76 77 L20 67 Z" fill="#5C1820" />
-          <path d="M20 62 L46 48 L102 58 L76 72 Z" fill="#780D18" />
-        </g>
-        {/* Middle Book (Sage/Olive Green) */}
-        <g>
-          <path d="M26 50 L80 60 L102 46 L48 36 Z" fill="#FAF5E6" stroke="#D4C3B3" strokeWidth="0.8" />
-          <path d="M24 45 L78 55 L78 59 L24 49 Z" fill="#1C3831" />
-          <path d="M24 45 L46 32 L100 42 L78 55 Z" fill="#284E45" />
-        </g>
-        {/* Top Book (Ochre/Gold) */}
-        <g>
-          <path d="M30 34 L82 43 L98 31 L46 22 Z" fill="#FFFDF5" stroke="#DECDBA" strokeWidth="0.8" />
-          <path d="M28 29 L80 38 L80 42 L28 33 Z" fill="#8C5C1B" />
-          <path d="M28 29 L44 18 L96 27 L80 38 Z" fill="#C98B28" />
-        </g>
-        <path d="M80 38 Q86 48 88 56 L91 52 L94 56 Q88 44 82 39" fill="#780D18" />
-      </svg>
-    </div>
-  );
-}
-
 export function NetworkPage() {
   const { user } = useAuth();
+  const meId = user?.id ? String(user.id) : "";
   const me = useQuery({
-    queryKey: ["my-profile-photo", user?.id ?? ""],
+    queryKey: ["my-profile-photo", meId],
     queryFn: fetchMyProfile,
     enabled: Boolean(user),
   });
@@ -164,21 +95,8 @@ export function NetworkPage() {
   const [postType, setPostType] = useState<string>("spark");
   const [posting, setPosting] = useState(false);
 
-  // Connection requests state
+  // Connection requests state (optimistic pending)
   const [requestedUsers, setRequestedUsers] = useState<Record<string, boolean>>({});
-
-  // Interactive like / bookmark states for demo showcase posts
-  const [chanLiked, setChanLiked] = useState(false);
-  const [chanLikesCount, setChanLikesCount] = useState(94);
-  const [chanBookmarked, setChanBookmarked] = useState(false);
-
-  const [arjunLiked, setArjunLiked] = useState(false);
-  const [arjunLikesCount, setArjunLikesCount] = useState(128);
-  const [arjunBookmarked, setArjunBookmarked] = useState(false);
-
-  const [miraLiked, setMiraLiked] = useState(false);
-  const [miraLikesCount, setMiraLikesCount] = useState(86);
-  const [miraBookmarked, setMiraBookmarked] = useState(false);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -188,28 +106,68 @@ export function NetworkPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const loadSidebar = useCallback(async () => {
-    try {
-      await Promise.all([
-        fetchConnections(),
-        fetchSuggestedDevelopers(),
-      ]);
-    } catch {
-      // Ignore
+  const connectionsQuery = useQuery({
+    queryKey: [...queryKeys.connections, "network-sidebar"],
+    queryFn: fetchConnections,
+    enabled: Boolean(user),
+  });
+
+  const suggestionsQuery = useQuery({
+    queryKey: [...queryKeys.connections, "suggested", "network"],
+    queryFn: () => fetchSuggestedDevelopers(8),
+    enabled: Boolean(user),
+  });
+
+  const clubsQuery = useQuery({
+    queryKey: ["groups", "network-sidebar"],
+    queryFn: async () => {
+      const mine = await fetchMyClubs().catch(() => []);
+      if (mine.length > 0) return mine.slice(0, 5);
+      return (await fetchGroups()).slice(0, 5);
+    },
+    enabled: Boolean(user),
+  });
+  const sidebarClubs = clubsQuery.data ?? [];
+
+  const connectedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of connectionsQuery.data?.accepted ?? []) {
+      if (c.partner?.id) ids.add(String(c.partner.id));
     }
-  }, []);
+    return ids;
+  }, [connectionsQuery.data?.accepted]);
+
+  const pendingOutgoingIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of connectionsQuery.data?.pendingOutgoing ?? []) {
+      if (c.partner?.id) ids.add(String(c.partner.id));
+    }
+    return ids;
+  }, [connectionsQuery.data?.pendingOutgoing]);
+
+  const suggestedPeople = useMemo(() => {
+    const rows = suggestionsQuery.data ?? [];
+    return rows.filter((u) => {
+      const id = String(u.id);
+      if (!id || id === meId) return false;
+      // Never suggest people you are already connected with.
+      if (connectedIds.has(id)) return false;
+      return true;
+    }).slice(0, 5);
+  }, [suggestionsQuery.data, connectedIds, meId]);
 
   useEffect(() => {
-    void loadSidebar();
-    const handleUpdate = () => void loadSidebar();
+    const refreshConnections = () => {
+      void client.invalidateQueries({ queryKey: queryKeys.connections });
+    };
     const handleDemoFeed = () => void client.invalidateQueries({ queryKey: queryKeys.feed });
     window.addEventListener("devzgo:feed-updated", handleDemoFeed);
-    window.addEventListener("devzgo:connections-updated", handleUpdate);
+    window.addEventListener("devzgo:connections-updated", refreshConnections);
     return () => {
       window.removeEventListener("devzgo:feed-updated", handleDemoFeed);
-      window.removeEventListener("devzgo:connections-updated", handleUpdate);
+      window.removeEventListener("devzgo:connections-updated", refreshConnections);
     };
-  }, [loadSidebar, client]);
+  }, [client]);
 
   async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
@@ -230,35 +188,43 @@ export function NetworkPage() {
     }
   }
 
-  const meId = user?.id ? String(user.id) : "";
-
   async function handleSendConnect(targetUserId: string) {
     if (!targetUserId || targetUserId === meId) return;
+    if (connectedIds.has(targetUserId)) return;
     setRequestedUsers((prev) => ({ ...prev, [targetUserId]: true }));
     try {
       await sendConnectionRequest(targetUserId);
       showToast("Connection request sent");
-      await loadSidebar();
+      await client.invalidateQueries({ queryKey: queryKeys.connections });
     } catch {
-      setRequestedUsers((prev) => ({ ...prev, [targetUserId]: false }));
+      setRequestedUsers((prev) => {
+        const next = { ...prev };
+        delete next[targetUserId];
+        return next;
+      });
       showToast("Failed to send request");
     }
   }
 
-  // Current logged in user info (or default to Janasi Rajput as shown in the design)
+  function profileHref(person: { id: string; username?: string | null }) {
+    if (person.username?.trim()) return `/profile/${person.username.trim()}`;
+    return `/profile/${person.id}`;
+  }
+
   const userDisplayName: string =
     me.data?.fullName ||
     (typeof user?.fullName === "string" ? user.fullName : "") ||
     (typeof user?.full_name === "string" ? user.full_name : "") ||
-    "Janasi Rajput";
+    user?.username ||
+    "Developer";
   const userDisplayRole: string =
     me.data?.headline ||
     (typeof user?.headline === "string" ? user.headline : "") ||
-    "Frontend Developer";
+    "Developer";
   const userAvatarUrl: string =
     me.data?.avatarUrl ||
     (typeof user?.avatar_url === "string" ? user.avatar_url : "") ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces";
+    "";
 
   return (
     <div className="min-h-screen bg-[#FBF8F2] text-[#2D120D] font-sans antialiased">
@@ -272,7 +238,7 @@ export function NetworkPage() {
         </div>
       )}
 
-      <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <main data-tour="network-places" className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         {/* ========================================================================= */}
         {/* THREE-COLUMN RESPONSIVE LAYOUT (Picture format)                           */}
         {/* ========================================================================= */}
@@ -293,12 +259,18 @@ export function NetworkPage() {
 
               <div className="px-5 pb-5 pt-0 relative">
                 <div className="-mt-10 mb-3 flex items-end justify-between">
-                  <Link to="/profile" className="shrink-0 group block">
-                    <img
-                      src={userAvatarUrl}
-                      alt={userDisplayName}
-                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm group-hover:scale-105 transition-transform bg-white"
-                    />
+                  <Link to="/profile" className="shrink-0 group block" aria-label="Your profile">
+                    {userAvatarUrl ? (
+                      <img
+                        src={userAvatarUrl}
+                        alt={userDisplayName}
+                        className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm group-hover:scale-105 transition-transform bg-white"
+                      />
+                    ) : (
+                      <span className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-[#FAF3E8] font-serif text-2xl font-bold text-[#780D18] shadow-sm group-hover:scale-105 transition-transform">
+                        {userDisplayName.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                   </Link>
                 </div>
 
@@ -364,41 +336,6 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Card 3: Build Streak 🔥 */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs flex items-center justify-between">
-              <div>
-                <h3 className="font-serif font-bold text-sm text-[#2D120D] flex items-center gap-1.5">
-                  <span>Build Streak</span>
-                  <span>🔥</span>
-                </h3>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="font-serif text-3xl font-bold text-[#2D120D]">12</span>
-                  <span className="text-xs font-semibold text-[#6E5952]">days</span>
-                </div>
-              </div>
-
-              <div className="w-20 h-14 relative flex items-center justify-center shrink-0">
-                <svg viewBox="0 0 88 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                  <rect x="2" y="46" width="84" height="6" rx="2" fill="#8C5C1B" opacity="0.8" />
-                  <rect x="0" y="44" width="88" height="4" rx="1.5" fill="#C98B28" />
-                  <rect x="12" y="10" width="40" height="30" rx="3" fill="#2D120D" stroke="#780D18" strokeWidth="1.5" />
-                  <rect x="15" y="13" width="34" height="22" rx="1.5" fill="#1A2D23" />
-                  <path d="M19 20 L23 24 L19 28" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <line x1="26" y1="28" x2="33" y2="28" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" />
-                  <rect x="28" y="40" width="8" height="4" fill="#2D120D" />
-                  <path d="M22 44 L42 44" stroke="#2D120D" strokeWidth="2" strokeLinecap="round" />
-                  <g transform="translate(56, 18)">
-                    <ellipse cx="14" cy="18" rx="11" ry="8" fill="#FACC15" />
-                    <ellipse cx="12" cy="18" rx="8" ry="6" fill="#EAB308" />
-                    <circle cx="8" cy="10" r="7" fill="#FACC15" />
-                    <circle cx="6.5" cy="8.5" r="1.3" fill="#1C1917" />
-                    <circle cx="6" cy="8" r="0.4" fill="#FFFFFF" />
-                    <path d="M1 9 Q-2 11 1 13 L5 12 Z" fill="#F97316" />
-                    <path d="M14 16 Q19 14 20 18 Q16 22 13 18 Z" fill="#F59E0B" />
-                  </g>
-                </svg>
-              </div>
-            </div>
           </aside>
 
           {/* ─────────────────────────────────────────────────────────────────────── */}
@@ -408,11 +345,19 @@ export function NetworkPage() {
             {/* Post Composer Card */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-4 sm:p-5 shadow-xs">
               <div className="flex items-center gap-3 mb-3">
-                <img
-                  src={userAvatarUrl}
-                  alt={userDisplayName}
-                  className="w-10 h-10 rounded-full object-cover border border-[#DECDBA] shrink-0"
-                />
+                <Link to="/profile" className="shrink-0" aria-label="Your profile">
+                  {userAvatarUrl ? (
+                    <img
+                      src={userAvatarUrl}
+                      alt={userDisplayName}
+                      className="h-10 w-10 rounded-full object-cover border border-[#DECDBA]"
+                    />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#DECDBA] bg-[#FAF3E8] text-xs font-bold text-[#780D18]">
+                      {userDisplayName.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </Link>
                 <input
                   type="text"
                   value={postContent}
@@ -499,93 +444,6 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Post: Chan Li (Featured Module Post) */}
-            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/team/chan.jpg"
-                    alt="Chan Li"
-                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-bold text-sm text-[#2D120D]">Chan Li</span>
-                    </div>
-                    <p className="text-xs text-[#6E5952] flex items-center gap-1">
-                      <span>2h ago &middot; Software Developer</span>
-                      <span aria-hidden>&middot;</span>
-                      <Globe className="w-3 h-3 text-[#6E5952]" />
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="text-[#6E5952] hover:text-[#2D120D] p-1.5 rounded-full hover:bg-[#FAF7F2] transition"
-                  title="More options"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3">
-                Just shipped the Network &amp; Messages module for DevZ-Go! 💻 Added real-time messaging and project collaboration—would love feedback from the community.
-              </p>
-
-              <div className="rounded-2xl overflow-hidden border border-[#DECDBA] mb-3.5 bg-[#2D120D]">
-                <img
-                  src="/brand/chan_workspace.jpg"
-                  alt="Workstations showing DevZ-Go"
-                  className="w-full h-auto object-cover max-h-72"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setChanLiked((l) => !l);
-                      setChanLikesCount((c) => (chanLiked ? c - 1 : c + 1));
-                    }}
-                    className={`flex items-center gap-1.5 transition cursor-pointer ${
-                      chanLiked ? "text-[#780D18] font-bold" : "hover:text-[#780D18]"
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${chanLiked ? "fill-[#780D18]" : ""}`} />
-                    <span>{chanLikesCount}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 hover:text-[#780D18] transition cursor-pointer"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>32</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 hover:text-[#780D18] transition cursor-pointer"
-                  >
-                    <Repeat className="w-4 h-4" />
-                    <span>18</span>
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setChanBookmarked((b) => !b)}
-                  className={`hover:text-[#780D18] transition cursor-pointer ${
-                    chanBookmarked ? "text-[#780D18]" : ""
-                  }`}
-                >
-                  <Bookmark className={`w-4 h-4 ${chanBookmarked ? "fill-[#780D18]" : ""}`} />
-                </button>
-              </div>
-            </article>
-
             {/* Feed Filter Dropdown (aligned right, Community Feed text removed as per design) */}
             <div className="flex justify-end pt-1">
               <div className="relative" ref={feedFilterRef}>
@@ -624,178 +482,6 @@ export function NetworkPage() {
               </div>
             </div>
 
-            {/* Post 1: Arjun Mehra (TaskFlow v2) */}
-            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces"
-                    alt="Arjun Mehra"
-                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-bold text-sm text-[#2D120D]">Arjun Mehra</span>
-                      <span className="text-xs text-[#6E5952]">@arjun</span>
-                    </div>
-                    <p className="text-xs text-[#6E5952]">Full Stack Developer · 4h ago</p>
-                  </div>
-                </div>
-                <button type="button" className="text-[#6E5952] hover:text-[#2D120D] p-1">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3.5">
-                Just shipped v2 of my task manager! 🎉 Added team workspaces and real-time sync. Would love your feedback on the new flow.
-              </p>
-
-              {/* Embedded Project Card */}
-              <div className="rounded-2xl border border-[#DECDBA] bg-[#FAF7F2] p-3 sm:p-3.5 flex flex-col sm:flex-row gap-4 items-center mb-4">
-                <TaskFlowMockup />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="font-bold text-sm text-[#2D120D]">TaskFlow v2</h4>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#6E5952]" />
-                  </div>
-                  <p className="text-xs text-[#6E5952] leading-relaxed mb-2.5">
-                    A simple, collaborative task manager for small teams.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      React
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Node.js
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Socket.IO
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
-                <div className="flex items-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setArjunLiked(!arjunLiked);
-                      setArjunLikesCount((c) => (arjunLiked ? c - 1 : c + 1));
-                    }}
-                    className={`inline-flex items-center gap-1.5 transition ${
-                      arjunLiked ? "text-[#780D18] font-semibold" : "hover:text-[#780D18]"
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${arjunLiked ? "fill-[#780D18]" : ""}`} />
-                    <span>{arjunLikesCount}</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>24</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <Repeat className="w-4 h-4" />
-                    <span>12</span>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setArjunBookmarked(!arjunBookmarked)}
-                  className={`p-1 transition ${arjunBookmarked ? "text-[#780D18]" : "hover:text-[#2D120D]"}`}
-                >
-                  <Bookmark className={`w-4 h-4 ${arjunBookmarked ? "fill-[#780D18]" : ""}`} />
-                </button>
-              </div>
-            </article>
-
-            {/* Post 2: Mira Joshi (Building a Local RAG Pipeline) */}
-            <article className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces"
-                    alt="Mira Joshi"
-                    className="w-10 h-10 rounded-full object-cover border border-[#DECDBA]"
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-bold text-sm text-[#2D120D]">Mira Joshi</span>
-                      <span className="text-xs text-[#6E5952]">@mira</span>
-                    </div>
-                    <p className="text-xs text-[#6E5952]">ML Engineer · 1d ago</p>
-                  </div>
-                </div>
-                <button type="button" className="text-[#6E5952] hover:text-[#2D120D] p-1">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs sm:text-sm text-[#2D120D] leading-relaxed mb-3.5">
-                Wrote a beginner-friendly guide on setting up a local RAG pipeline. Hope it helps anyone exploring LLMs! 📚
-              </p>
-
-              {/* Embedded Resource Card */}
-              <div className="rounded-2xl border border-[#DECDBA] bg-[#FAF7F2] p-3 sm:p-3.5 flex flex-col sm:flex-row gap-4 items-center mb-4">
-                <RagBooksMockup />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="font-bold text-sm text-[#2D120D]">Building a Local RAG Pipeline</h4>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#6E5952]" />
-                  </div>
-                  <p className="text-xs text-[#6E5952] leading-relaxed mb-2.5">
-                    A step-by-step guide with code and resources.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      Python
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      LLM
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#E2F0CB] text-[#284E45] text-[11px] font-semibold">
-                      RAG
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#DECDBA]/40 text-xs text-[#6E5952]">
-                <div className="flex items-center gap-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMiraLiked(!miraLiked);
-                      setMiraLikesCount((c) => (miraLiked ? c - 1 : c + 1));
-                    }}
-                    className={`inline-flex items-center gap-1.5 transition ${
-                      miraLiked ? "text-[#780D18] font-semibold" : "hover:text-[#780D18]"
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${miraLiked ? "fill-[#780D18]" : ""}`} />
-                    <span>{miraLikesCount}</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>18</span>
-                  </button>
-                  <button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2D120D] transition">
-                    <Repeat className="w-4 h-4" />
-                    <span>9</span>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMiraBookmarked(!miraBookmarked)}
-                  className={`p-1 transition ${miraBookmarked ? "text-[#780D18]" : "hover:text-[#2D120D]"}`}
-                >
-                  <Bookmark className={`w-4 h-4 ${miraBookmarked ? "fill-[#780D18]" : ""}`} />
-                </button>
-              </div>
-            </article>
-
             {/* Dynamic Community Feed from API */}
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-dashed border-[#DECDBA]">
@@ -819,37 +505,18 @@ export function NetworkPage() {
                   </button>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <div className="rounded-3xl border border-dashed border-[#DECDBA] bg-white px-6 py-12 text-center">
+                <p className="font-serif text-lg font-bold text-[#2D120D]">No posts yet</p>
+                <p className="mt-1 text-sm text-[#6E5952]">Share an update above to get the feed started.</p>
+              </div>
+            )}
           </div>
 
           {/* ─────────────────────────────────────────────────────────────────────── */}
-          {/* COLUMN 3 (RIGHT): Your Progress, Suggested Connections, Communities     */}
+          {/* COLUMN 3 (RIGHT): Suggested Connections, Communities     */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
           <aside className="space-y-6">
-            {/* Card 1: Your Progress */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D] flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-[#780D18]" />
-                  <span>Your Progress</span>
-                </h3>
-                <span className="text-xs text-[#6E5952]">This month</span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex-1 h-2.5 rounded-full bg-[#FAF3E8] border border-[#DECDBA] overflow-hidden">
-                  <div className="h-full w-3/5 rounded-full bg-[#780D18]" />
-                </div>
-                <span className="text-xs font-bold text-[#2D120D] shrink-0">3 / 5 builds</span>
-              </div>
-
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FAF3E8] border border-[#DECDBA] text-[11px] font-semibold text-[#780D18] shadow-2xs">
-                <span>Keep Building!</span>
-                <span>✨</span>
-              </div>
-            </div>
-
             {/* Card 2: Suggested Connections */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
@@ -857,7 +524,7 @@ export function NetworkPage() {
                   Suggested Connections
                 </h3>
                 <Link
-                  to="/explore/developers"
+                  to="/network/connections?tab=suggestions"
                   className="text-xs font-semibold text-[#780D18] hover:underline"
                 >
                   See All
@@ -865,65 +532,74 @@ export function NetworkPage() {
               </div>
 
               <div className="space-y-3.5">
-                {[
-                  {
-                    id: "sugg-1",
-                    name: "Manasi Sharma",
-                    role: "Full-Stack Developer",
-                    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
-                  },
-                  {
-                    id: "sugg-2",
-                    name: "Khushbu Patel",
-                    role: "Frontend Developer",
-                    avatarUrl: "/team/khushbu.jpeg",
-                  },
-                  {
-                    id: "sugg-3",
-                    name: "Janasi Reddy",
-                    role: "DevOps Enthusiast",
-                    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces",
-                  },
-                ].map((creator) => {
-                  const isRequested = requestedUsers[creator.id];
-                  return (
-                    <div key={creator.id} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={creator.avatarUrl}
-                          alt={creator.name}
-                          className="w-10 h-10 rounded-full object-cover border border-[#DECDBA] shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-xs sm:text-sm text-[#2D120D] truncate">
-                            {creator.name}
-                          </p>
-                          <p className="text-[11px] text-[#6E5952] truncate">
-                            {creator.role}
-                          </p>
-                        </div>
-                      </div>
+                {suggestionsQuery.isLoading ? (
+                  <p className="text-xs text-[#6E5952]">Finding people…</p>
+                ) : suggestedPeople.length === 0 ? (
+                  <p className="text-xs text-[#6E5952]">
+                    No new suggestions right now. Check back after more people join.
+                  </p>
+                ) : (
+                  suggestedPeople.map((creator) => {
+                    const id = String(creator.id);
+                    const isConnected = connectedIds.has(id);
+                    const isRequested = Boolean(requestedUsers[id]) || pendingOutgoingIds.has(id);
+                    const href = profileHref(creator);
+                    return (
+                      <div key={id} className="flex items-center justify-between gap-3">
+                        <Link to={href} className="flex min-w-0 flex-1 items-center gap-2.5 group">
+                          {creator.avatarUrl ? (
+                            <img
+                              src={creator.avatarUrl}
+                              alt=""
+                              className="h-10 w-10 shrink-0 rounded-full object-cover border border-[#DECDBA]"
+                            />
+                          ) : (
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#DECDBA] bg-[#FAF3E8] text-xs font-bold text-[#780D18]">
+                              {(creator.fullName || creator.username || "?").slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-[#2D120D] group-hover:text-[#780D18] sm:text-sm">
+                              {creator.fullName || creator.username}
+                            </p>
+                            <p className="truncate text-[11px] text-[#6E5952]">
+                              {creator.headline || `@${creator.username}`}
+                            </p>
+                          </div>
+                        </Link>
 
-                      <button
-                        type="button"
-                        disabled={isRequested}
-                        onClick={() => handleSendConnect(creator.id)}
-                        className={`w-8 h-8 rounded-xl border border-[#DECDBA] flex items-center justify-center transition cursor-pointer shrink-0 ${
-                          isRequested
-                            ? "bg-stone-100 text-stone-400 cursor-default"
-                            : "bg-white hover:bg-[#FAF7F2] text-[#2D120D] hover:text-[#780D18] shadow-2xs"
-                        }`}
-                        title={isRequested ? "Request sent" : "Connect"}
-                      >
-                        {isRequested ? (
-                          <Check className="w-4 h-4 text-[#780D18]" />
+                        {isConnected ? (
+                          <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700"
+                            title="Connected"
+                            aria-label="Connected"
+                          >
+                            <Check className="h-4 w-4" />
+                          </span>
                         ) : (
-                          <UserPlus className="w-4 h-4" />
+                          <button
+                            type="button"
+                            disabled={isRequested}
+                            onClick={() => void handleSendConnect(id)}
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#DECDBA] transition ${
+                              isRequested
+                                ? "cursor-default bg-stone-100 text-[#780D18]"
+                                : "cursor-pointer bg-white text-[#2D120D] shadow-2xs hover:bg-[#FAF7F2] hover:text-[#780D18]"
+                            }`}
+                            title={isRequested ? "Request sent" : "Connect"}
+                            aria-label={isRequested ? "Request sent" : "Connect"}
+                          >
+                            {isRequested ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <UserPlus className="h-4 w-4" />
+                            )}
+                          </button>
                         )}
-                      </button>
-                    </div>
-                  );
-                })}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -942,54 +618,53 @@ export function NetworkPage() {
               </div>
 
               <div className="space-y-3">
-                {[
-                  {
-                    name: "Sheridan Developers",
-                    members: "1.2K members",
-                    link: "/network/groups",
-                    bg: "bg-[#780D18]",
-                    icon: Cpu,
-                  },
-                  {
-                    name: "Women in Tech",
-                    members: "3.4K members",
-                    link: "/network/groups",
-                    bg: "bg-[#2D120D]",
-                    icon: Globe,
-                  },
-                  {
-                    name: "Hackathon Hub",
-                    members: "2.1K members",
-                    link: "/network/groups",
-                    bg: "bg-[#8C5C1B]",
-                    icon: Boxes,
-                  },
-                ].map((club) => {
-                  const Icon = club.icon;
-                  return (
-                    <Link
-                      key={club.name}
-                      to={club.link}
-                      className="flex items-center justify-between p-2 rounded-2xl hover:bg-[#FAF7F2] transition group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl ${club.bg} text-white flex items-center justify-center shrink-0 shadow-2xs`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-xs sm:text-sm text-[#2D120D] group-hover:text-[#780D18] truncate">
-                            {club.name}
-                          </p>
-                          <p className="text-[11px] text-[#6E5952]">{club.members}</p>
-                        </div>
-                      </div>
-
-                      <div className="w-7 h-7 rounded-full border border-[#DECDBA] flex items-center justify-center text-[#2D120D] group-hover:bg-[#FAF7F2] group-hover:border-[#780D18] group-hover:text-[#780D18] transition shrink-0">
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </div>
+                {clubsQuery.isLoading ? (
+                  <p className="text-xs text-[#6E5952]">Loading clubs…</p>
+                ) : sidebarClubs.length === 0 ? (
+                  <p className="text-xs text-[#6E5952]">
+                    No clubs yet.{" "}
+                    <Link to="/network/groups" className="font-semibold text-[#780D18] hover:underline">
+                      Browse communities
                     </Link>
-                  );
-                })}
+                  </p>
+                ) : (
+                  sidebarClubs.map((club) => {
+                    const href = `/network/groups/${club.slug || club.id}`;
+                    const initial = (club.name || "?").slice(0, 1).toUpperCase();
+                    return (
+                      <Link
+                        key={club.id}
+                        to={href}
+                        className="flex items-center justify-between p-2 rounded-2xl hover:bg-[#FAF7F2] transition group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {club.avatarUrl ? (
+                            <img
+                              src={club.avatarUrl}
+                              alt=""
+                              className="h-9 w-9 shrink-0 rounded-xl object-cover border border-[#DECDBA]"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#780D18] text-sm font-bold text-white shadow-2xs">
+                              {initial}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs sm:text-sm text-[#2D120D] group-hover:text-[#780D18] truncate">
+                              {club.name}
+                            </p>
+                            <p className="text-[11px] text-[#6E5952]">
+                              {club.memberCount ?? 0} member{(club.memberCount ?? 0) === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="w-7 h-7 rounded-full border border-[#DECDBA] flex items-center justify-center text-[#2D120D] group-hover:bg-[#FAF7F2] group-hover:border-[#780D18] group-hover:text-[#780D18] transition shrink-0">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </Link>
+                    );
+                  })
+                )}
               </div>
             </div>
           </aside>

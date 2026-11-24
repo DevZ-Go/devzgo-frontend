@@ -176,7 +176,7 @@ export function Navbar({ variant = "default" }: NavbarProps) {
   function handleLogout() {
     setMobileOpen(false);
     logout();
-    window.location.replace("/login");
+    window.location.replace("/");
   }
 
   const isActive = (path: string) => {
@@ -258,8 +258,8 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   <Link to="/about-developers" onClick={close} aria-current={isActive("/about-developers") ? "page" : undefined} className={mobileLinkClass("/about-developers", dark)}>
                 <UsersRound className="w-4 h-4 shrink-0" /> About us
               </Link>
-              <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={mobileLinkClass("/settings", dark)}>
-                <Settings className="w-4 h-4 shrink-0" /> Settings
+              <Link to="/settings" onClick={close} aria-current={isActive("/settings") ? "page" : undefined} className={`group/nav ${mobileLinkClass("/settings", dark)}`}>
+                <Settings className="nav-icon-gear w-4 h-4 shrink-0" /> Settings
               </Link>
             </div>
             {!recruiter && (
@@ -449,6 +449,47 @@ export function Navbar({ variant = "default" }: NavbarProps) {
     isActive("/activity") ||
     isActive("/settings");
 
+  if (!user) {
+    return (
+      <nav
+        aria-label="Main"
+        className="fixed top-0 left-0 right-0 z-50 bg-[#2D120D]/95 backdrop-blur-md border-b border-[#FFF8CA]/15 shadow-lg"
+      >
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6 md:px-8">
+          <Link
+            to="/"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="group inline-flex items-center shrink-0"
+            title="DevZ-Go Home"
+            aria-label="DevZ-Go Home"
+          >
+            <DevZLockup />
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/about-developers"
+              className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-sm font-semibold text-[#FFF8CA]/85 hover:text-[#FFF8CA] hover:bg-white/10 transition-all"
+            >
+              About
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex px-4 py-2 rounded-full text-sm font-semibold text-[#FFF8CA] border border-[#FFF8CA]/30 hover:bg-white/10 transition-all"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="inline-flex px-4 py-2 rounded-full text-sm font-bold bg-[#fced96] text-stone-900 hover:bg-[#fae77c] transition-all"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <>
       <nav
@@ -587,9 +628,9 @@ export function Navbar({ variant = "default" }: NavbarProps) {
                   <Link
                     to="/settings"
                     onClick={() => setMoreOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
+                    className="group/nav flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium hover:bg-[#EFE5D8] dark:hover:bg-[#3D1812] transition-colors"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="nav-icon-gear w-4 h-4" />
                     <span>Settings</span>
                   </Link>
                   <button

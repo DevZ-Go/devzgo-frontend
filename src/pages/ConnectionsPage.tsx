@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Compass, Handshake, Inbox, Loader2, Search, Users, type LucideIcon } from "lucide-react";
+import { Check, Compass, Handshake, Inbox, Loader2, Search, Users, type LucideIcon } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import {
   acceptConnection,
@@ -30,6 +30,7 @@ import type { Connection, ConnectionUserSummary } from "../types/network";
 import { NetworkPlaces } from "../components/network/NetworkPlaces";
 import { StickerBadge } from "../components/StickerBadge";
 import { ui } from "../styles/editorial";
+import { useNotice } from "../components/AppNotice";
 
 type Tab = "connections" | "requests" | "collaboration" | "suggestions";
 
@@ -59,11 +60,11 @@ function rawPerson(u: { id: string; username: string; full_name?: string | null;
 
 function PersonRow({ person, detail, children }: { person: ConnectionUserSummary; detail?: ReactNode; children?: ReactNode }) {
   const name = person.fullName || person.username || "Developer";
-  const href = `/profile/${person.id}`;
+  const href = person.username?.trim() ? `/profile/${person.username.trim()}` : `/profile/${person.id}`;
   return (
     <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <Link to={href} className="shrink-0">
+        <Link to={href} className="shrink-0" aria-label={`${name} profile`}>
           {person.avatarUrl ? (
             <img src={person.avatarUrl} alt="" className="h-11 w-11 rounded-xl object-cover ring-1 ring-stone-200" />
           ) : (
@@ -161,6 +162,7 @@ function ConnectionSection({ kind, search = "", title, hint, empty, actions }: {
 }
 
 export function ConnectionsPage() {
+  const { confirm } = useNotice();
   const [params, setParams] = useSearchParams();
   const tab = readTab(params.get("tab"));
   const navigate = useNavigate();
@@ -194,7 +196,15 @@ export function ConnectionsPage() {
   });
   const busy = act.isPending;
 
-  const people = (suggestions.data ?? []).filter((p) => p.id !== meId);
+  const connectedIds = new Set(
+    (summary.data?.accepted ?? []).map((c) => String(c.partner?.id)).filter(Boolean),
+  );
+  const pendingOut = new Set(
+    (summary.data?.pendingOutgoing ?? []).map((c) => String(c.partner?.id)).filter(Boolean),
+  );
+  const people = (suggestions.data ?? []).filter(
+    (p) => p.id !== meId && !connectedIds.has(String(p.id)),
+  );
   const accepted = summary.data?.accepted.length ?? 0;
   const counts: Record<Tab, { value: number; alert?: boolean }> = {
     connections: { value: accepted },
@@ -271,8 +281,13 @@ export function ConnectionsPage() {
                 <>
                   <Link to={`/messages?user=${c.partner.id}`} className={quiet}>Message</Link>
                   <button type="button" className={quiet} disabled={busy}
-                    onClick={() => window.confirm(`Remove ${c.partner.fullName || c.partner.username} from your connections?`) &&
-                      act.mutate(() => removeConnection(c.id))}>
+                    onClick={() => {
+                      void confirm({
+                        title: "Remove connection",
+                        message: `Remove ${c.partner.fullName || c.partner.username} from your connections?`,
+                        confirmLabel: "Remove",
+                      }).then((ok) => { if (ok) act.mutate(() => removeConnection(c.id)); });
+                    }}>
                     Remove
                   </button>
                 </>
@@ -352,20 +367,35 @@ export function ConnectionsPage() {
         )}
 
         {tab === "suggestions" && (
-          <Section title="People you may know" hint="Most shared connections first, then newer members">
+          <Section title="People you may know" hint="Most shared connections first, then newer members. Connected people are hidden.">
             <Rows query={suggestions} items={people} empty="No suggestions right now.">
-              {(person) => (
-                <PersonRow key={person.id} person={person}>
-                  <button type="button" disabled={busy || asked[person.id]}
-                    onClick={() => act.mutate(async () => {
-                      await sendConnectionRequest(person.id);
-                      setAsked((prev) => ({ ...prev, [person.id]: true }));
-                    })}
-                    className={`${ui.btn} bg-[#fced96] text-stone-900 hover:bg-[#f8e46a]`}>
-                    {asked[person.id] ? "Request sent" : "Connect"}
-                  </button>
-                </PersonRow>
-              )}
+              {(person) => {
+                const id = String(person.id);
+                const sent = Boolean(asked[id]) || pendingOut.has(id);
+                return (
+                  <PersonRow key={id} person={person}>
+                    {sent ? (
+                      <span className={`${ui.btn} inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200`}>
+                        <Check className="h-3.5 w-3.5" /> Request sent
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          act.mutate(async () => {
+                            await sendConnectionRequest(id);
+                            setAsked((prev) => ({ ...prev, [id]: true }));
+                          })
+                        }
+                        className={`${ui.btn} bg-[#fced96] text-stone-900 hover:bg-[#f8e46a]`}
+                      >
+                        Connect
+                      </button>
+                    )}
+                  </PersonRow>
+                );
+              }}
             </Rows>
           </Section>
         )}

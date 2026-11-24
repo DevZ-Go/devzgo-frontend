@@ -27,6 +27,7 @@ import type { AccessLevel } from "../types/network";
 import { AccessSelect } from "./AccessSelect";
 import { CollaborationModal } from "./CollaborationModal";
 import { ui } from "../styles/editorial";
+import { useNotice } from "./AppNotice";
 
 const btn = ui.btn;
 const quiet = `${btn} ${ui.neutral}`;
@@ -57,6 +58,7 @@ function FocusEditor({ projectId, current, onSaved }: { projectId: string; curre
 
 /** Everything about the project's team: members, what each is working on, and the actions open to the viewer. */
 export function TeamPanel({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
+  const { confirm } = useNotice();
   const { token, user } = useAuth();
   const client = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -154,7 +156,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
           )}
           {status === "member" && (
             <button className={quiet} disabled={act.isPending}
-              onClick={() => window.confirm("Leave this project?") && run(() => leaveProject(projectId))}>Leave project</button>
+              onClick={() => { void confirm({ title: "Leave project", message: "Leave this project?", confirmLabel: "Leave" }).then((ok) => { if (ok) run(() => leaveProject(projectId)); }); }}>Leave project</button>
           )}
         </div>
       </div>
@@ -175,7 +177,7 @@ export function TeamPanel({ projectId, projectTitle }: { projectId: string; proj
                     <AccessSelect value={(m.access as AccessLevel) ?? "commenter"} label={`Access for ${m.username}`}
                       onChange={(next) => run(() => updateMemberAccess(projectId, m.userId, next))} />
                     <button className={quiet} disabled={act.isPending}
-                      onClick={() => window.confirm(`Remove ${m.fullName || m.username} from the team?`) && run(() => removeMember(projectId, m.userId))}>
+                      onClick={() => { void confirm({ title: "Remove member", message: `Remove ${m.fullName || m.username} from the team?`, confirmLabel: "Remove" }).then((ok) => { if (ok) run(() => removeMember(projectId, m.userId)); }); }}>
                       Remove
                     </button>
                   </>

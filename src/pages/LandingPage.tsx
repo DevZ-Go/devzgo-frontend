@@ -9,11 +9,13 @@ import { ImageWithFallback } from "../components/ImageWithFallback";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
 import { ProjectTeamAvatars, teamFromProject } from "../components/ProjectTeamAvatars";
 import type { ApiProject } from "../types/project";
+import { useAuth } from "../auth/AuthContext";
 import lockInImage from "../assets/lock_in.jpg";
 import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
 export function LandingPage() {
+  const { isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [, setLoading] = useState(true);
 
@@ -85,17 +87,36 @@ export function LandingPage() {
             transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
           >
-            <ExploreLink
-              className="inline-block px-8 py-3 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-            >
-              EXPLORE PROJECTS
-            </ExploreLink>
-            <Link
-              to="/add-project"
-              className="inline-block px-8 py-3 rounded-full bg-white/90 hover:bg-white text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm"
-            >
-              Add project
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <ExploreLink
+                  className="inline-block px-8 py-3 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  EXPLORE PROJECTS
+                </ExploreLink>
+                <Link
+                  to="/add-project"
+                  className="inline-block px-8 py-3 rounded-full bg-white/90 hover:bg-white text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm"
+                >
+                  Add project
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="inline-block px-8 py-3 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-block px-8 py-3 rounded-full bg-white/90 hover:bg-white text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </motion.div>
         </div>
 

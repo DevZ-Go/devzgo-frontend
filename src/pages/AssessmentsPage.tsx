@@ -17,6 +17,7 @@ import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
 import { deadlineText, difficultyLabel, minutesText, ratingLabel, typeLabel } from "../utils/challenges";
 import { shortDate } from "../utils/evidence";
+import { useNotice } from "../components/AppNotice";
 
 const ASSESSMENTS = [...queryKeys.challenges, "assessments"];
 
@@ -260,6 +261,7 @@ function SubmitForm({ challengeId, current }: { challengeId: string; current: De
     mutationFn: () => withdrawSubmission(challengeId),
     onSuccess: () => void client.invalidateQueries({ queryKey: queryKeys.challenges }),
   });
+  const { confirm } = useNotice();
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -290,7 +292,7 @@ function SubmitForm({ challengeId, current }: { challengeId: string; current: De
       {submit.isSuccess && <p className="text-sm text-forest-700">Submitted. You can update it until the review starts or the deadline passes.</p>}
       <div className="flex flex-wrap justify-end gap-2">
         {live && (
-          <button type="button" onClick={() => window.confirm("Withdraw your submission?") && withdraw.mutate()} disabled={withdraw.isPending}
+          <button type="button" onClick={() => { void confirm({ title: "Withdraw submission", message: "Withdraw your submission?", confirmLabel: "Withdraw" }).then((ok) => { if (ok) withdraw.mutate(); }); }} disabled={withdraw.isPending}
             className={`${ui.btn} ${ui.neutral} px-4 py-2`}>Withdraw</button>
         )}
         <button type="submit" disabled={submit.isPending || (!repo.trim() && !projectId) || explanation.trim().length < 10}

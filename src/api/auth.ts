@@ -12,8 +12,8 @@ export interface RegisterPayload {
   email: string;
   password: string;
   username: string;
-  first_name?: string;
-  last_name?: string;
+  first_name: string;
+  last_name: string;
   role?: string;
   company?: string;
 }

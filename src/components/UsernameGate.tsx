@@ -7,8 +7,8 @@ import { getApiErrorMessage } from "../utils/apiError";
 import { ui } from "../styles/editorial";
 
 /**
- * Alerts existing accounts that are missing a username (still using an email)
- * or missing their First & Last Name so every profile shows First Last with @username underneath.
+ * Existing accounts missing a real username (still on email) and/or missing
+ * first + last name must complete those before using the rest of the app.
  */
 export function UsernameGate() {
   const { user, refreshUser } = useAuth();
@@ -35,7 +35,8 @@ export function UsernameGate() {
 
   const trimmedFirst = firstName.trim();
   const trimmedLast = lastName.trim();
-  const usernameChanged = username.trim().toLowerCase() !== (user.username || "").trim().toLowerCase();
+  const usernameChanged =
+    username.trim().toLowerCase() !== (user.username || "").trim().toLowerCase();
   const canSubmit =
     !busy &&
     (!needsName || (trimmedFirst.length > 0 && trimmedLast.length > 0)) &&
@@ -45,7 +46,7 @@ export function UsernameGate() {
   async function save(e: FormEvent) {
     e.preventDefault();
     if (needsName && (!trimmedFirst || !trimmedLast)) {
-      setError("Please enter both your first name and last name.");
+      setError("Enter both your first name and last name.");
       return;
     }
     setBusy(true);
@@ -78,18 +79,18 @@ export function UsernameGate() {
       >
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-maroon-800">
-            Profile Update Required
+            Profile update required
           </p>
           <h2 id="username-gate-title" className="mt-1 font-serif text-3xl text-stone-900">
             {needsUsername && !needsName
               ? "Choose a username"
               : needsName && !needsUsername
-              ? "Add your First & Last Name"
-              : "Complete your profile"}
+                ? "Add your first & last name"
+                : "Complete your profile"}
           </h2>
           <p className="mt-2 text-sm text-stone-600">
-            Profiles now display your <strong>First &amp; Last Name</strong> with your{" "}
-            <span className="font-mono text-xs">@username</span> underneath. Please fill in your details to continue.
+            Profiles display your first and last name with your{" "}
+            <span className="font-mono text-xs">@username</span> underneath.
           </p>
         </div>
 
@@ -97,7 +98,7 @@ export function UsernameGate() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="gate-first-name" className="block text-xs font-semibold text-stone-700 mb-1">
-                First Name *
+                First name
               </label>
               <input
                 id="gate-first-name"
@@ -113,7 +114,7 @@ export function UsernameGate() {
             </div>
             <div>
               <label htmlFor="gate-last-name" className="block text-xs font-semibold text-stone-700 mb-1">
-                Last Name *
+                Last name
               </label>
               <input
                 id="gate-last-name"
@@ -132,7 +133,7 @@ export function UsernameGate() {
 
         <div>
           <label htmlFor="username" className="block text-xs font-semibold text-stone-700 mb-1">
-            Username {needsUsername ? "*" : "(your @handle)"}
+            Username {needsUsername ? "" : "(your @handle)"}
           </label>
           <UsernameField
             value={username}

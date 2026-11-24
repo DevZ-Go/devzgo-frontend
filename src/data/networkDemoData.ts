@@ -65,12 +65,12 @@ export const INITIAL_DEMO_USERS: DeveloperProfile[] = [
     userId: "usr-manasi",
     username: "manasi",
     email: "manasi@devzgo.com",
-    fullName: "Manasi Sharma",
+    fullName: "Manasi Rajput",
     headline: "Analytics & Dashboard Engineer",
     bio: "Crafting developer metrics, monthly wrap-ups, and productivity insights from raw git signals and peer collaboration flows.",
     skills: "Python, Data Visualization, Next.js, Pandas, Chart.js, TailwindCSS, SQL",
     githubUrl: "https://github.com/manasi-eng",
-    linkedinUrl: "https://linkedin.com/in/manasi-sharma",
+    linkedinUrl: "https://linkedin.com/in/manasi-rajput",
     location: "London, UK",
     projectsCount: 3,
     connectionsCount: 31,
@@ -133,7 +133,7 @@ export const INITIAL_DEMO_ACTIVITIES: FeedActivity[] = [
         id: "c-2",
         activityId: "act-1",
         authorId: "usr-manasi",
-        authorName: "Manasi Sharma",
+        authorName: "Manasi Rajput",
         authorUsername: "manasi",
         authorAvatar:
           "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
@@ -214,7 +214,7 @@ export const INITIAL_DEMO_ACTIVITIES: FeedActivity[] = [
   {
     id: "act-4",
     userId: "usr-manasi",
-    authorName: "Manasi Sharma",
+    authorName: "Manasi Rajput",
     authorUsername: "manasi",
     authorHeadline: "Analytics & Dashboard Engineer",
     authorAvatar:
@@ -287,7 +287,7 @@ export const INITIAL_DEMO_CONNECTIONS: Connection[] = [
     partner: {
       id: "usr-manasi",
       username: "manasi",
-      fullName: "Manasi Sharma",
+      fullName: "Manasi Rajput",
       headline: "Analytics & Dashboard Engineer",
       avatarUrl:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
@@ -365,13 +365,13 @@ export const INITIAL_DEMO_NOTIFICATIONS: NotificationItem[] = [
     id: "notif-1",
     recipientId: "usr-janasi",
     actorId: "usr-manasi",
-    actorName: "Manasi Sharma",
+    actorName: "Manasi Rajput",
     actorUsername: "manasi",
     actorAvatar:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",
     type: "connection_request",
     relatedId: "usr-manasi",
-    message: "Manasi Sharma sent you a connection request",
+    message: "Manasi Rajput sent you a connection request",
     read: false,
     createdAt: new Date(Date.now() - 3600000 * 1).toISOString(),
   },
@@ -476,7 +476,7 @@ export const INITIAL_PROJECT_COLLABORATORS: Record<string, ProjectCollaborator[]
       projectId: "demo-proj-2",
       userId: "usr-manasi",
       username: "manasi",
-      fullName: "Manasi Sharma",
+      fullName: "Manasi Rajput",
       headline: "Analytics Engineer",
       avatarUrl:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces",

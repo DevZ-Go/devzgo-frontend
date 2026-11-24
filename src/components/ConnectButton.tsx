@@ -12,6 +12,7 @@ import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../auth/AuthContext";
 import { getApiErrorMessage } from "../utils/apiError";
 import { ui } from "../styles/editorial";
+import { useNotice } from "./AppNotice";
 
 const base = "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold transition disabled:opacity-60";
 const primary = `${base} ${ui.primary}`;
@@ -21,6 +22,7 @@ const quiet = `${base} ${ui.neutral}`;
 export function ConnectButton({ userId, onChange }: { userId: string; onChange?: () => void }) {
   const { user } = useAuth();
   const client = useQueryClient();
+  const { confirm } = useNotice();
   const { data } = useQuery({
     queryKey: [...queryKeys.connections, "status", userId],
     queryFn: () => fetchConnectionStatus(userId),
@@ -48,7 +50,7 @@ export function ConnectButton({ userId, onChange }: { userId: string; onChange?:
             <Check className="w-3.5 h-3.5" /> Connected
           </span>
           <button type="button" className={quiet} disabled={busy}
-            onClick={() => window.confirm("Remove this connection?") && act.mutate(() => removeConnection(id))}>
+            onClick={() => { void confirm({ title: "Remove connection", message: "Remove this connection?", confirmLabel: "Remove" }).then((ok) => { if (ok) act.mutate(() => removeConnection(id)); }); }}>
             Remove
           </button>
         </>

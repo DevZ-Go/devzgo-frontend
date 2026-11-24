@@ -6,6 +6,7 @@ export interface AuthUser {
   created_at?: string;
   has_password?: boolean;
   username_needs_choice?: boolean;
+  /** True when first + last name are missing or incomplete. */
   name_needs_choice?: boolean;
   full_name?: string | null;
   /** Fixed at sign-up. Recruiter accounts review work and cannot build projects. */

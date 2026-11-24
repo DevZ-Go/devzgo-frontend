@@ -10,6 +10,7 @@ import {
   type EntryStatus, type ShortlistEntry,
 } from "../api/recruiting";
 import { ui } from "../styles/editorial";
+import { useNotice } from "../components/AppNotice";
 
 function EntryRow({ entry, listId }: { entry: ShortlistEntry; listId: string }) {
   const queryClient = useQueryClient();
@@ -54,6 +55,7 @@ function EntryRow({ entry, listId }: { entry: ShortlistEntry; listId: string }) 
 
 /** Private shortlists. Nobody else, including the candidates, can see these lists, statuses, or notes. */
 export function ShortlistsPage() {
+  const { confirm } = useNotice();
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -149,7 +151,7 @@ export function ShortlistsPage() {
                       ]}
                       className="w-44 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs"
                     />
-                    <button type="button" onClick={() => { if (window.confirm(`Delete "${detail.data.name}" and its notes?`)) remove.mutate(detail.data.id); }}
+                    <button type="button" onClick={() => { void confirm({ title: "Delete shortlist", message: `Delete "${detail.data.name}" and its notes?`, confirmLabel: "Delete" }).then((ok) => { if (ok) remove.mutate(detail.data.id); }); }}
                       className={`${ui.btn} ${ui.danger}`}><Trash2 className="h-3.5 w-3.5" /> Delete list</button>
                   </div>
                 </div>

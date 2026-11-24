@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { rememberPath } from "../auth/session";
 import { noteVisit } from "../usage";
+import { AvatarPrompt } from "./AvatarPrompt";
 import { Footer } from "./Footer";
 import { DeveloperTour } from "./tour/DeveloperTour";
 import { RecruiterTour } from "./tour/RecruiterTour";
@@ -59,6 +60,7 @@ export function AppLayout() {
         <Suspense fallback={<PageLoading />}>
           <Outlet />
         </Suspense>
+        <AvatarPrompt />
         <RecruiterTour />
         <DeveloperTour />
       </div>

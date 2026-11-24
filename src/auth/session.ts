@@ -54,14 +54,15 @@ function savedPath(userId: string): string | null {
 
 /**
  * Network (/network) is the main page for developers after sign-in.
- * Only on the very first sign-in after creating a new account do developers land on the About Us (/home) welcome page.
+ * New accounts also land on /network so the developer tour can auto-start there.
  */
 export async function destinationAfterLogin(
   user: AuthUser | null,
   options?: { isNewAccount?: boolean },
 ): Promise<string> {
-  if (user?.account_type !== "recruiter" && (options?.isNewAccount || consumeNewAccountWelcome(user))) {
-    return "/home";
+  // Consume first-welcome flag so it does not linger; tour uses profile.tourVersion instead.
+  if (options?.isNewAccount || consumeNewAccountWelcome(user)) {
+    /* no-op: destination is always role home */
   }
   const home = homeFor(user);
   const id = user?.id ? String(user.id) : "";

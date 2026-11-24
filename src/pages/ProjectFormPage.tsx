@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  CheckCircle2,
   FileArchive,
   Github,
   ImagePlus,
@@ -13,6 +14,7 @@ import {
   Video,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import {
   createProject,
@@ -113,6 +115,7 @@ export function ProjectFormPage() {
   const [loadingProject, setLoadingProject] = useState(isEdit);
   const [detectingStacks, setDetectingStacks] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
+  const [zipDragging, setZipDragging] = useState(false);
   const [showTechConfirmModal, setShowTechConfirmModal] = useState(false);
   const [techConfirmContext, setTechConfirmContext] = useState<{
     projectId: string;
@@ -284,6 +287,32 @@ export function ProjectFormPage() {
   function clearZip() {
     setWorkspaceZip(null);
     if (zipInputRef.current) zipInputRef.current.value = "";
+  }
+
+  function acceptZipFile(f: File | null) {
+    if (!f) {
+      setWorkspaceZip(null);
+      return;
+    }
+    const looksZip =
+      f.name.toLowerCase().endsWith(".zip") ||
+      f.type === "application/zip" ||
+      f.type === "application/x-zip-compressed";
+    if (!looksZip) {
+      setStepError("Choose a .zip of your project folder.");
+      setWorkspaceZip(null);
+      return;
+    }
+    if (f.size > WORKSPACE_ZIP_MAX_BYTES) {
+      setStepError(
+        `ZIP is too large (${(f.size / (1024 * 1024)).toFixed(0)} MB). Max ${WORKSPACE_ZIP_MAX_MB} MB.`
+      );
+      setWorkspaceZip(null);
+      return;
+    }
+    setStepError(null);
+    setWorkspaceZip(f);
+    setSourceIndexed(false);
   }
 
   function projectPayloadBase(overrides?: {
@@ -476,6 +505,16 @@ export function ProjectFormPage() {
     }
   }
 
+  function advanceStep(next: number) {
+    // Blur focused controls before unmounting the step (avoids focus + hidden ancestor issues).
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setStepError(null);
+    setStep(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function goNext() {
     if (step === 1) {
       if (!validateStep1ForNext()) return;
@@ -488,16 +527,21 @@ export function ProjectFormPage() {
         const id = await ensureDraftAndUploadZip();
         if (!id) return;
       }
-      setStep(2);
+      advanceStep(2);
     } else if (step === 2) {
       if (!validateStep2()) return;
-      setStep(3);
+      advanceStep(3);
     }
   }
 
   function goBack() {
-    setStepError(null);
-    setStep((s) => Math.max(1, s - 1));
+    advanceStep(Math.max(1, step - 1));
+  }
+
+  function hasCoverImage(): boolean {
+    if (coverFile) return true;
+    if (isEdit && savedCoverUrl && !coverRemoved) return true;
+    return false;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -506,6 +550,10 @@ export function ProjectFormPage() {
     if (submitLock.current || loading || loadingProject) return;
     if (!validateDescriptionsForSubmit() || !validateStep2()) {
       setStepError("Please review steps 1 and 2.");
+      return;
+    }
+    if (!hasCoverImage()) {
+      setStepError("Add a cover image before publishing — it appears on project cards.");
       return;
     }
     submitLock.current = true;
@@ -759,11 +807,8 @@ export function ProjectFormPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="rounded-2xl border border-stone-200/80 bg-gradient-to-b from-white to-stone-50/80 p-6 sm:p-8 shadow-sm shadow-stone-200/50 ring-1 ring-stone-100">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-stone-400">
-                Your progress
-              </p>
-              <div className="mt-6 flex w-full items-start justify-between gap-0 sm:gap-1">
+            <div className="rounded-2xl border border-stone-200/80 bg-gradient-to-b from-white to-stone-50/80 p-5 sm:p-6 shadow-sm">
+              <div className="flex w-full items-center justify-between gap-1">
                 {STEP_META.map((s, stepIdx) => {
                   const Icon = s.icon;
                   const n = stepIdx + 1;
@@ -774,40 +819,36 @@ export function ProjectFormPage() {
                     <Fragment key={s.n}>
                       <div className="flex min-w-0 flex-1 flex-col items-center">
                         <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-11 sm:w-11 ${
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
                             active
                               ? "border-maroon-500 bg-white text-maroon-600 shadow-lg shadow-maroon-500/20 ring-[3px] ring-maroon-100"
                               : done
                                 ? "border-transparent bg-gradient-to-br from-forest-700 to-forest-800 text-white shadow-md"
                                 : "border-stone-200 bg-white text-stone-400"
                           }`}
+                          aria-current={active ? "step" : undefined}
                         >
                           {done ? (
                             <span className="text-sm font-bold" aria-hidden>
                               ✓
                             </span>
                           ) : (
-                            <Icon className="h-[18px] w-[18px]" aria-hidden />
+                            <Icon className="h-5 w-5" aria-hidden />
                           )}
                         </div>
-                        <p className="mt-3 max-w-[100px] text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-stone-500 sm:max-w-none sm:text-[11px]">
+                        <p className="mt-2 text-center text-[11px] font-bold uppercase tracking-wide text-stone-600">
                           {s.title}
-                        </p>
-                        <p className="mt-1 hidden max-w-[120px] text-center text-[10px] leading-snug text-stone-500 sm:block">
-                          {s.subtitle}
                         </p>
                       </div>
                       {stepIdx < TOTAL_STEPS - 1 && (
                         <div
-                          className="relative mx-0.5 mt-[18px] h-[3px] min-w-[1rem] flex-[1.15] shrink self-start sm:mx-1 sm:min-w-[1.5rem]"
+                          className="relative mx-1 h-1 min-w-[1.25rem] flex-[1.2] self-start mt-5"
                           aria-hidden
                         >
                           <div className="absolute inset-0 rounded-full bg-stone-100" />
                           <div
                             className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-maroon-800 to-autumn-rust transition-[width] duration-500 ease-out"
-                            style={{
-                              width: segmentComplete ? "100%" : "0%",
-                            }}
+                            style={{ width: segmentComplete ? "100%" : "0%" }}
                           />
                         </div>
                       )}
@@ -815,43 +856,16 @@ export function ProjectFormPage() {
                   );
                 })}
               </div>
-              <div className="mx-auto mt-8 max-w-lg px-1">
-                <div className="relative h-2 overflow-hidden rounded-full bg-stone-100/90 shadow-inner">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-maroon-800 to-autumn-rust transition-[width] duration-500 ease-out"
-                    style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-                  />
-                </div>
-              </div>
-              <p className="mt-5 text-center text-sm text-stone-600">
-                <span className="font-semibold text-stone-800">
-                  Step {step} of {TOTAL_STEPS}
-                </span>
-                <span className="text-stone-300"> · </span>
-                <span className="text-stone-500">
-                  {STEP_META[step - 1]?.subtitle ?? ""}
-                </span>
-              </p>
-              {stepError && step < 3 && (
+              {stepError && (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
                   {stepError}
                 </div>
               )}
             </div>
 
-            <section
-              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
-                step === 1 ? "" : "hidden"
-              }`}
-              aria-hidden={step !== 1}
-            >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Source & story
-              </h2>
-              <p className="text-sm text-stone-600">
-                Start with a title and your project ZIP. We detect tech stacks right away so you can
-                write—or generate—descriptions with AI before publishing.
-              </p>
+            {step === 1 && (
+            <section className="rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+              <h2 className="font-serif text-xl font-bold text-stone-900">Project source</h2>
 
               <div>
                 <label
@@ -869,30 +883,86 @@ export function ProjectFormPage() {
                 />
               </div>
 
-              <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
-                    <FileArchive className="w-4 h-4 text-maroon-600" />
-                    Project folder (.zip)
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {workspaceZip && (
-                      <button
-                        type="button"
-                        onClick={clearZip}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Remove
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => zipInputRef.current?.click()}
-                      className="text-xs font-semibold text-maroon-600 hover:text-maroon-700 px-3 py-1.5 rounded-lg bg-maroon-50 hover:bg-maroon-100"
+              <div className="space-y-3">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => zipInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      zipInputRef.current?.click();
+                    }
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setZipDragging(true);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setZipDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                    setZipDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setZipDragging(false);
+                    acceptZipFile(e.dataTransfer.files?.[0] ?? null);
+                  }}
+                  className={`relative overflow-hidden rounded-2xl border-2 border-dashed transition cursor-pointer select-none ${
+                    zipDragging
+                      ? "border-maroon-500 bg-maroon-100/60 scale-[1.01]"
+                      : sourceIndexed
+                        ? "border-emerald-300 bg-gradient-to-br from-emerald-50/80 to-stone-50"
+                        : workspaceZip
+                          ? "border-maroon-300 bg-gradient-to-br from-maroon-50/60 to-stone-50"
+                          : "border-maroon-200 bg-gradient-to-br from-maroon-50/40 to-stone-50 hover:border-maroon-400"
+                  }`}
+                >
+                  <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle_at_20%_20%,#7f1d1d,transparent_45%),radial-gradient(circle_at_80%_70%,#292524,transparent_40%)]" />
+                  <div className="relative flex flex-col items-center justify-center gap-3 px-4 py-10 sm:py-14 text-center">
+                    <div
+                      className={`flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm ${
+                        sourceIndexed
+                          ? "bg-emerald-600 text-white"
+                          : "bg-maroon-800 text-white"
+                      }`}
                     >
-                      {workspaceZip || sourceIndexed ? "Replace" : "Choose"}
-                    </button>
+                      {detectingStacks ? (
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      ) : sourceIndexed ? (
+                        <CheckCircle2 className="h-8 w-8" />
+                      ) : (
+                        <UploadCloud className="h-8 w-8" />
+                      )}
+                    </div>
+                    {workspaceZip ? (
+                      <>
+                        <div className="max-w-full px-2">
+                          <p className="truncate text-base font-bold text-stone-900">{workspaceZip.name}</p>
+                          <p className="mt-0.5 text-sm text-stone-500">
+                            {(workspaceZip.size / (1024 * 1024)).toFixed(1)} MB
+                            {sourceIndexed ? " · ready" : " · tap to replace"}
+                          </p>
+                        </div>
+                      </>
+                    ) : sourceIndexed ? (
+                      <p className="text-base font-bold text-emerald-900">Workspace ready</p>
+                    ) : (
+                      <p className="text-base font-bold text-stone-900">
+                        {zipDragging ? "Drop ZIP here" : "Drop ZIP or click to browse"}
+                      </p>
+                    )}
+                    <p className="text-[11px] uppercase tracking-wider text-stone-400">
+                      .zip · up to {WORKSPACE_ZIP_MAX_MB} MB
+                    </p>
                   </div>
                 </div>
                 <input
@@ -903,73 +973,51 @@ export function ProjectFormPage() {
                   onChange={(e) => {
                     const f = e.target.files?.[0] ?? null;
                     e.target.value = "";
-                    if (!f) {
-                      setWorkspaceZip(null);
-                      return;
-                    }
-                    if (f.size > WORKSPACE_ZIP_MAX_BYTES) {
-                      setStepError(
-                        `ZIP is too large (${(f.size / (1024 * 1024)).toFixed(0)} MB). Maximum is ${WORKSPACE_ZIP_MAX_MB} MB. Exclude node_modules, .git, build folders, and large media when possible.`
-                      );
-                      setWorkspaceZip(null);
-                      return;
-                    }
-                    setStepError(null);
-                    setWorkspaceZip(f);
-                    setSourceIndexed(false);
+                    acceptZipFile(f);
                   }}
                 />
-                {workspaceZip ? (
-                  <p className="text-sm text-stone-600 truncate">
-                    {workspaceZip.name}{" "}
-                    <span className="text-stone-400">
-                      ({(workspaceZip.size / (1024 * 1024)).toFixed(1)} MB)
-                    </span>
-                  </p>
-                ) : sourceIndexed ? (
-                  <p className="text-sm text-emerald-800">
-                    Workspace indexed. Next: generate or write descriptions, then confirm tech stacks.
-                  </p>
-                ) : (
-                  <p className="text-xs text-stone-500">
-                    Zip your project root (max {WORKSPACE_ZIP_MAX_MB} MB). Leave out{" "}
-                    <span className="font-medium">node_modules</span>,{" "}
-                    <span className="font-medium">.git</span>, and build caches — they inflate size and
-                    are ignored anyway.
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {workspaceZip && (
+                    <button
+                      type="button"
+                      onClick={clearZip}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-stone-200 bg-white text-red-600 hover:bg-red-50"
+                      aria-label="Remove ZIP"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={detectingStacks || !workspaceZip || !title.trim()}
                     onClick={() => void ensureDraftAndUploadZip()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-maroon-800 px-4 py-2 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50"
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-maroon-800 px-5 text-sm font-semibold text-white hover:bg-maroon-900 disabled:opacity-50 sm:flex-none sm:ml-auto"
                   >
                     {detectingStacks ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        {submitPhase ?? "Working…"}
+                        {uploadPercent < 100 ? `${uploadPercent}%` : "Detecting…"}
                       </>
                     ) : sourceIndexed ? (
-                      "Upload replacement & detect"
+                      <>
+                        <UploadCloud className="h-4 w-4" />
+                        Re-scan
+                      </>
                     ) : (
-                      "Upload & continue"
+                      <>
+                        <UploadCloud className="h-4 w-4" />
+                        Upload & detect
+                      </>
                     )}
                   </button>
                 </div>
                 {detectingStacks && (
-                  <div className="rounded-xl border border-maroon-200/70 bg-maroon-50/70 p-3" role="status">
-                    <p className="text-sm font-medium text-maroon-900 mb-2">
-                      {uploadPercent < 100
-                        ? `Uploading… ${uploadPercent}%`
-                        : "Detecting languages and tech…"}
-                    </p>
-                    <div className="h-2 rounded-full bg-maroon-100 overflow-hidden">
-                      <div
-                        className={`h-full bg-maroon-500 transition-[width] ${uploadPercent < 100 ? "" : "animate-pulse"}`}
-                        style={{ width: `${uploadPercent}%` }}
-                      />
-                    </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-maroon-100" role="status" aria-label="Upload progress">
+                    <div
+                      className={`h-full bg-maroon-600 transition-[width] ${uploadPercent < 100 ? "" : "animate-pulse"}`}
+                      style={{ width: `${uploadPercent}%` }}
+                    />
                   </div>
                 )}
               </div>
@@ -983,26 +1031,20 @@ export function ProjectFormPage() {
                     if (short) setShortDescription(short);
                     if (full) setFullDescription(full);
                   }}
-                  onApprovedContinue={() => {
-                    setStepError(null);
-                    setStep(2);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  continueLabel="Continue to category & visibility"
+                  onApprovedContinue={() => advanceStep(2)}
+                  continueLabel="Continue"
                 />
               ) : (
-                <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-5 py-4">
-                  <p className="text-sm font-medium text-stone-700">AI descriptions unlock after upload</p>
-                  <p className="mt-1 text-xs text-stone-500">
-                    Upload your ZIP above. You can then generate drafts with AI or write descriptions yourself.
-                  </p>
+                <div className="flex items-center gap-3 rounded-2xl border border-dashed border-stone-200 bg-stone-50/80 px-4 py-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-maroon-100 text-maroon-700">
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                  <span className="text-sm font-semibold text-stone-700">AI after upload</span>
                 </div>
               )}
 
               <div className="space-y-5 border-t border-stone-100 pt-5">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                  Descriptions
-                </h3>
+                <h3 className="font-serif text-lg font-bold text-stone-900">Descriptions</h3>
                 <div>
                   <label
                     htmlFor="short_description"
@@ -1050,9 +1092,17 @@ export function ProjectFormPage() {
                   ) : null}
                 </span>
                 {loadingStacks ? (
-                  <p className="text-sm text-stone-500">Loading…</p>
+                  <div className="flex items-center gap-2 text-sm text-stone-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading…
+                  </div>
                 ) : !sourceIndexed ? (
-                  <p className="text-sm text-stone-500">Detected stacks appear after ZIP upload.</p>
+                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-stone-200 bg-stone-50/80 px-4 py-5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-200/80 text-stone-500">
+                      <Layers className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm text-stone-500">Stacks appear after upload</span>
+                  </div>
                 ) : stackOptions.length === 0 ? (
                   <p className="text-sm text-stone-500">No catalog options loaded.</p>
                 ) : (
@@ -1074,9 +1124,6 @@ export function ProjectFormPage() {
                     })}
                   </div>
                 )}
-                <p className="text-xs text-stone-500 mt-2">
-                  Toggle freely — these appear on your project page.
-                </p>
               </div>
 
               <div>
@@ -1137,24 +1184,14 @@ export function ProjectFormPage() {
                 </button>
               </div>
             </section>
+            )}
 
-            <section
-              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5 ${
-                step === 2 ? "" : "hidden"
-              }`}
-              aria-hidden={step !== 2}
-            >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Category & visibility
-              </h2>
-              <p className="text-sm text-stone-600">
-                Categories match the platform taxonomy. If you pick{" "}
-                <span className="font-medium">Other</span>, add a short custom label (one or two
-                words).
-              </p>
+            {step === 2 && (
+            <section className="rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+              <h2 className="font-serif text-xl font-bold text-stone-900">Category & visibility</h2>
               {categorySuggested && category ? (
                 <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
-                  Suggested from your tech stacks: <span className="font-semibold">{category}</span>. Change it if that doesn’t fit.
+                  Suggested: <span className="font-semibold">{category}</span>
                 </p>
               ) : null}
               <div className="grid sm:grid-cols-2 gap-4">
@@ -1255,22 +1292,17 @@ export function ProjectFormPage() {
                 </button>
               </div>
             </section>
+            )}
 
-            <section
-              className={`rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6 ${
-                step === 3 ? "" : "hidden"
-              }`}
-              aria-hidden={step !== 3}
-            >
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Media
-              </h2>
+            {step === 3 && (
+            <section className="rounded-2xl border border-stone-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+              <h2 className="font-serif text-xl font-bold text-stone-900">Cover & media</h2>
 
-              <div className="space-y-3">
+              <div className="space-y-3 rounded-2xl border border-maroon-200/70 bg-gradient-to-br from-maroon-50/50 to-stone-50 p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-stone-800 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-stone-900 flex items-center gap-2">
                     <ImagePlus className="w-4 h-4 text-maroon-600" />
-                    Cover image
+                    Cover image <span className="text-maroon-700 font-bold">*</span>
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {(coverFile || (isEdit && savedCoverUrl && !coverRemoved)) && (
@@ -1304,11 +1336,11 @@ export function ProjectFormPage() {
                     setPendingCover(f);
                   }}
                 />
-                <p className="text-xs text-stone-500">
-                  Crop to 16:9 for project cards. Keep the image under 10 MB (PNG, JPG, GIF, or WebP).
+                <p className="text-xs text-stone-600">
+                  Required for publishing. PNG, JPG, GIF, or WebP · under 10 MB · cropped to 16:9.
                 </p>
                 {coverHeroSrc ? (
-                  <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-video max-h-56">
+                  <div className="rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-video max-h-64 shadow-sm">
                     <ImageWithFallback
                       src={coverHeroSrc}
                       alt="Cover preview"
@@ -1319,9 +1351,9 @@ export function ProjectFormPage() {
                   <button
                     type="button"
                     onClick={() => coverInputRef.current?.click()}
-                    className="w-full rounded-xl border-2 border-dashed border-stone-200 hover:border-maroon-300 hover:bg-maroon-50/30 py-10 text-sm text-stone-500 transition"
+                    className="w-full rounded-xl border-2 border-dashed border-maroon-300/80 bg-white hover:border-maroon-500 hover:bg-maroon-50/40 py-12 text-sm font-medium text-maroon-800 transition"
                   >
-                    Click to add a cover preview
+                    Add cover image
                   </button>
                 )}
                 {pendingCover && (
@@ -1463,6 +1495,7 @@ export function ProjectFormPage() {
                 </div>
               </div>
             </section>
+            )}
 
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

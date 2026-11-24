@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { Zap } from "lucide-react";
 import { loginWithPassword, registerUser } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { destinationAfterLogin, markNewAccountWelcome } from "../auth/session";
@@ -15,7 +14,7 @@ import { SignupRoleFields } from "../components/SignupRoleFields";
 import { passwordValid } from "../utils/passwordPolicy";
 
 const inputClass =
-  "w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  "w-full rounded-xl border border-[#DECDBA] bg-white px-4 py-3 text-[#2D120D] placeholder:text-[#6E5952]/65 transition focus:border-[#780D18] focus:outline-none focus:ring-2 focus:ring-[#780D18]/20";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -41,7 +40,7 @@ export function RegisterPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) issues.push("Enter a valid email address.");
     if (!password) issues.push("Create a password.");
     else if (!passwordValid(password)) {
-      issues.push("Password needs 8–128 characters, an uppercase letter, and a special character.");
+      issues.push("Password needs 8–128 characters, one uppercase letter, and one special character.");
     }
     if (!role) issues.push("Select your role.");
     if (role === "Recruiter" && company.trim().length < 2) {
@@ -71,7 +70,7 @@ export function RegisterPage() {
         company: role === "Recruiter" ? company.trim() : undefined,
       });
       if ("verification_required" in result && result.verification_required) {
-        markNewAccountWelcome(email);
+        markNewAccountWelcome(email.trim());
         navigate("/verify-email", {
           replace: true,
           state: {
@@ -83,6 +82,7 @@ export function RegisterPage() {
         });
         return;
       }
+      markNewAccountWelcome(email.trim(), result.id);
       login((await loginWithPassword(email, password)).access_token);
       navigate(await destinationAfterLogin(await refreshUser(), { isNewAccount: true }), { replace: true });
     } catch (err) {
@@ -93,36 +93,35 @@ export function RegisterPage() {
   }
 
   const blocking = criteriaErrors();
+  const started = Boolean(firstName || lastName || username || email || password || role);
 
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Join DevZ-Go and showcase your projects"
+      subtitle="Join DevZ-Go with your real name and a unique handle"
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="w-full max-w-[420px]"
+        transition={{ duration: 0.45, delay: 0.05 }}
+        className="w-full max-w-[440px]"
       >
-        <div className="rounded-3xl border border-gray-200/50 bg-white shadow-xl">
-          <div className="px-8 pt-8 pb-2">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-600/10 rounded-full border border-blue-500/20 mb-6">
-              <Zap className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">
-                Get started free
-              </span>
-            </div>
+        <div className="rounded-3xl border border-[#DECDBA] bg-[#F7F1E8] shadow-[0_18px_40px_rgba(45,18,13,0.08)] overflow-hidden">
+          <div className="px-7 sm:px-8 pt-7 pb-1">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#780D18]">
+              Developer signup
+            </p>
+            <h2 className="mt-1 font-serif text-2xl font-bold text-[#2D120D]">Welcome to DevZ-Go</h2>
+            <p className="mt-1.5 text-sm text-[#6E5952] leading-relaxed">
+              Profiles show your first and last name with @username underneath.
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5">
+          <form onSubmit={handleSubmit} className="px-7 sm:px-8 pb-7 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label
-                  htmlFor="first-name"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  First Name
+                <label htmlFor="first-name" className="mb-1.5 block text-sm font-medium text-[#2D120D]">
+                  First name
                 </label>
                 <input
                   id="first-name"
@@ -137,11 +136,8 @@ export function RegisterPage() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="last-name"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Last Name
+                <label htmlFor="last-name" className="mb-1.5 block text-sm font-medium text-[#2D120D]">
+                  Last name
                 </label>
                 <input
                   id="last-name"
@@ -158,20 +154,19 @@ export function RegisterPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="username"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-[#2D120D]">
                 Username
               </label>
-              <UsernameField value={username} onChange={setUsername} onAvailable={setUsernameOk} className={inputClass} />
+              <UsernameField
+                value={username}
+                onChange={setUsername}
+                onAvailable={setUsernameOk}
+                className={inputClass}
+              />
             </div>
 
             <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-[#2D120D]">
                 Email
               </label>
               <input
@@ -182,34 +177,46 @@ export function RegisterPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-gray-900 placeholder:text-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-[#2D120D]">
                 Password
               </label>
-              <PasswordField id="password" value={password} onChange={setPassword} placeholder="••••••••" className={inputClass} />
+              <PasswordField
+                id="password"
+                value={password}
+                onChange={setPassword}
+                placeholder="Create a password"
+                className={inputClass}
+              />
             </div>
 
-            <SignupRoleFields role={role} company={company} onRole={setRole} onCompany={setCompany} inputClass={inputClass} />
+            <SignupRoleFields
+              role={role}
+              company={company}
+              onRole={setRole}
+              onCompany={setCompany}
+              inputClass={inputClass}
+            />
 
             {error && (
               <div
                 role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="rounded-xl border border-[#780D18]/25 bg-[#780D18]/8 px-4 py-3 text-sm text-[#780D18]"
               >
                 {error}
               </div>
             )}
-            {!error && blocking.length > 0 && (username || email || password || role) && (
-              <ul className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 space-y-1">
+            {!error && blocking.length > 0 && started && (
+              <ul className="rounded-xl border border-[#DECDBA] bg-white px-4 py-3 text-sm text-[#2D120D]/85 space-y-1">
                 {blocking.map((item) => (
-                  <li key={item}>• {item}</li>
+                  <li key={item} className="flex gap-2">
+                    <span className="text-[#780D18]">·</span>
+                    <span>{item}</span>
+                  </li>
                 ))}
               </ul>
             )}
@@ -217,25 +224,25 @@ export function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-gradient-to-r from-maroon-800 via-maroon-700 to-autumn-rust py-3.5 text-base font-semibold text-white shadow-md shadow-maroon-800/20 transition-all hover:shadow-lg hover:shadow-maroon-800/30 hover:from-maroon-900 hover:to-autumn-amber disabled:opacity-60"
+              className="w-full rounded-xl bg-[#780D18] py-3.5 text-base font-semibold text-[#F7F1E8] shadow-md transition hover:bg-[#5C0A12] disabled:opacity-60"
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? "Creating account…" : "Create account"}
             </button>
           </form>
-          <div className="px-8 pb-8 -mt-3">
-            <div className="mb-4 flex items-center gap-3 text-xs text-stone-400">
-              <span className="h-px flex-1 bg-stone-200" />or<span className="h-px flex-1 bg-stone-200" />
+
+          <div className="px-7 sm:px-8 pb-8 -mt-2">
+            <div className="mb-4 flex items-center gap-3 text-xs text-[#6E5952]">
+              <span className="h-px flex-1 bg-[#DECDBA]" />
+              or
+              <span className="h-px flex-1 bg-[#DECDBA]" />
             </div>
             <GitHubButton />
           </div>
         </div>
 
-        <p className="mt-8 text-center text-stone-600">
+        <p className="mt-7 text-center text-[#6E5952]">
           Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-semibold text-maroon-700 hover:text-maroon-900"
-          >
+          <Link to="/login" className="font-semibold text-[#780D18] hover:text-[#5C0A12]">
             Sign in
           </Link>
         </p>

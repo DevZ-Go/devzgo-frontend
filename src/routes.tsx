@@ -34,6 +34,7 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
 
 const ProjectFormPage = page(() => import("./pages/ProjectFormPage"), "ProjectFormPage");
 const LandingPage = page(() => import("./pages/LandingPage"), "LandingPage");
+const RootLanding = page(() => import("./components/RootLanding"), "RootLanding");
 const ProfilePage = page(() => import("./pages/ProfilePage"), "ProfilePage");
 const LoginPage = page(() => import("./pages/LoginPage"), "LoginPage");
 const RegisterPage = page(() => import("./pages/RegisterPage"), "RegisterPage");
@@ -46,7 +47,6 @@ const SettingsPage = page(() => import("./pages/SettingsPage"), "SettingsPage");
 const MyActivityPage = page(() => import("./pages/MyActivityPage"), "MyActivityPage");
 const ProjectDetailPage = page(() => import("./pages/ProjectDetailPage"), "ProjectDetailPage");
 const ProjectWorkspacePage = page(() => import("./pages/ProjectWorkspacePage"), "ProjectWorkspacePage");
-const ExploreShowcasePage = page(() => import("./pages/ExploreShowcasePage"), "ExploreShowcasePage");
 const ExplorePage = page(() => import("./pages/ExplorePage"), "ExplorePage");
 const CardsWorldPage = page(() => import("./pages/CardsWorldPage"), "CardsWorldPage");
 const CatalogPage = page(() => import("./pages/CatalogPage"), "CatalogPage");
@@ -92,21 +92,20 @@ const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{e
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <Navigate to="/network" replace />,
-    errorElement: <RouteError />,
-  },
-  {
     element: <AppLayout />,
     errorElement: <RouteError />,
     children: [
       {
+        index: true,
+        element: <RootLanding />,
+      },
+      {
         path: "/home",
-        element: developer(<LandingPage />),
+        element: <LandingPage />,
       },
       {
         path: "/about",
-        element: developer(<LandingPage />),
+        element: <Navigate to="/home" replace />,
       },
       {
         path: "/about-developers",
@@ -151,9 +150,13 @@ export const router = createBrowserRouter([
         path: "/explore",
         element: (
           <ProtectedRoute>
-            <ExploreShowcasePage />
+            <CatalogPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/explore/showcase",
+        element: <Navigate to="/explore" replace />,
       },
       {
         path: "/explore/tv",
@@ -177,19 +180,15 @@ export const router = createBrowserRouter([
       },
       {
         path: "/explore/folio",
-        element: <Navigate to="/explore/catalog" replace />,
+        element: <Navigate to="/explore" replace />,
       },
       {
         path: "/explore/lanterns",
-        element: <Navigate to="/explore/catalog" replace />,
+        element: <Navigate to="/explore" replace />,
       },
       {
         path: "/explore/catalog",
-        element: (
-          <ProtectedRoute>
-            <CatalogPage />
-          </ProtectedRoute>
-        ),
+        element: <Navigate to="/explore" replace />,
       },
       {
         path: "/explore/developers",
@@ -286,6 +285,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/network" replace />,
+    element: <Navigate to="/" replace />,
   },
 ]);

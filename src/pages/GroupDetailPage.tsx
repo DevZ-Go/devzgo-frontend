@@ -72,10 +72,12 @@ import {
   type ClubJoinNoticeKind,
 } from "../components/network/ClubJoinNotice";
 import { assetUrlOrNull } from "../api/config";
+import { useNotice } from "../components/AppNotice";
 
 export function GroupDetailPage() {
   const { groupId = "" } = useParams<{ groupId: string }>();
   const { user } = useAuth();
+  const { notify, confirm } = useNotice();
 
   const [group, setGroup] = useState<NetworkGroup | null>(null);
   const [announcements, setAnnouncements] = useState<GroupAnnouncement[]>([]);
@@ -261,14 +263,14 @@ export function GroupDetailPage() {
   const handleJoinLeave = async () => {
     if (isMember) {
       if (isHost) {
-        alert("As president, transfer the presidency to someone else before leaving the club.");
+        notify("As president, transfer the presidency to someone else before leaving the club.", "info");
         return;
       }
       try {
       const updated = await leaveGroup(group.id, String(user?.id ?? "usr-me"));
       setGroup(updated);
       } catch (err) {
-        alert(getApiErrorMessage(err) || "Could not leave club");
+        notify(getApiErrorMessage(err) || "Could not leave club", "bad");
       }
     } else if (!isPending) {
       try {
@@ -283,7 +285,7 @@ export function GroupDetailPage() {
           emailOptIn: updated.emailBroadcastOptIn !== false,
         });
       } catch (err) {
-        alert(getApiErrorMessage(err) || "Could not send request");
+        notify(getApiErrorMessage(err) || "Could not send request", "bad");
       }
     }
   };
@@ -293,7 +295,7 @@ export function GroupDetailPage() {
       const updated = await approveClubJoinRequest(group.id, targetUserId);
       setGroup(updated);
     } catch (err) {
-      alert(getApiErrorMessage(err) || "Could not approve request");
+      notify(getApiErrorMessage(err) || "Could not approve request", "bad");
     }
   };
 
@@ -302,7 +304,7 @@ export function GroupDetailPage() {
       const updated = await declineClubJoinRequest(group.id, targetUserId);
       setGroup(updated);
     } catch (err) {
-      alert(getApiErrorMessage(err) || "Could not decline request");
+      notify(getApiErrorMessage(err) || "Could not decline request", "bad");
     }
   };
 
@@ -389,7 +391,7 @@ export function GroupDetailPage() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard?.writeText(window.location.href);
-                  alert("Club link copied to clipboard!");
+                  notify("Club link copied to clipboard.", "ok");
                 }}
                 className="p-2 rounded-full bg-[#2D120D]/80 hover:bg-[#780D18] text-[#F7F1E8] border border-[#F7F1E8]/30 transition cursor-pointer shadow-sm"
                 title="Share club link"
@@ -548,7 +550,7 @@ export function GroupDetailPage() {
                 onClick={() =>
                   void approveClubAvatar(group.id)
                     .then(setGroup)
-                    .catch((err) => alert(getApiErrorMessage(err) || "Approve failed"))
+                    .catch((err) => notify(getApiErrorMessage(err) || "Approve failed", "bad"))
                 }
               >
                 Approve logo
@@ -1256,16 +1258,23 @@ export function GroupDetailPage() {
                               disabled={deletingEventId === ev.id}
                               className="inline-flex items-center gap-1 rounded-lg border border-[#780D18]/25 bg-white px-3 py-1.5 text-[11px] font-bold text-[#780D18] hover:bg-[#780D18]/5 disabled:opacity-50 ml-auto"
                               onClick={() => {
-                                if (!window.confirm(`Delete “${ev.title}”? This cannot be undone.`)) return;
-                                setDeletingEventId(ev.id);
-                                void deleteGroupEvent(groupId, ev.id)
-                                  .then(() => {
+                                void (async () => {
+                                  const ok = await confirm({
+                                    title: "Delete event",
+                                    message: `Delete “${ev.title}”? This cannot be undone.`,
+                                    confirmLabel: "Delete",
+                                  });
+                                  if (!ok) return;
+                                  setDeletingEventId(ev.id);
+                                  try {
+                                    await deleteGroupEvent(groupId, ev.id);
                                     setEvents((prev) => prev.filter((e) => e.id !== ev.id));
-                                  })
-                                  .catch((err) => {
-                                    window.alert(getApiErrorMessage(err) || "Could not delete event");
-                                  })
-                                  .finally(() => setDeletingEventId(null));
+                                  } catch (err) {
+                                    notify(getApiErrorMessage(err) || "Could not delete event", "bad");
+                                  } finally {
+                                    setDeletingEventId(null);
+                                  }
+                                })();
                               }}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -1303,7 +1312,7 @@ export function GroupDetailPage() {
                       setFundAmount("");
                       setFundNote("");
                     })
-                    .catch((err) => alert(getApiErrorMessage(err) || "Could not add entry"))
+                    .catch((err) => notify(getApiErrorMessage(err) || "Could not add entry", "bad"))
                     .finally(() => setFundSaving(false));
                 }}
               >
@@ -1487,7 +1496,7 @@ export function GroupDetailPage() {
                               academicYear: row.academicYear,
                             });
                           } catch (err) {
-                            alert(getApiErrorMessage(err) || `Failed: ${f.name}`);
+                            notify(getApiErrorMessage(err) || `Failed: ${f.name}`, "bad");
                           }
                         }
                         if (uploaded.length) setGallery((prev) => [...uploaded, ...prev]);
@@ -1523,7 +1532,7 @@ export function GroupDetailPage() {
                             ...prev,
                           ])
                         )
-                        .catch((err) => alert(getApiErrorMessage(err) || "Upload failed"));
+                        .catch((err) => notify(getApiErrorMessage(err) || "Upload failed", "bad"));
                     }}
                   />
                 </label>

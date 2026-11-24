@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { fetchMyProfile, saveTourState } from "../../api/profiles";
 import { useAccount } from "../../auth/account";
 import { DEVELOPER_TOUR_EVENT } from "./events";
@@ -9,56 +9,50 @@ import { GuidedTour, type TourStep } from "./GuidedTour";
  * Separate from the recruiter tour version (1) so finishing one never hides the other.
  * Raise this when the developer steps change.
  */
-export const DEV_TOUR_VERSION = 11;
+export const DEV_TOUR_VERSION = 12;
 
 const STEPS: TourStep[] = [
   {
-    path: "/home",
-    target: "home-cta",
+    path: "/network",
+    target: "network-places",
     title: "Welcome to DevZ-Go",
-    body: "This is your home. Jump into Explore to browse projects, or start a new one of your own. You can reopen this tour any time from Help in the top bar.",
+    body: "Network is your home feed — posts, connections, and clubs. You can restart this tour any time from More → Take Developer Tour, or from Settings → Help.",
   },
   {
     path: "/explore",
-    target: "explore-rooms",
-    title: "Explore in different rooms",
-    body: "Pick a room to browse projects, or search for developers. Each room is a different way to look at the same work.",
-  },
-  {
-    path: "/network",
-    target: "network-places",
-    title: "Your network",
-    body: "See the feed, manage connections and requests, and find developers. This is where collaboration starts.",
+    target: "explore-studio",
+    title: "Explore projects",
+    body: "Browse real projects from the community. Filter by stack, switch gallery modes, and open any project to learn more.",
   },
   {
     path: "/add-project",
     target: "add-project-form",
     title: "Share a project",
-    body: "Add a title, stack, and optional media or workspace files. Public projects show up in Explore for everyone.",
+    body: "Upload a ZIP, add a cover, and publish. Public projects show up in Explore for everyone.",
   },
   {
     path: "/messages",
     target: "messages-list",
-    title: "Messages and groups",
-    body: "Chat one-on-one or in groups. You can mute, restrict, or block anyone from a conversation, and manage that in Settings.",
+    title: "Messages",
+    body: "Chat one-on-one or in groups. Mute, restrict, or block anyone from a conversation — manage that in Settings.",
   },
   {
     path: "/assessments",
     target: "assessments-intro",
     title: "Assessments",
-    body: "Technical challenges from recruiters land here. Choose whether you receive them, and share results only if you want to.",
+    body: "Technical challenges from recruiters land here (also under More). Choose whether you receive them, and share results only if you want to.",
   },
   {
     path: "/profile",
     target: "profile-actions",
     title: "Your profile",
-    body: "Keep your skills and photo up to date, open your Monthly Wrap, and manage connections. Help in the top bar restarts this tour whenever you need it.",
+    body: "Keep skills and photo up to date, open Monthly Wrap, and manage connections.",
   },
   {
     path: "/settings?section=help",
     target: "settings-tour",
     title: "Settings and safety",
-    body: "Blocked & muted lives here, along with pause or delete your account. You can restart this tour from Help in Settings or from the top bar.",
+    body: "Open Settings from More. Blocked & muted, account pause/delete, and restart this tour all live here.",
   },
 ];
 
@@ -66,14 +60,15 @@ const STEPS: TourStep[] = [
 export function DeveloperTour() {
   const { ready, recruiter } = useAccount();
   const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const checked = useRef(false);
   const developer = ready && !recruiter;
-  const onDevHome = location.pathname === "/home" || location.pathname === "/";
+  const onNetworkHome = location.pathname === "/network";
 
   useEffect(() => {
-    if (!developer || checked.current || !onDevHome) return;
+    if (!developer || checked.current || !onNetworkHome) return;
     checked.current = true;
     fetchMyProfile()
       .then((profile) => {
@@ -83,7 +78,7 @@ export function DeveloperTour() {
         }
       })
       .catch(() => undefined);
-  }, [developer, onDevHome]);
+  }, [developer, onNetworkHome]);
 
   useEffect(() => {
     const start = () => {
@@ -94,10 +89,16 @@ export function DeveloperTour() {
     return () => window.removeEventListener(DEVELOPER_TOUR_EVENT, start);
   }, []);
 
-  const finish = useCallback((state: "completed" | "skipped") => {
-    setOpen(false);
-    void saveTourState(DEV_TOUR_VERSION, state).catch(() => undefined);
-  }, []);
+  const finish = useCallback(
+    (state: "completed" | "skipped") => {
+      setOpen(false);
+      void saveTourState(DEV_TOUR_VERSION, state).catch(() => undefined);
+      if (location.pathname !== "/network") {
+        navigate("/network");
+      }
+    },
+    [location.pathname, navigate],
+  );
 
   if (!developer) return null;
 

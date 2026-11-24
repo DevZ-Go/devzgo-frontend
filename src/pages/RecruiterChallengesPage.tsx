@@ -14,6 +14,7 @@ import { ui } from "../styles/editorial";
 import { getApiErrorMessage } from "../utils/apiError";
 import { RATINGS, deadlineText, difficultyLabel, minutesText, ratingLabel, typeLabel } from "../utils/challenges";
 import { shortDate } from "../utils/evidence";
+import { useNotice } from "../components/AppNotice";
 
 const MINE = [...queryKeys.challenges, "mine"];
 
@@ -207,6 +208,7 @@ function SubmissionRow({ challenge, submission }: { challenge: RecruiterChalleng
 
 /** One challenge: state changes, who was invited, and the submissions to review. */
 export function RecruiterChallengePage() {
+  const { confirm } = useNotice();
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const client = useQueryClient();
@@ -272,7 +274,7 @@ export function RecruiterChallengePage() {
                 <button type="button" onClick={() => state.mutate("close")} disabled={state.isPending} className={`${ui.btn} ${ui.neutral}`}>Close submissions</button>
               )}
               {received === 0 && (
-                <button type="button" onClick={() => window.confirm("Delete this challenge? This cannot be undone.") && remove.mutate()}
+                <button type="button" onClick={() => { void confirm({ title: "Delete challenge", message: "Delete this challenge? This cannot be undone.", confirmLabel: "Delete" }).then((ok) => { if (ok) remove.mutate(); }); }}
                   disabled={remove.isPending} className={`${ui.btn} ${ui.danger}`}><Trash2 className="h-3.5 w-3.5" /> Delete</button>
               )}
             </div>

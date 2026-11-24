@@ -19,8 +19,10 @@ import { branchProblem } from "../utils/branchName";
 import { buildFileTreeFromEntries } from "../utils/buildFileTree";
 import { githubTreeEntries } from "../utils/githubTree";
 import { hasBom, lineEndingOf } from "../utils/lineEndings";
+import { useNotice } from "../components/AppNotice";
 
 export function ProjectWorkspacePage() {
+  const { confirm } = useNotice();
   const { id = "" } = useParams();
   const status = useQuery({
     queryKey: queryKeys.workspace(id),
@@ -83,9 +85,15 @@ export function ProjectWorkspacePage() {
 
   useEffect(() => {
     if (blocker.state !== "blocked") return;
-    if (window.confirm("You have an unsaved draft on this file. Leave anyway?")) blocker.proceed();
-    else blocker.reset();
-  }, [blocker]);
+    void confirm({
+      title: "Unsaved draft",
+      message: "You have an unsaved draft on this file. Leave anyway?",
+      confirmLabel: "Leave",
+    }).then((ok) => {
+      if (ok) blocker.proceed();
+      else blocker.reset();
+    });
+  }, [blocker, confirm]);
 
   useEffect(() => {
     if (!dirty || !path || !info?.can_edit) return;
