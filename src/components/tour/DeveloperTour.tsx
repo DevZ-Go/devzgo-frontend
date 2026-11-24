@@ -6,53 +6,95 @@ import { DEVELOPER_TOUR_EVENT } from "./events";
 import { GuidedTour, type TourStep } from "./GuidedTour";
 
 /**
- * Separate from the recruiter tour version (1) so finishing one never hides the other.
+ * Separate from the recruiter tour version so finishing one never hides the other.
  * Raise this when the developer steps change.
  */
-export const DEV_TOUR_VERSION = 12;
+export const DEV_TOUR_VERSION = 13;
 
 const STEPS: TourStep[] = [
   {
     path: "/network",
     target: "network-places",
-    title: "Welcome to DevZ-Go",
-    body: "Network is your home feed — posts, connections, and clubs. You can restart this tour any time from More → Take Developer Tour, or from Settings → Help.",
+    title: "Network is home",
+    body: "After sign-in you land here. Left: your space. Center: feed. Right: people and clubs. Restart anytime from More → Take Developer Tour or Settings → Help.",
+  },
+  {
+    path: "/network",
+    target: "network-composer",
+    title: "Share an update",
+    body: "Post text to the community feed. Attach a project later from a project page with Share → Post to network.",
+  },
+  {
+    path: "/network",
+    target: "network-feed",
+    title: "Your feed",
+    body: "Posts from people you connect with, clubs, and project updates. Use the filter (For you / Following / Latest / Projects) on the right.",
+  },
+  {
+    path: "/network",
+    target: "network-connections",
+    title: "Suggested connections",
+    body: "Connect with classmates and collaborators. Accepted connections unlock Messages. See All opens the full connections inbox.",
+  },
+  {
+    path: "/network",
+    target: "network-clubs",
+    title: "Communities & clubs",
+    body: "Join campus clubs for announcements and group chat. See All opens the clubs directory.",
   },
   {
     path: "/explore",
+    target: "explore-reels",
+    title: "Explore · Reels",
+    body: "Reels is the default Explore view — snap-scroll full-bleed project covers. Open any build to read the full page, like, or comment.",
+  },
+  {
+    path: "/explore",
+    target: "explore-modes",
+    title: "Reels · Directory · TV",
+    body: "Switch modes here. Directory is a filterable grid. TV World is a pixel room where every public project is a CRT.",
+  },
+  {
+    path: "/explore?view=directory",
     target: "explore-studio",
-    title: "Explore projects",
-    body: "Browse real projects from the community. Filter by stack, switch gallery modes, and open any project to learn more.",
+    title: "Explore · Directory",
+    body: "Grid catalog with filters by stack and category. Same projects as Reels — calmer browsing when you know what you want.",
+  },
+  {
+    path: "/explore/tv",
+    target: "explore-tv",
+    title: "TV World",
+    body: "Drag or use WASD to move. Click a TV to focus it, then open the project. Esc returns to the room.",
   },
   {
     path: "/add-project",
     target: "add-project-form",
     title: "Share a project",
-    body: "Upload a ZIP, add a cover, and publish. Public projects show up in Explore for everyone.",
+    body: "Upload a ZIP, add a cover and story, then publish. Public projects appear in Explore for peers and recruiters.",
   },
   {
     path: "/messages",
     target: "messages-list",
     title: "Messages",
-    body: "Chat one-on-one or in groups. Mute, restrict, or block anyone from a conversation — manage that in Settings.",
+    body: "Chat one-on-one after a connection, or in club groups. Mute, restrict, or block from a conversation — manage that in Settings.",
   },
   {
     path: "/assessments",
     target: "assessments-intro",
     title: "Assessments",
-    body: "Technical challenges from recruiters land here (also under More). Choose whether you receive them, and share results only if you want to.",
+    body: "Technical challenges from recruiters land here (also under More). Choose whether you receive them; share results only if you want to.",
   },
   {
     path: "/profile",
     target: "profile-actions",
     title: "Your profile",
-    body: "Keep skills and photo up to date, open Monthly Wrap, and manage connections.",
+    body: "Skills, photo, projects, Monthly Wrap, and connection controls. Keep this current — recruiters and classmates see what you share.",
   },
   {
     path: "/settings?section=help",
     target: "settings-tour",
-    title: "Settings and safety",
-    body: "Open Settings from More. Blocked & muted, account pause/delete, and restart this tour all live here.",
+    title: "Settings & safety",
+    body: "Blocked & muted, account pause/delete, and restart this tour. Open Settings anytime from More.",
   },
 ];
 

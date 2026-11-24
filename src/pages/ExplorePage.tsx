@@ -313,6 +313,7 @@ export function ExplorePage() {
   return (
     <div
       ref={viewportRef}
+      data-tour="explore-tv"
       className={`tvw-root${focusedId ? " has-focus" : ""}`}
       onClick={onRootClick}
     >

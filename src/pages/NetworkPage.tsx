@@ -246,7 +246,10 @@ export function NetworkPage() {
           {/* ─────────────────────────────────────────────────────────────────────── */}
           {/* COLUMN 1 (LEFT): User Card, YOUR NETWORK, COMMUNITIES & CLUBS           */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
-          <aside className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto scrollbar-none">
+          <aside
+            data-tour="network-myspace"
+            className="space-y-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto scrollbar-none"
+          >
             {/* Card 1: User Profile Card with Sunset Cover */}
             <div className="rounded-3xl border border-[#DECDBA] bg-white overflow-hidden shadow-xs">
               <div className="h-28 w-full relative overflow-hidden bg-[#2D120D]">
@@ -341,9 +344,9 @@ export function NetworkPage() {
           {/* ─────────────────────────────────────────────────────────────────────── */}
           {/* COLUMN 2 (CENTER): Share Composer, Community Feed & Posts               */}
           {/* ─────────────────────────────────────────────────────────────────────── */}
-          <div className="space-y-6">
+          <div data-tour="network-feed" className="space-y-6">
             {/* Post Composer Card */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-4 sm:p-5 shadow-xs">
+            <div data-tour="network-composer" className="rounded-3xl border border-[#DECDBA] bg-white p-4 sm:p-5 shadow-xs">
               <div className="flex items-center gap-3 mb-3">
                 <Link to="/profile" className="shrink-0" aria-label="Your profile">
                   {userAvatarUrl ? (
@@ -518,7 +521,7 @@ export function NetworkPage() {
           {/* ─────────────────────────────────────────────────────────────────────── */}
           <aside className="space-y-6">
             {/* Card 2: Suggested Connections */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
+            <div data-tour="network-connections" className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D]">
                   Suggested Connections
@@ -604,7 +607,7 @@ export function NetworkPage() {
             </div>
 
             {/* Card 3: Communities & Clubs */}
-            <div className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
+            <div data-tour="network-clubs" className="rounded-3xl border border-[#DECDBA] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-serif font-bold text-sm sm:text-base text-[#2D120D]">
                   Communities &amp; Clubs

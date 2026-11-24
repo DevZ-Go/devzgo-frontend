@@ -21,15 +21,21 @@ const STEPS: TourStep[] = [
   },
   {
     path: "/explore",
-    target: "explore-studio",
-    title: "Explore · Directory",
-    body: "Browse the project grid, filter by stack, and open builds. This is the calm catalog view of the same public work.",
-  },
-  {
-    path: "/explore?view=reels",
     target: "explore-reels",
     title: "Explore · Reels",
-    body: "Snap-scroll full-bleed project covers like stories. Scroll the gallery — hearts and shares wait until you have an account.",
+    body: "Reels is the default Explore view — snap-scroll full-bleed project covers. Hearts and shares wait until you have an account.",
+  },
+  {
+    path: "/explore",
+    target: "explore-modes",
+    title: "Switch views",
+    body: "Toggle Reels, Directory, or TV World here. Directory is a filterable grid; TV World unlocks fully after sign-in.",
+  },
+  {
+    path: "/explore?view=directory",
+    target: "explore-studio",
+    title: "Explore · Directory",
+    body: "Calm grid catalog of the same public projects. Filter by stack, then open any build to read more.",
   },
   {
     path: "/preview/tv",

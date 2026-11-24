@@ -186,10 +186,10 @@ export function StudioWallPage({
   const containerRef = useRef<HTMLDivElement>(null);
   const projects = data.projects ?? [];
 
-  // Keep Reels/Directory in sync with `?view=` (guest tour + shareable links).
+  // Reels is default; `?view=directory` opens the grid (guest/member tours + shareable links).
   useEffect(() => {
     const view = searchParams.get("view");
-    setViewMode(view === "reels" ? "horizontal" : "vertical");
+    setViewMode(view === "directory" ? "vertical" : "horizontal");
   }, [searchParams]);
 
   const setGalleryMode = (mode: "horizontal" | "vertical") => {
@@ -197,7 +197,7 @@ export function StudioWallPage({
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (mode === "horizontal") next.set("view", "reels");
+        if (mode === "vertical") next.set("view", "directory");
         else next.delete("view");
         return next;
       },
@@ -302,7 +302,7 @@ export function StudioWallPage({
             />
 
             {/* Unified 3-Way Switch: Reels | Directory | TV World */}
-            <div className={modeShell} role="tablist" aria-label="Explore view modes">
+            <div data-tour="explore-modes" className={modeShell} role="tablist" aria-label="Explore view modes">
               <button
                 type="button"
                 role="tab"
