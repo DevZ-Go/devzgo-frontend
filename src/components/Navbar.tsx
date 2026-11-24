@@ -21,6 +21,7 @@ import {
   Trophy,
   UsersRound,
   User,
+  LogIn,
   LogOut,
   Menu,
   X,
@@ -74,11 +75,11 @@ function UnreadBadge({ count, className = "" }: { count: number; className?: str
 
 export function Navbar({ variant = "default" }: NavbarProps) {
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { logout, user, isAuthenticated } = useAuth();
   const { recruiter: isRecruiterAccount } = useAccount();
   const recruiter = isRecruiterAccount || location.pathname.startsWith("/recruit");
   const items = recruiter ? RECRUITER_NAV : NAV_ITEMS;
-  const homePath = recruiter ? "/recruit" : "/network";
+  const homePath = recruiter ? "/recruit" : (isAuthenticated ? "/network" : "/home");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -285,17 +286,38 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             >
               <CircleHelp className="w-4 h-4" /> Take the {recruiter ? "recruiter" : "developer"} tour
             </button>
-            <div className={`mt-2 flex justify-end gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-[#DECDBA] dark:border-stone-800"}`}>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
-                  dark ? "text-white/90 hover:bg-white/10 hover:text-red-400" : "text-stone-700 dark:text-stone-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-                }`}
-              >
-                <LogOut className="w-4 h-4" /> Log out
-              </button>
-            </div>
+            {isAuthenticated ? (
+              <div className={`mt-2 flex justify-end gap-3 pt-3 border-t ${dark ? "border-white/10" : "border-[#DECDBA] dark:border-stone-800"}`}>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
+                    dark ? "text-white/90 hover:bg-white/10 hover:text-red-400" : "text-stone-700 dark:text-stone-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                  }`}
+                >
+                  <LogOut className="w-4 h-4" /> Log out
+                </button>
+              </div>
+            ) : (
+              <div className={`mt-3 pt-3 border-t flex flex-col gap-2 ${dark ? "border-white/10" : "border-[#DECDBA] dark:border-stone-800"}`}>
+                <Link
+                  to="/login"
+                  onClick={close}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-full bg-[#fced96] text-stone-900 text-sm font-bold shadow-xs"
+                >
+                  <LogIn className="w-4 h-4" /> Log in
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={close}
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-2 rounded-full border text-sm font-semibold transition-colors ${
+                    dark ? "border-white/20 text-white hover:bg-white/10" : "border-stone-300 text-stone-800 hover:bg-stone-100"
+                  }`}
+                >
+                  Create an account
+                </Link>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
@@ -394,43 +416,62 @@ export function Navbar({ variant = "default" }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 text-[#FFF8CA]">
-            {user?.is_platform_admin && (
-              <Link
-                to="/admin"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FFF8CA] text-[#6B0B0C] text-xs font-semibold tracking-wide transition-all shadow-xs"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                Admin
-              </Link>
+            {isAuthenticated ? (
+              <>
+                {user?.is_platform_admin && (
+                  <Link
+                    to="/admin"
+                    className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#FFF8CA] text-[#6B0B0C] text-xs font-semibold tracking-wide transition-all shadow-xs"
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    Admin
+                  </Link>
+                )}
+                {!recruiter && (
+                  <Link
+                    to="/wrap"
+                    className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] border border-[#FFF8CA]/35 text-xs font-semibold tracking-wide transition-all shadow-xs"
+                    title="Monthly Wrap"
+                  >
+                    <CalendarDays className="w-3.5 h-3.5 text-[#CDE3E8]" />
+                    <span>Wrap</span>
+                  </Link>
+                )}
+                {messagesButton("bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]")}
+                <NotificationsDropdown className="bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]" />
+                <button
+                  type="button"
+                  onClick={startTour}
+                  data-tour="nav-help"
+                  className={`group/nav ${iconLink}`}
+                  aria-label={`Help: ${tourLabel}`}
+                  title={tourLabel}
+                >
+                  <CircleHelp className="nav-icon-help w-5 h-5 drop-shadow-sm" />
+                </button>
+                <Link to="/settings" className={`group/nav ${iconLink}`} title="Settings" aria-label="Settings">
+                  <Settings className="nav-icon-gear w-5 h-5 drop-shadow-sm" />
+                </Link>
+                <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-400`} title="Log out" aria-label="Log out">
+                  <LogOut className="w-5 h-5 drop-shadow-sm" />
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-[#fced96] hover:bg-[#fae77c] text-stone-900 font-sans text-xs sm:text-sm font-bold shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden sm:inline-flex items-center justify-center px-3.5 py-1.5 rounded-full border border-[#FFF8CA]/30 hover:bg-white/10 text-[#FFF8CA] font-sans text-xs sm:text-sm font-semibold transition-all"
+                >
+                  Sign up
+                </Link>
+              </div>
             )}
-            {!recruiter && (
-              <Link
-                to="/wrap"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#6B0B0C] hover:bg-[#2D120D] text-[#FFF8CA] border border-[#FFF8CA]/35 text-xs font-semibold tracking-wide transition-all shadow-xs"
-                title="Monthly Wrap"
-              >
-                <CalendarDays className="w-3.5 h-3.5 text-[#CDE3E8]" />
-                <span>Wrap</span>
-              </Link>
-            )}
-            {messagesButton("bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]")}
-            <NotificationsDropdown className="bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C] hover:text-[#FFF8CA]" />
-            <button
-              type="button"
-              onClick={startTour}
-              data-tour="nav-help"
-              className={`group/nav ${iconLink}`}
-              aria-label={`Help: ${tourLabel}`}
-              title={tourLabel}
-            >
-              <CircleHelp className="nav-icon-help w-5 h-5 drop-shadow-sm" />
-            </button>
-            <Link to="/settings" className={`group/nav ${iconLink}`} title="Settings" aria-label="Settings">
-              <Settings className="nav-icon-gear w-5 h-5 drop-shadow-sm" />
-            </Link>
-            <button type="button" onClick={handleLogout} className={`${iconLink} hover:text-red-400`} title="Log out" aria-label="Log out">
-              <LogOut className="w-5 h-5 drop-shadow-sm" />
-            </button>
             {menuButton("bg-[#2D120D]/80 text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 hover:bg-[#6B0B0C]")}
           </div>
         </nav>
@@ -614,44 +655,63 @@ export function Navbar({ variant = "default" }: NavbarProps) {
             </div>
           </div>
 
-          {/* Right: + Add Project · Search · Notifications · User Avatar */}
+          {/* Right: + Add Project · Search · Notifications · User Avatar OR Log in */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {!recruiter && (
-              <Link
-                to="/add-project"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 rounded-full font-sans text-sm font-bold shadow-xs transition-all hover:scale-[1.02]"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Add Project</span>
-              </Link>
+            {isAuthenticated ? (
+              <>
+                {!recruiter && (
+                  <Link
+                    to="/add-project"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 bg-[#6B0B0C] hover:bg-[#8B1A1E] text-[#FFF8CA] ring-1 ring-[#FFF8CA]/25 rounded-full font-sans text-sm font-bold shadow-xs transition-all hover:scale-[1.02]"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Add Project</span>
+                  </Link>
+                )}
+
+                {/* Circular Search Button */}
+                <Link
+                  to="/explore"
+                  className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9"
+                  title="Search projects and developers"
+                  aria-label="Search"
+                >
+                  <Search className="w-4 h-4" />
+                </Link>
+
+                {/* Circular Notifications Button */}
+                <NotificationsDropdown className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9" />
+
+                {/* Circular User Avatar */}
+                <Link
+                  to="/profile"
+                  className="rounded-full overflow-hidden border border-[#FFF8CA]/35 hover:border-[#FFF8CA] transition-all flex items-center justify-center h-9 w-9 bg-[#6B0B0C] text-[#FFF8CA] text-xs font-serif font-bold shadow-xs hover:scale-105"
+                  title={displayName}
+                  aria-label="My Profile"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{userInitials}</span>
+                  )}
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center px-4 py-2 bg-[#fced96] hover:bg-[#fae77c] text-stone-900 rounded-full font-sans text-sm font-bold shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden sm:inline-flex items-center justify-center px-3.5 py-2 border border-[#FFF8CA]/35 hover:bg-white/10 text-[#FFF8CA] rounded-full font-sans text-sm font-semibold transition-all"
+                >
+                  Sign up
+                </Link>
+              </div>
             )}
-
-            {/* Circular Search Button */}
-            <Link
-              to="/explore"
-              className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9"
-              title="Search projects and developers"
-              aria-label="Search"
-            >
-              <Search className="w-4 h-4" />
-            </Link>
-
-            {/* Circular Notifications Button */}
-            <NotificationsDropdown className="p-2 rounded-full border border-[#FFF8CA]/25 text-[#FFF8CA] hover:bg-[#6B0B0C] hover:border-[#FFF8CA]/40 transition-all flex items-center justify-center h-9 w-9" />
-
-            {/* Circular User Avatar */}
-            <Link
-              to="/profile"
-              className="rounded-full overflow-hidden border border-[#FFF8CA]/35 hover:border-[#FFF8CA] transition-all flex items-center justify-center h-9 w-9 bg-[#6B0B0C] text-[#FFF8CA] text-xs font-serif font-bold shadow-xs hover:scale-105"
-              title={displayName}
-              aria-label="My Profile"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span>{userInitials}</span>
-              )}
-            </Link>
 
             {/* Mobile Hamburger toggle */}
             <button

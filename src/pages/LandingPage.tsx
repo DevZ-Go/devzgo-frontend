@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { FolderCode } from "lucide-react";
 import { Navbar } from "../components/Navbar";
 import { ExploreLink } from "../components/tvworld/ExploreLink";
+import { useAuth } from "../auth/AuthContext";
 import { fetchProjects, resolveApiAssetUrl } from "../api";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import { ProjectSocialBar } from "../components/explore/ProjectSocialBar";
@@ -14,8 +15,21 @@ import bestSellersBoxes from "../assets/editorial/best_sellers_boxes.jpg";
 import pixelCatBackground from "../assets/pixelcat-ezgif.com-gif-to-mp4-converter.mp4";
 
 export function LandingPage() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<ApiProject[]>([]);
   const [, setLoading] = useState(true);
+
+  function requireAuth(targetPath: string, notice: string) {
+    return (e: React.MouseEvent) => {
+      if (!isAuthenticated) {
+        e.preventDefault();
+        navigate("/login", {
+          state: { from: { pathname: targetPath }, notice },
+        });
+      }
+    };
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -92,6 +106,7 @@ export function LandingPage() {
             </ExploreLink>
             <Link
               to="/add-project"
+              onClick={requireAuth("/add-project", "Please log in to add a project.")}
               className="inline-block px-8 py-3 rounded-full bg-white/90 hover:bg-white text-stone-900 font-sans text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all duration-200 shadow-sm"
             >
               Add project
@@ -155,6 +170,7 @@ export function LandingPage() {
             </div>
             <Link
               to="/explore"
+              onClick={requireAuth("/explore", "Please log in to view all projects.")}
               className="self-start sm:self-end inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#2D120D]/60 hover:bg-[#CDE3E8] text-[#FFF8CA] hover:text-[#2D120D] border border-[#CDE3E8]/50 text-xs font-semibold uppercase tracking-wider transition-all shrink-0"
             >
               View all projects &rarr;
@@ -191,6 +207,7 @@ export function LandingPage() {
               <div className="z-10">
                 <Link
                   to="/explore"
+                  onClick={requireAuth("/explore", "Please log in to explore all projects.")}
                   className="w-full block text-center py-2.5 px-4 rounded-full bg-[#2D120D] hover:bg-[#6B0B0C] text-[#FFF8CA] font-sans text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
                 >
                   EXPLORE ALL
@@ -216,6 +233,7 @@ export function LandingPage() {
                 >
                   <Link
                     to={href}
+                    onClick={requireAuth(href, "Please log in to view project details.")}
                     className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[#CDE3E8] focus-visible:ring-inset"
                   >
                     <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#2D120D]/08">

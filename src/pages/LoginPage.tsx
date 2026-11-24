@@ -49,7 +49,8 @@ export function LoginPage() {
         setError("Signed in but could not verify your session. Try again.");
         return;
       }
-      navigate(await destinationAfterLogin(me), { replace: true });
+      const targetPath = (locationState as { from?: { pathname?: string } })?.from?.pathname;
+      navigate(targetPath && targetPath !== "/login" ? targetPath : await destinationAfterLogin(me), { replace: true });
     } catch (err) {
       const message = getApiErrorMessage(err);
       if (/verify your email/i.test(message)) {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 import "./tvworld.css";
 
 interface Props {
@@ -18,10 +19,18 @@ interface Props {
  */
 export function ExploreLink({ className, children, onClick }: Props) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [leaving, setLeaving] = useState(false);
 
   function handleClick(e: MouseEvent<HTMLAnchorElement>) {
     onClick?.();
+    if (!isAuthenticated) {
+      e.preventDefault();
+      navigate("/login", {
+        state: { from: { pathname: "/explore" }, notice: "Please log in to explore all projects and join the community." },
+      });
+      return;
+    }
     try {
       sessionStorage.removeItem("devzgo:tvworld:cam");
     } catch {

@@ -91,7 +91,7 @@ const recruiting = (element: ReactElement) => <ProtectedRoute><RecruiterRoute>{e
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/network" replace />,
+    element: <LandingPage />,
     errorElement: <RouteError />,
   },
   {
@@ -100,11 +100,15 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/home",
-        element: developer(<LandingPage />),
+        element: <LandingPage />,
+      },
+      {
+        path: "/overview",
+        element: <LandingPage />,
       },
       {
         path: "/about",
-        element: developer(<LandingPage />),
+        element: <LandingPage />,
       },
       {
         path: "/about-developers",

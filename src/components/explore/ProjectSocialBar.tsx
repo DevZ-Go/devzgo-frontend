@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { useProjectLike } from "../../hooks/useProjectLike";
@@ -46,6 +47,7 @@ export function ProjectSocialBar({
   blurb,
   techStacks,
 }: ProjectSocialBarProps) {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const signedIn = Boolean(token);
   const { count, liked, busy, toggle } = useProjectLike(projectId, initialLikes, initialLiked);
@@ -69,8 +71,16 @@ export function ProjectSocialBar({
         {/* Like Button */}
         <button
           type="button"
-          onClick={toggle}
-          disabled={!signedIn || busy}
+          onClick={(e) => {
+            if (!signedIn) {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate("/login", { state: { notice: "Please log in to like and save projects." } });
+              return;
+            }
+            toggle();
+          }}
+          disabled={busy}
           aria-pressed={liked}
           title={signedIn ? (liked ? "Unlike project" : "Like project") : "Sign in to like projects"}
           className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
@@ -89,7 +99,15 @@ export function ProjectSocialBar({
         {/* Comment Button */}
         <button
           type="button"
-          onClick={() => setCommentsOpen(true)}
+          onClick={(e) => {
+            if (!signedIn) {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate("/login", { state: { notice: "Please log in to comment on projects." } });
+              return;
+            }
+            setCommentsOpen(true);
+          }}
           title="View and post comments"
           className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold border bg-white/90 text-[#5B233B] border-[#5B233B]/25 hover:bg-[#E9DCF6] transition-all cursor-pointer ${
             iconsOnly ? "h-9 w-9" : labeled ? "min-h-10 px-3.5 py-2 text-sm" : compact ? "px-2 py-1.5 text-[11px]" : "px-2.5 py-1 text-xs"
